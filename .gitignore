@@ -1,0 +1,15 @@
+# Dependencies
+node_modules/
+
+# Secrets & Environment Variables
+.env
+.env.*
+!.env.example
+
+# XRPL Wallet Seeds (Testnet / Mainnet)
+wallets.json
+
+# OS / Editor files
+.DS_Store
+Thumbs.db
+*.log

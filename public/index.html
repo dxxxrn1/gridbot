@@ -1,0 +1,1618 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GridBot | Autonomous Prepaid-Resource Agent on XRPL</title>
+    <style>
+      :root {
+        --bg: #060911;
+        --panel: rgba(15, 23, 42, 0.78);
+        --card: rgba(2, 6, 23, 0.65);
+        --line: rgba(30, 41, 59, 0.9);
+        --text: #e2e8f0;
+        --muted: #94a3b8;
+        --dim: #64748b;
+        --green: #10b981;
+        --amber: #f59e0b;
+        --red: #ef4444;
+        --sky: #38bdf8;
+        --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+        --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        font-family: var(--sans);
+        background:
+          var(--bg)
+            radial-gradient(
+              at 15% 10%,
+              rgba(16, 185, 129, 0.09),
+              transparent 45%
+            ),
+          radial-gradient(
+            at 85% 15%,
+            rgba(56, 189, 248, 0.09),
+            transparent 45%
+          );
+        color: var(--text);
+        -webkit-font-smoothing: antialiased;
+      }
+      .hidden {
+        display: none !important;
+      }
+      .mono {
+        font-family: var(--mono);
+      }
+      /* blocked banner */
+      .blocked-banner {
+        background: rgba(69, 10, 10, 0.97);
+        border-bottom: 2px solid var(--red);
+        padding: 22px 24px;
+        color: #fee2e2;
+        z-index: 40;
+        animation: flashRed 1s ease-out;
+      }
+      .blocked-inner {
+        max-width: 1280px;
+        margin: 0 auto;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+      }
+      .blocked-left {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+      }
+      .blocked-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: rgba(239, 68, 68, 0.25);
+        border: 1px solid #f87171;
+        color: #fca5a5;
+        font-weight: 700;
+        font-size: 22px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+      }
+      .blocked-title {
+        display: block;
+        font-weight: 800;
+        font-size: 18px;
+        letter-spacing: 0.04em;
+        color: #fca5a5;
+        margin-bottom: 4px;
+      }
+      .blocked-text {
+        font-size: 14px;
+        font-family: var(--mono);
+      }
+      /* header */
+      .top-header {
+        position: sticky;
+        top: 0;
+        z-index: 30;
+        background: rgba(7, 11, 20, 0.88);
+        backdrop-filter: blur(12px);
+        border-bottom: 1px solid var(--line);
+      }
+      .header-inner {
+        max-width: 1280px;
+        margin: 0 auto;
+        padding: 14px 24px;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+      }
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .logo {
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+        background: linear-gradient(
+          135deg,
+          rgba(16, 185, 129, 0.2),
+          rgba(56, 189, 248, 0.2)
+        );
+        border: 1px solid rgba(16, 185, 129, 0.45);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--green);
+      }
+      .brand-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .brand-title {
+        font-size: 20px;
+        font-weight: 700;
+        color: #fff;
+        letter-spacing: -0.02em;
+      }
+      .brand-sub {
+        font-size: 12px;
+        color: var(--muted);
+        margin-top: 2px;
+      }
+      .ws-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 11px;
+        font-weight: 600;
+        padding: 2px 9px;
+        border-radius: 999px;
+        background: #1e293b;
+        color: var(--muted);
+        border: 1px solid #334155;
+      }
+      .ws-dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--amber);
+      }
+      .ws-dot.online {
+        background: var(--green);
+        box-shadow: 0 0 8px var(--green);
+      }
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 6px 14px;
+        border-radius: 999px;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        background: rgba(56, 189, 248, 0.1);
+        border: 1px solid rgba(56, 189, 248, 0.4);
+        color: #bae6fd;
+      }
+      .header-right {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .treasury {
+        background: rgba(15, 23, 42, 0.9);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 6px 12px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .treasury-label {
+        font-size: 10px;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--muted);
+        font-weight: 700;
+      }
+      .treasury a {
+        font-family: var(--mono);
+        font-size: 12px;
+        color: #6ee7b7;
+      }
+      /* buttons */
+      .btn {
+        cursor: pointer;
+        font: 600 12px var(--sans);
+        padding: 6px 12px;
+        border-radius: 8px;
+        border: 1px solid #334155;
+        background: #0f172a;
+        color: var(--text);
+        transition: 0.18s;
+      }
+      .btn:hover {
+        background: #1e293b;
+        border-color: #475569;
+      }
+      .btn-amber {
+        background: rgba(245, 158, 11, 0.15);
+        border-color: rgba(245, 158, 11, 0.45);
+        color: #fde68a;
+      }
+      .btn-sky {
+        background: rgba(56, 189, 248, 0.15);
+        border-color: rgba(56, 189, 248, 0.45);
+        color: #bae6fd;
+      }
+      .btn-red {
+        background: rgba(239, 68, 68, 0.15);
+        border-color: rgba(239, 68, 68, 0.45);
+        color: #fecaca;
+      }
+      .btn-red-active {
+        background: #dc2626;
+        border-color: #f87171;
+        color: #fff;
+        animation: pulse 1.4s infinite;
+      }
+      .btn-approve {
+        background: var(--amber);
+        border-color: #fbbf24;
+        color: #020617;
+        font-weight: 700;
+      }
+      .demo-bar {
+        border-top: 1px solid var(--line);
+        background: rgba(15, 23, 42, 0.96);
+        padding: 10px 24px;
+      }
+      .demo-inner {
+        max-width: 1280px;
+        margin: 0 auto;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        font-size: 12px;
+      }
+      .demo-inner strong {
+        color: #fbbf24;
+        font-family: var(--mono);
+        text-transform: uppercase;
+      }
+      .demo-btns {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+      /* layout */
+      .main {
+        max-width: 1280px;
+        width: 100%;
+        margin: 0 auto;
+        padding: 24px;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 24px;
+      }
+      @media (max-width: 1024px) {
+        .grid {
+          grid-template-columns: 1fr;
+        }
+      }
+      .panel {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 15px 35px -10px rgba(0, 0, 0, 0.5);
+      }
+      .panel-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 8px;
+        margin-bottom: 14px;
+      }
+      .panel-title {
+        font-size: 14px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: #f1f5f9;
+      }
+      .panel-sub {
+        font-size: 11px;
+        color: var(--muted);
+        margin-top: 2px;
+      }
+      .panel-footer {
+        margin-top: auto;
+        padding-top: 12px;
+        border-top: 1px solid var(--line);
+        font-size: 11px;
+        color: var(--muted);
+      }
+      /* gauges */
+      .gauges {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+        margin: auto 0;
+      }
+      .gauge-card {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 14px 10px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+      }
+      .tag {
+        font-family: var(--mono);
+        font-size: 10px;
+        text-transform: uppercase;
+        padding: 2px 7px;
+        border-radius: 4px;
+        background: #0f172a;
+        color: var(--muted);
+        border: 1px solid #1e293b;
+        margin-bottom: 8px;
+      }
+      .gauge-wrap {
+        position: relative;
+        width: 128px;
+        height: 128px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .ring {
+        transition:
+          stroke-dashoffset 0.55s cubic-bezier(0.4, 0, 0.2, 1),
+          stroke 0.35s;
+        transform: rotate(-90deg);
+        transform-origin: 50% 50%;
+      }
+      .gauge-center {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+      }
+      .gauge-pct {
+        font: 700 24px var(--mono);
+        color: #fff;
+      }
+      .gauge-status {
+        font-size: 10px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--green);
+      }
+      .gauge-name {
+        font-size: 13px;
+        font-weight: 700;
+        margin-top: 8px;
+        color: #f1f5f9;
+      }
+      .gauge-cost {
+        font-size: 11px;
+        color: var(--muted);
+        margin-top: 2px;
+      }
+      .gauge-cost b {
+        font-family: var(--mono);
+        color: var(--text);
+      }
+      .vend-box {
+        margin-top: 8px;
+        width: 100%;
+        background: rgba(15, 23, 42, 0.9);
+        border: 1px solid #1e293b;
+        border-radius: 6px;
+        padding: 4px 8px;
+        font: 10px var(--mono);
+        color: #6ee7b7;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      /* brain */
+      .stats {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+        margin-bottom: 12px;
+      }
+      .stat {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 8px 10px;
+      }
+      .stat-label {
+        font-size: 10px;
+        text-transform: uppercase;
+        color: var(--dim);
+        font-weight: 700;
+      }
+      .stat-val {
+        font: 700 12px var(--mono);
+        color: var(--text);
+        margin-top: 3px;
+      }
+      .terminal {
+        background: #030712;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 14px;
+        min-height: 200px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        flex: 1;
+      }
+      .terminal-top {
+        display: flex;
+        justify-content: space-between;
+        font: 10px var(--mono);
+        color: var(--dim);
+        border-bottom: 1px solid #1e293b;
+        padding-bottom: 6px;
+        margin-bottom: 8px;
+      }
+      .typewriter {
+        font: 16px/1.6 var(--mono);
+        color: #e0f2fe;
+      }
+      .cursor::after {
+        content: "\258B";
+        margin-left: 3px;
+        color: var(--sky);
+        animation: blink 1s step-end infinite;
+      }
+      .outcome {
+        margin-top: 10px;
+        padding-top: 8px;
+        border-top: 1px solid #1e293b;
+        display: flex;
+        justify-content: space-between;
+        font: 11px var(--mono);
+        color: var(--dim);
+      }
+      .model {
+        font: 11px var(--mono);
+        padding: 3px 9px;
+        border-radius: 999px;
+        background: rgba(56, 189, 248, 0.15);
+        color: #7dd3fc;
+        border: 1px solid rgba(56, 189, 248, 0.35);
+        white-space: nowrap;
+      }
+      /* budget */
+      .budget-card {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 14px;
+        display: flex;
+        align-items: center;
+        gap: 18px;
+        margin-bottom: 14px;
+      }
+      .budget-rows {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 7px;
+        font-size: 12px;
+      }
+      .budget-row {
+        display: flex;
+        justify-content: space-between;
+        color: var(--muted);
+      }
+      .budget-row b {
+        font-family: var(--mono);
+      }
+      .edit-form {
+        background: #020617;
+        border: 1px solid #334155;
+        border-radius: 10px;
+        padding: 12px;
+        margin-bottom: 12px;
+      }
+      .edit-form label {
+        display: block;
+        font-size: 10px;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin-bottom: 4px;
+      }
+      .edit-form input {
+        width: 100%;
+        background: #0f172a;
+        border: 1px solid #334155;
+        border-radius: 6px;
+        padding: 5px 8px;
+        color: #fff;
+        font-family: var(--mono);
+      }
+      .allow-card {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        padding: 12px;
+        margin-bottom: 14px;
+      }
+      .allow-head {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 6px;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+      /* feed */
+      .feed {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        padding: 20px;
+        box-shadow: 0 15px 35px -10px rgba(0, 0, 0, 0.5);
+      }
+      .table-wrap {
+        overflow-x: auto;
+        margin-top: 12px;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        text-align: left;
+        font-size: 12px;
+      }
+      th {
+        padding: 10px 12px;
+        border-bottom: 1px solid var(--line);
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--muted);
+      }
+      td {
+        padding: 12px;
+        border-bottom: 1px solid rgba(30, 41, 59, 0.55);
+        vertical-align: middle;
+      }
+      tr:hover td {
+        background: rgba(30, 41, 59, 0.28);
+      }
+      td:nth-child(5) > div {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        max-width: 420px;
+      }
+      .pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 3px 10px;
+        border-radius: 999px;
+        font: 600 11px var(--mono);
+      }
+      .pill-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+      }
+      .pill-green {
+        background: rgba(16, 185, 129, 0.15);
+        color: #6ee7b7;
+        border: 1px solid rgba(16, 185, 129, 0.35);
+      }
+      .pill-amber {
+        background: rgba(245, 158, 11, 0.15);
+        color: #fcd34d;
+        border: 1px solid rgba(245, 158, 11, 0.35);
+      }
+      .pill-red {
+        background: rgba(239, 68, 68, 0.15);
+        color: #fca5a5;
+        border: 1px solid rgba(239, 68, 68, 0.35);
+      }
+      /* toasts */
+      .toasts {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        z-index: 50;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        max-width: 380px;
+        width: 100%;
+        pointer-events: none;
+      }
+      .toast {
+        pointer-events: auto;
+        background: rgba(15, 23, 42, 0.96);
+        border: 1px solid rgba(16, 185, 129, 0.55);
+        border-radius: 12px;
+        padding: 14px;
+        color: #ecfdf5;
+        box-shadow: 0 20px 30px -10px rgba(0, 0, 0, 0.7);
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        font-size: 12px;
+        animation: slideIn 0.25s ease-out;
+      }
+      .toast-x {
+        background: none;
+        border: none;
+        color: var(--muted);
+        cursor: pointer;
+        font-size: 14px;
+      }
+      @keyframes blink {
+        50% {
+          opacity: 0;
+        }
+      }
+      @keyframes pulse {
+        50% {
+          opacity: 0.65;
+        }
+      }
+      @keyframes slideIn {
+        from {
+          transform: translateX(100%);
+          opacity: 0;
+        }
+        to {
+          transform: none;
+          opacity: 1;
+        }
+      }
+      @keyframes flashRed {
+        0% {
+          background: #dc2626;
+        }
+        100% {
+          background: rgba(69, 10, 10, 0.97);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="blockedBanner" class="blocked-banner hidden">
+      <div class="blocked-inner">
+        <div class="blocked-left">
+          <span class="blocked-icon">!</span>
+          <div>
+            <span id="blockedBannerTitle" class="blocked-title"
+              >BLOCKED BY POLICY SIGNER</span
+            >
+            <span id="blockedBannerText" class="blocked-text"
+              >The policy signer refused to co-sign this payment.</span
+            >
+          </div>
+        </div>
+        <button onclick="hideBlockedBanner()" class="btn btn-red">
+          Dismiss
+        </button>
+      </div>
+    </div>
+
+    <header class="top-header">
+      <div class="header-inner">
+        <div class="brand">
+          <div class="logo">
+            <svg
+              width="24"
+              height="24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.2"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M13 10V3L4 14h7v7l9-11h-7z"
+              />
+            </svg>
+          </div>
+          <div>
+            <div class="brand-row">
+              <h1 class="brand-title">GridBot</h1>
+              <span class="ws-pill"
+                ><span id="wsDotCircle" class="ws-dot"></span
+                ><span id="wsStatusText">Connecting</span></span
+              >
+            </div>
+            <p class="brand-sub">
+              Autonomous prepaid-resource agent for SA small businesses
+            </p>
+          </div>
+        </div>
+        <span class="badge">Mock devices / Real XRPL testnet payments</span>
+        <div class="header-right">
+          <div class="treasury">
+            <span class="treasury-label">Treasury</span>
+            <a
+              id="treasuryAddressLink"
+              href="https://testnet.xrpl.org"
+              target="_blank"
+              rel="noopener noreferrer"
+              >Loading...</a
+            >
+          </div>
+          <button id="demoToggleBtn" onclick="toggleDemoBar()" class="btn">
+            Demo
+          </button>
+        </div>
+      </div>
+      <div id="demoControlBar" class="demo-bar hidden">
+        <div class="demo-inner">
+          <div>
+            <strong>Demo controls</strong> &nbsp;Force a low balance or trigger
+            a runaway agent
+          </div>
+          <div class="demo-btns">
+            <button
+              onclick="drainResource('electricity')"
+              class="btn btn-amber"
+            >
+              Drain Electricity
+            </button>
+            <button onclick="drainResource('data')" class="btn btn-sky">
+              Drain Data
+            </button>
+            <button
+              id="rogueBtn"
+              onclick="toggleRogueMode()"
+              class="btn btn-red"
+            >
+              <span id="rogueBtnText">Trigger Runaway Bug</span>
+            </button>
+            <button onclick="resetDemo()" class="btn">Reset</button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="main">
+      <div class="grid">
+        <section class="panel">
+          <div class="panel-header">
+            <h2 class="panel-title">Prepaid Resources</h2>
+          </div>
+          <div class="gauges">
+            <div class="gauge-card">
+              <span class="tag">Alert at 5%</span>
+              <div class="gauge-wrap">
+                <svg width="124" height="124" viewBox="0 0 120 120">
+                  <circle
+                    cx="60"
+                    cy="60"
+                    r="50"
+                    stroke="#1e293b"
+                    stroke-width="10"
+                    fill="transparent"
+                  />
+                  <circle
+                    id="elecGaugeRing"
+                    class="ring"
+                    cx="60"
+                    cy="60"
+                    r="50"
+                    stroke="#10b981"
+                    stroke-width="10"
+                    stroke-linecap="round"
+                    fill="transparent"
+                    stroke-dasharray="314.16"
+                    stroke-dashoffset="0"
+                  />
+                </svg>
+                <div class="gauge-center">
+                  <span id="elecLevelText" class="gauge-pct">100%</span
+                  ><span id="elecStatusLabel" class="gauge-status"
+                    >Healthy</span
+                  >
+                </div>
+              </div>
+              <h3 class="gauge-name">Electricity</h3>
+              <p class="gauge-cost">Unit cost <b>5 RLUSD</b></p>
+              <div
+                id="lastStsTokenBox"
+                class="vend-box"
+                title="Last vended STS token (mock)"
+              >
+                STS: none yet
+              </div>
+            </div>
+            <div class="gauge-card">
+              <span class="tag">Alert at 10%</span>
+              <div class="gauge-wrap">
+                <svg width="124" height="124" viewBox="0 0 120 120">
+                  <circle
+                    cx="60"
+                    cy="60"
+                    r="50"
+                    stroke="#1e293b"
+                    stroke-width="10"
+                    fill="transparent"
+                  />
+                  <circle
+                    id="dataGaugeRing"
+                    class="ring"
+                    cx="60"
+                    cy="60"
+                    r="50"
+                    stroke="#10b981"
+                    stroke-width="10"
+                    stroke-linecap="round"
+                    fill="transparent"
+                    stroke-dasharray="314.16"
+                    stroke-dashoffset="0"
+                  />
+                </svg>
+                <div class="gauge-center">
+                  <span id="dataLevelText" class="gauge-pct">100%</span
+                  ><span id="dataStatusLabel" class="gauge-status"
+                    >Healthy</span
+                  >
+                </div>
+              </div>
+              <h3 class="gauge-name">Router Data</h3>
+              <p class="gauge-cost">Unit cost <b>3 RLUSD</b></p>
+              <div
+                id="lastDataBundleBox"
+                class="vend-box"
+                style="color: #7dd3fc"
+                title="Last vended data bundle (mock)"
+              >
+                Bundle: none yet
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-header">
+            <div>
+              <h2 class="panel-title">Agent Brain</h2>
+              <p class="panel-sub">Proposes only. Cannot pay alone.</p>
+            </div>
+            <span id="agentModeBadge" class="model"
+              >llama-3.3-70b-versatile</span
+            >
+          </div>
+          <div class="stats">
+            <div class="stat">
+              <div class="stat-label">Decision</div>
+              <div id="brainDecisionBadge" class="stat-val">STANDBY</div>
+            </div>
+            <div class="stat">
+              <div class="stat-label">Resource</div>
+              <div id="brainResourceText" class="stat-val">-</div>
+            </div>
+            <div class="stat">
+              <div class="stat-label">Proposed</div>
+              <div id="brainAmountText" class="stat-val" style="color: #34d399">
+                0 RLUSD
+              </div>
+            </div>
+          </div>
+          <div class="terminal">
+            <div class="terminal-top">
+              <span>AI REASONING</span
+              ><span id="brainTimestamp">Waiting...</span>
+            </div>
+            <div style="margin: auto 0; padding: 4px 0">
+              <p id="brainTypewriter" class="typewriter cursor">
+                Watching electricity and data levels. When one runs low, the
+                agent proposes a top-up.
+              </p>
+            </div>
+            <div class="outcome">
+              <span>Policy signer:</span
+              ><span id="brainOutcomeStatus">Idle</span>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-header">
+            <h2 class="panel-title">Daily Budget</h2>
+            <button
+              onclick="togglePolicyEditor()"
+              class="btn"
+              style="padding: 4px 10px; font-size: 11px"
+            >
+              Edit caps
+            </button>
+          </div>
+          <div class="budget-card">
+            <div
+              class="gauge-wrap"
+              style="width: 112px; height: 112px; flex-shrink: 0"
+            >
+              <svg width="112" height="112" viewBox="0 0 120 120">
+                <circle
+                  cx="60"
+                  cy="60"
+                  r="48"
+                  stroke="#1e293b"
+                  stroke-width="10"
+                  fill="transparent"
+                />
+                <circle
+                  id="budgetGaugeRing"
+                  class="ring"
+                  cx="60"
+                  cy="60"
+                  r="48"
+                  stroke="#38bdf8"
+                  stroke-width="10"
+                  stroke-linecap="round"
+                  fill="transparent"
+                  stroke-dasharray="301.59"
+                  stroke-dashoffset="0"
+                />
+              </svg>
+              <div class="gauge-center">
+                <span
+                  style="
+                    font-size: 9px;
+                    text-transform: uppercase;
+                    color: #94a3b8;
+                  "
+                  >Left</span
+                >
+                <span
+                  id="budgetRemainingRingText"
+                  class="mono"
+                  style="font-size: 18px; font-weight: 700; color: #fff"
+                  >15.0</span
+                >
+                <span class="mono" style="font-size: 9px; color: #94a3b8"
+                  >RLUSD</span
+                >
+              </div>
+            </div>
+            <div class="budget-rows">
+              <div class="budget-row">
+                <span>Daily cap</span
+                ><b id="dailyCapText" style="color: #fff">15 RLUSD</b>
+              </div>
+              <div class="budget-row">
+                <span>Spent today</span
+                ><b id="spentTodayText" style="color: #7dd3fc">0 RLUSD</b>
+              </div>
+              <div class="budget-row">
+                <span>Remaining</span
+                ><b id="budgetRemainingText" style="color: #34d399">15 RLUSD</b>
+              </div>
+              <div
+                class="budget-row"
+                style="padding-top: 6px; border-top: 1px solid #1e293b"
+              >
+                <span>Per-payment cap</span
+                ><b id="perTxCapText" style="color: #fcd34d">10 RLUSD</b>
+              </div>
+            </div>
+          </div>
+          <form
+            id="policyEditForm"
+            onsubmit="savePolicy(event)"
+            class="edit-form hidden"
+          >
+            <div
+              style="
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 10px;
+                margin-bottom: 10px;
+              "
+            >
+              <div>
+                <label>Daily cap</label
+                ><input
+                  id="inputDailyCap"
+                  type="number"
+                  step="0.5"
+                  min="0"
+                  required
+                />
+              </div>
+              <div>
+                <label>Per-payment cap</label
+                ><input
+                  id="inputPerTxCap"
+                  type="number"
+                  step="0.5"
+                  min="0"
+                  required
+                />
+              </div>
+            </div>
+            <div style="display: flex; justify-content: flex-end; gap: 8px">
+              <button type="button" onclick="togglePolicyEditor()" class="btn">
+                Cancel
+              </button>
+              <button type="submit" class="btn btn-sky">Save</button>
+            </div>
+          </form>
+          <div class="allow-card">
+            <div class="allow-head"><span>Allowed payee</span></div>
+            <div
+              id="allowlistContainer"
+              class="mono"
+              style="font-size: 11px; color: #cbd5e1; word-break: break-all"
+            >
+              Loading...
+            </div>
+          </div>
+          <div class="panel-footer">
+            Limits: policy signer (off-chain). Payments: XRPL multi-sign.
+          </div>
+        </section>
+      </div>
+
+      <section class="feed">
+        <h2 class="panel-title">Transaction Audit Feed</h2>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>Status</th>
+                <th>Resource</th>
+                <th>Amount</th>
+                <th>Reason</th>
+                <th style="text-align: right">Explorer / Action</th>
+              </tr>
+            </thead>
+            <tbody id="txTableBody">
+              <tr>
+                <td
+                  colspan="6"
+                  class="mono"
+                  style="text-align: center; padding: 28px; color: #64748b"
+                >
+                  Loading...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+
+    <div id="toastContainer" class="toasts"></div>
+
+    <script>
+      const GAUGE_C = 2 * Math.PI * 50;
+      const BUDGET_C = 2 * Math.PI * 48;
+      let appState = {
+        levels: [],
+        policy: { daily_cap: 15, per_tx_cap: 10, allowed_payees: [] },
+        spentToday: 0,
+        budgetRemaining: 15,
+        rogueMode: false,
+        treasuryAddress: null,
+        transactions: [],
+      };
+      let typewriterTimer = null;
+      let initialLoadDone = false;
+
+      function formatTimeSAST(iso) {
+        if (!iso) return "-";
+        try {
+          return new Intl.DateTimeFormat("en-ZA", {
+            timeZone: "Africa/Johannesburg",
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+            hour12: false,
+          }).format(new Date(iso));
+        } catch {
+          return iso;
+        }
+      }
+      function escapeHtml(s) {
+        if (s === null || s === undefined) return "";
+        return String(s)
+          .replace(/&/g, "&amp;")
+          .replace(/</g, "&lt;")
+          .replace(/>/g, "&gt;")
+          .replace(/"/g, "&quot;")
+          .replace(/'/g, "&#039;");
+      }
+      function shortHash(h) {
+        return h ? h.slice(0, 8) + "..." + h.slice(-6) : "";
+      }
+
+      function typewriteBrainText(text) {
+        const el = document.getElementById("brainTypewriter");
+        if (!el) return;
+        if (typewriterTimer) {
+          clearInterval(typewriterTimer);
+          typewriterTimer = null;
+        }
+        el.textContent = "";
+        const chars = Array.from(String(text || ""));
+        let i = 0;
+        typewriterTimer = setInterval(() => {
+          if (i < chars.length) {
+            el.textContent += chars[i++];
+          } else {
+            clearInterval(typewriterTimer);
+            typewriterTimer = null;
+          }
+        }, 14);
+      }
+
+      function showToast({ title, subtitle, explorerUrl }) {
+        const box = document.getElementById("toastContainer");
+        const t = document.createElement("div");
+        t.className = "toast";
+        t.innerHTML = `<div>
+      <div style="font-weight:700;margin-bottom:4px">${escapeHtml(title)}</div>
+      <div class="mono" style="font-size:11px;color:#cbd5e1">${escapeHtml(subtitle)}</div>
+      ${explorerUrl ? `<a href="${escapeHtml(explorerUrl)}" target="_blank" rel="noopener noreferrer" class="mono" style="display:inline-block;margin-top:6px;font-size:11px;color:#34d399;text-decoration:underline">View on explorer</a>` : ""}
+    </div>
+    <button class="toast-x" onclick="this.parentElement.remove()">x</button>`;
+        box.appendChild(t);
+        setTimeout(() => {
+          if (t.parentElement) t.remove();
+        }, 6500);
+      }
+
+      function showBlockedBanner(reason, status = "blocked") {
+        document.getElementById("blockedBannerTitle").textContent =
+          status === "pending_owner"
+            ? "OVER LIMIT: WAITING FOR OWNER APPROVAL"
+            : "BLOCKED BY POLICY SIGNER";
+        document.getElementById("blockedBannerText").textContent =
+          reason || "The policy signer refused to co-sign this payment.";
+        document.getElementById("blockedBanner").classList.remove("hidden");
+      }
+      function hideBlockedBanner() {
+        document.getElementById("blockedBanner").classList.add("hidden");
+      }
+
+      function renderHeader() {
+        const link = document.getElementById("treasuryAddressLink");
+        if (appState.treasuryAddress) {
+          link.textContent = appState.treasuryAddress;
+          link.href = `https://testnet.xrpl.org/accounts/${appState.treasuryAddress}`;
+        } else {
+          link.textContent = "Unavailable";
+        }
+
+        const btn = document.getElementById("rogueBtn");
+        const txt = document.getElementById("rogueBtnText");
+        const badge = document.getElementById("agentModeBadge");
+        if (appState.rogueMode) {
+          txt.textContent = "Stop Runaway Bug";
+          btn.className = "btn btn-red-active";
+          badge.textContent = "ROGUE LOOP ACTIVE";
+          badge.style.background = "rgba(239,68,68,.25)";
+          badge.style.color = "#fca5a5";
+        } else {
+          txt.textContent = "Trigger Runaway Bug";
+          btn.className = "btn btn-red";
+          badge.textContent = "llama-3.3-70b-versatile";
+          badge.style.background = "rgba(56,189,248,.15)";
+          badge.style.color = "#7dd3fc";
+        }
+      }
+
+      function updateSingleGauge(ringId, textId, statusId, level, threshold) {
+        const ring = document.getElementById(ringId),
+          text = document.getElementById(textId),
+          status = document.getElementById(statusId);
+        if (!ring || !text || !status) return;
+        const pct = Math.max(0, Math.min(100, Number(level) || 0));
+        ring.style.strokeDashoffset = (GAUGE_C - (pct / 100) * GAUGE_C).toFixed(
+          2,
+        );
+        text.textContent = `${pct.toFixed(0)}%`;
+        if (pct <= threshold) {
+          ring.setAttribute("stroke", "#ef4444");
+          status.textContent = "CRITICAL LOW";
+          status.style.color = "#f87171";
+        } else if (pct < 20) {
+          ring.setAttribute("stroke", "#f59e0b");
+          status.textContent = "LOW";
+          status.style.color = "#fbbf24";
+        } else {
+          ring.setAttribute("stroke", "#10b981");
+          status.textContent = "Healthy";
+          status.style.color = "#10b981";
+        }
+      }
+      function renderGauges(levels) {
+        if (!Array.isArray(levels)) return;
+        appState.levels = levels;
+        const e = levels.find((r) => r.id === "electricity"),
+          d = levels.find((r) => r.id === "data");
+        if (e)
+          updateSingleGauge(
+            "elecGaugeRing",
+            "elecLevelText",
+            "elecStatusLabel",
+            e.level,
+            e.threshold,
+          );
+        if (d)
+          updateSingleGauge(
+            "dataGaugeRing",
+            "dataLevelText",
+            "dataStatusLabel",
+            d.level,
+            d.threshold,
+          );
+      }
+
+      function renderBudget() {
+        const cap = Number(appState.policy?.daily_cap ?? 15),
+          perTx = Number(appState.policy?.per_tx_cap ?? 10);
+        const spent = Number(appState.spentToday ?? 0);
+        const left = Math.max(
+          0,
+          Number(appState.budgetRemaining ?? Math.max(0, cap - spent)),
+        );
+        document.getElementById("dailyCapText").textContent = `${cap} RLUSD`;
+        document.getElementById("spentTodayText").textContent =
+          `${spent} RLUSD`;
+        document.getElementById("budgetRemainingText").textContent =
+          `${left} RLUSD`;
+        document.getElementById("perTxCapText").textContent = `${perTx} RLUSD`;
+        document.getElementById("budgetRemainingRingText").textContent =
+          left.toFixed(1);
+        const ring = document.getElementById("budgetGaugeRing");
+        const ratio = cap > 0 ? Math.max(0, Math.min(1, left / cap)) : 0;
+        ring.style.strokeDashoffset = (BUDGET_C - ratio * BUDGET_C).toFixed(2);
+        ring.setAttribute(
+          "stroke",
+          left <= 0 ? "#ef4444" : ratio < 0.25 ? "#f59e0b" : "#38bdf8",
+        );
+        const list = document.getElementById("allowlistContainer");
+        const payees = appState.policy?.allowed_payees || [];
+        list.innerHTML =
+          payees.length === 0
+            ? '<span style="color:#64748b">No allowed payees</span>'
+            : payees
+                .map(
+                  (a) =>
+                    `<div style="padding:4px 8px;background:#0f172a;border:1px solid #1e293b;border-radius:6px;color:#6ee7b7">${escapeHtml(a)}</div>`,
+                )
+                .join("");
+      }
+
+      function renderDecision(d) {
+        if (!d) return;
+        const proposal = d.proposal || {},
+          payment = d.payment || {},
+          vend = d.vend || null;
+        const decision = (proposal.decision || "wait").toUpperCase();
+        const badge = document.getElementById("brainDecisionBadge");
+        badge.textContent = decision;
+        badge.style.color =
+          decision === "BUY"
+            ? "#34d399"
+            : decision === "ESCALATE"
+              ? "#fbbf24"
+              : "#cbd5e1";
+        document.getElementById("brainResourceText").textContent =
+          proposal.resource || "-";
+        document.getElementById("brainAmountText").textContent =
+          `${proposal.amount ?? 0} RLUSD`;
+        document.getElementById("brainTimestamp").textContent = formatTimeSAST(
+          d.timestamp,
+        );
+        typewriteBrainText(proposal.reason || "No reasoning provided.");
+
+        const out = document.getElementById("brainOutcomeStatus");
+        if (payment.status === "auto_approved") {
+          out.textContent = "Auto-approved";
+          out.style.color = "#34d399";
+          showToast({
+            title: `Paid ${proposal.amount} RLUSD (${proposal.resource})`,
+            subtitle: vend?.token
+              ? `STS token: ${vend.token}`
+              : vend?.bundle
+                ? `Vended: ${vend.bundle}`
+                : `TX: ${shortHash(payment.txHash)}`,
+            explorerUrl: payment.explorerUrl,
+          });
+        } else if (payment.status === "pending_owner") {
+          out.textContent = "Over cap: waiting for owner";
+          out.style.color = "#fbbf24";
+          showBlockedBanner(payment.reason, "pending_owner");
+        } else if (payment.status === "blocked") {
+          out.textContent = "Blocked by policy signer";
+          out.style.color = "#f87171";
+          showBlockedBanner(payment.reason, "blocked");
+        } else {
+          out.textContent = payment.status || "Waited";
+          out.style.color = "#94a3b8";
+        }
+
+        if (vend?.token)
+          document.getElementById("lastStsTokenBox").textContent =
+            `STS: ${vend.token}`;
+        if (vend?.bundle)
+          document.getElementById("lastDataBundleBox").textContent =
+            `Bundle: ${vend.bundle}`;
+      }
+
+      function statusPillHtml(s) {
+        if (s === "auto_approved")
+          return `<span class="pill pill-green"><span class="pill-dot" style="background:#10b981"></span>auto-approved</span>`;
+        if (s === "owner_approved")
+          return `<span class="pill pill-green"><span class="pill-dot" style="background:#34d399"></span>owner-approved</span>`;
+        if (s === "pending_owner")
+          return `<span class="pill pill-amber"><span class="pill-dot" style="background:#f59e0b"></span>pending</span>`;
+        return `<span class="pill pill-red"><span class="pill-dot" style="background:#ef4444"></span>blocked</span>`;
+      }
+
+      function renderTransactions(txs) {
+        if (!Array.isArray(txs)) return;
+        appState.transactions = txs;
+        const body = document.getElementById("txTableBody");
+        if (txs.length === 0) {
+          body.innerHTML = `<tr><td colspan="6" class="mono" style="text-align:center;padding:28px;color:#64748b">No transactions yet. Open "Demo" above to drain a meter.</td></tr>`;
+          return;
+        }
+        body.innerHTML = txs
+          .map((tx) => {
+            const url =
+              tx.explorerUrl ||
+              (tx.tx_hash
+                ? `https://testnet.xrpl.org/transactions/${tx.tx_hash}`
+                : null);
+            const note = tx.blocked_reason
+              ? `<div style="color:${tx.status === "pending_owner" ? "#fcd34d" : "#fca5a5"}" title="${escapeHtml(tx.blocked_reason)}">${escapeHtml(tx.blocked_reason)}</div>`
+              : `<div style="color:#e2e8f0" title="${escapeHtml(tx.reason || "")}">${escapeHtml(tx.reason || "")}</div>`;
+            let action;
+            if (tx.status === "pending_owner") {
+              action = `<button id="approveBtn-${escapeHtml(tx.id)}" onclick="approveTransaction('${escapeHtml(tx.id)}')" class="btn btn-approve">Approve</button>`;
+            } else if (url) {
+              action = `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" class="mono" style="color:#38bdf8;text-decoration:underline">${escapeHtml(shortHash(tx.tx_hash))}</a>`;
+            } else {
+              action = `<span class="mono" style="color:#64748b">-</span>`;
+            }
+            return `<tr>
+      <td class="mono" style="color:#94a3b8;white-space:nowrap">${escapeHtml(formatTimeSAST(tx.ts))}</td>
+      <td style="white-space:nowrap">${statusPillHtml(tx.status)}</td>
+      <td class="mono" style="text-transform:uppercase;color:#f1f5f9;white-space:nowrap">${escapeHtml(tx.resource)}</td>
+      <td class="mono" style="font-weight:700;color:#fff;white-space:nowrap">${escapeHtml(tx.amount)} RLUSD</td>
+      <td style="max-width:440px">${note}</td>
+      <td style="text-align:right;white-space:nowrap">${action}</td>
+    </tr>`;
+          })
+          .join("");
+      }
+
+      function toggleDemoBar() {
+        document.getElementById("demoControlBar").classList.toggle("hidden");
+      }
+      function togglePolicyEditor() {
+        const form = document.getElementById("policyEditForm");
+        if (form.classList.contains("hidden")) {
+          document.getElementById("inputDailyCap").value =
+            appState.policy?.daily_cap ?? 15;
+          document.getElementById("inputPerTxCap").value =
+            appState.policy?.per_tx_cap ?? 10;
+          form.classList.remove("hidden");
+        } else {
+          form.classList.add("hidden");
+        }
+      }
+
+      async function savePolicy(e) {
+        e.preventDefault();
+        const daily_cap = Number(
+          document.getElementById("inputDailyCap").value,
+        );
+        const per_tx_cap = Number(
+          document.getElementById("inputPerTxCap").value,
+        );
+        try {
+          const res = await fetch("/api/policy", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ daily_cap, per_tx_cap }),
+          });
+          const data = await res.json();
+          if (data.ok) {
+            appState.policy = data.policy;
+            appState.spentToday = data.spentToday;
+            appState.budgetRemaining = data.budgetRemaining;
+            renderBudget();
+            document.getElementById("policyEditForm").classList.add("hidden");
+            showToast({
+              title: "Policy updated",
+              subtitle: `Daily cap ${daily_cap} | Per-payment cap ${per_tx_cap} RLUSD`,
+            });
+          }
+        } catch (err) {
+          console.error("Failed to update policy:", err);
+        }
+      }
+      async function drainResource(r) {
+        try {
+          await fetch(`/api/demo/drain/${r}`, { method: "POST" });
+        } catch (err) {
+          console.error(`Failed to drain ${r}:`, err);
+        }
+      }
+      async function toggleRogueMode() {
+        try {
+          const res = await fetch("/api/demo/rogue", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ enabled: !appState.rogueMode }),
+          });
+          const data = await res.json();
+          if (data.ok) {
+            appState.rogueMode = data.rogueMode;
+            renderHeader();
+          }
+        } catch (err) {
+          console.error("Failed to toggle rogue mode:", err);
+        }
+      }
+      async function resetDemo() {
+        try {
+          const res = await fetch("/api/demo/reset", { method: "POST" });
+          const data = await res.json();
+          if (data.ok) {
+            appState.rogueMode = false;
+            hideBlockedBanner();
+            renderHeader();
+            if (data.levels) renderGauges(data.levels);
+            typewriteBrainText(
+              "Demo reset: runaway stopped and meters refilled to 100%.",
+            );
+          }
+        } catch (err) {
+          console.error("Failed to reset demo:", err);
+        }
+      }
+      async function approveTransaction(id) {
+        const btn = document.getElementById(`approveBtn-${id}`);
+        if (btn) {
+          btn.disabled = true;
+          btn.textContent = "Signing...";
+        }
+        try {
+          const res = await fetch(`/api/approve/${id}`, { method: "POST" });
+          const data = await res.json();
+          if (data.ok) {
+            hideBlockedBanner();
+            showToast({
+              title: `Owner approved #${id} (${data.transaction?.amount || ""} RLUSD)`,
+              subtitle: data.vend?.token
+                ? `STS token: ${data.vend.token}`
+                : data.vend?.bundle
+                  ? `Vended: ${data.vend.bundle}`
+                  : "Signed with owner key",
+              explorerUrl: data.explorerUrl,
+            });
+          } else {
+            showBlockedBanner(
+              data.reason || data.error || "Owner approval failed",
+              "blocked",
+            );
+          }
+        } catch (err) {
+          showBlockedBanner(`Owner approval failed: ${err.message}`, "blocked");
+        }
+      }
+
+      function setWsBadge(on) {
+        document.getElementById("wsDotCircle").className = on
+          ? "ws-dot online"
+          : "ws-dot";
+        document.getElementById("wsStatusText").textContent = on
+          ? "Live"
+          : "Reconnecting...";
+      }
+
+      function connectWebSocket() {
+        const proto = window.location.protocol === "https:" ? "wss:" : "ws:";
+        const ws = new WebSocket(`${proto}//${window.location.host}`);
+        ws.onopen = () => setWsBadge(true);
+        ws.onmessage = (event) => {
+          try {
+            const msg = JSON.parse(event.data);
+            if (msg.type === "init") {
+              appState = { ...appState, ...msg };
+              renderHeader();
+              renderGauges(msg.levels);
+              renderBudget();
+              renderTransactions(msg.transactions);
+              initialLoadDone = true;
+            } else if (msg.type === "levels") {
+              renderGauges(msg.levels);
+            } else if (msg.type === "low_alert") {
+              typewriteBrainText(
+                `${msg.label} dropped to ${msg.level}% (alert at ${msg.threshold}%). Asking the AI agent...`,
+              );
+            } else if (msg.type === "decision") {
+              if (msg.levels) renderGauges(msg.levels);
+              renderDecision(msg.decision);
+            } else if (msg.type === "budget") {
+              appState.policy = msg.policy || appState.policy;
+              appState.spentToday = msg.spentToday ?? appState.spentToday;
+              appState.budgetRemaining =
+                msg.budgetRemaining ?? appState.budgetRemaining;
+              renderBudget();
+            } else if (msg.type === "transactions") {
+              appState.spentToday = msg.spentToday ?? appState.spentToday;
+              appState.budgetRemaining =
+                msg.budgetRemaining ?? appState.budgetRemaining;
+              renderBudget();
+              renderTransactions(msg.transactions);
+            } else if (msg.type === "owner_approved") {
+              if (msg.vend?.token)
+                document.getElementById("lastStsTokenBox").textContent =
+                  `STS: ${msg.vend.token}`;
+              if (msg.vend?.bundle)
+                document.getElementById("lastDataBundleBox").textContent =
+                  `Bundle: ${msg.vend.bundle}`;
+            } else if (msg.type === "rogue") {
+              appState.rogueMode = Boolean(msg.rogueMode);
+              renderHeader();
+            } else if (msg.type === "agent_error") {
+              showBlockedBanner(msg.error, "blocked");
+            }
+          } catch (err) {
+            console.error("WS message parse error:", err);
+          }
+        };
+        ws.onclose = () => {
+          setWsBadge(false);
+          setTimeout(connectWebSocket, 2000);
+        };
+        ws.onerror = () => ws.close();
+      }
+
+      fetch("/api/state")
+        .then((r) => r.json())
+        .then((data) => {
+          if (data.ok && !initialLoadDone) {
+            appState = { ...appState, ...data };
+            renderHeader();
+            renderGauges(data.levels);
+            renderBudget();
+            renderTransactions(data.transactions);
+          }
+        })
+        .catch(() => {});
+
+      connectWebSocket();
+    </script>
+  </body>
+</html>

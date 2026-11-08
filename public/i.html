@@ -1,0 +1,1596 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GridBot — Autonomous Prepaid-Resource Agent on XRPL</title>
+  <!-- Optional Tailwind CDN if online, but 100% styled by pure embedded CSS below so it works completely standalone -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root {
+      --bg-base: #060911;
+      --bg-panel: rgba(15, 23, 42, 0.78);
+      --bg-card: rgba(2, 6, 23, 0.65);
+      --border-subtle: rgba(30, 41, 59, 0.9);
+      --border-highlight: rgba(56, 189, 248, 0.35);
+      --text-main: #e2e8f0;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      --emerald: #10b981;
+      --emerald-soft: rgba(16, 185, 129, 0.15);
+      --amber: #f59e0b;
+      --amber-soft: rgba(245, 158, 11, 0.15);
+      --red: #ef4444;
+      --red-soft: rgba(239, 68, 68, 0.15);
+      --sky: #38bdf8;
+      --sky-soft: rgba(56, 189, 248, 0.15);
+      --font-sans: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      font-family: var(--font-sans);
+      background-color: var(--bg-base);
+      background-image:
+        radial-gradient(at 15% 10%, rgba(16, 185, 129, 0.09) 0px, transparent 45%),
+        radial-gradient(at 85% 15%, rgba(56, 189, 248, 0.09) 0px, transparent 45%),
+        radial-gradient(at 50% 90%, rgba(245, 158, 11, 0.05) 0px, transparent 50%);
+      color: var(--text-main);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .mono {
+      font-family: var(--font-mono);
+    }
+
+    /* Red Blocked Banner */
+    .blocked-banner {
+      background: rgba(69, 10, 10, 0.96);
+      border-bottom: 1px solid rgba(239, 68, 68, 0.6);
+      padding: 12px 16px;
+      color: #fee2e2;
+      box-shadow: 0 10px 25px -5px rgba(69, 10, 10, 0.6);
+      z-index: 40;
+    }
+
+    .blocked-banner-inner {
+      max-width: 1280px;
+      margin: 0 auto;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .blocked-banner-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .blocked-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: rgba(239, 68, 68, 0.2);
+      border: 1px solid rgba(248, 113, 113, 0.45);
+      color: #fca5a5;
+      font-weight: 700;
+      font-size: 14px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .blocked-title {
+      font-weight: 700;
+      text-transform: uppercase;
+      font-size: 11px;
+      letter-spacing: 0.05em;
+      color: #fca5a5;
+      margin-right: 8px;
+    }
+
+    .blocked-text {
+      font-size: 13px;
+      font-family: var(--font-mono);
+      color: #fef2f2;
+    }
+
+    /* Top Header */
+    .top-header {
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      background: rgba(7, 11, 20, 0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    .header-inner {
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 14px 24px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logo-box {
+      width: 40px;
+      height: 40px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.2), rgba(56, 189, 248, 0.2));
+      border: 1px solid rgba(16, 185, 129, 0.45);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--emerald);
+    }
+
+    .brand-title-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: #ffffff;
+      letter-spacing: -0.02em;
+    }
+
+    .ws-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 2px 9px;
+      border-radius: 999px;
+      background: #1e293b;
+      color: var(--text-muted);
+      border: 1px solid #334155;
+    }
+
+    .ws-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--amber);
+    }
+
+    .ws-dot.online {
+      background: var(--emerald);
+      box-shadow: 0 0 8px var(--emerald);
+    }
+
+    .brand-subtitle {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .honesty-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      background: linear-gradient(90deg, rgba(245, 158, 11, 0.14), rgba(56, 189, 248, 0.14), rgba(16, 185, 129, 0.14));
+      border: 1px solid rgba(56, 189, 248, 0.4);
+      color: #bae6fd;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .treasury-pill {
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 6px 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+    }
+
+    .treasury-label {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
+      font-weight: 700;
+    }
+
+    .treasury-link {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      color: #6ee7b7;
+      text-decoration: underline;
+      text-decoration-color: rgba(16, 185, 129, 0.4);
+    }
+
+    .treasury-link:hover {
+      color: #a7f3d0;
+    }
+
+    /* Buttons */
+    .btn {
+      cursor: pointer;
+      font-family: var(--font-sans);
+      font-size: 12px;
+      font-weight: 600;
+      padding: 6px 12px;
+      border-radius: 8px;
+      border: 1px solid #334155;
+      background: #0f172a;
+      color: var(--text-main);
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.18s ease;
+    }
+
+    .btn:hover {
+      background: #1e293b;
+      border-color: #475569;
+    }
+
+    .btn-amber {
+      background: var(--amber-soft);
+      border-color: rgba(245, 158, 11, 0.45);
+      color: #fde68a;
+    }
+
+    .btn-amber:hover {
+      background: rgba(245, 158, 11, 0.25);
+    }
+
+    .btn-sky {
+      background: var(--sky-soft);
+      border-color: rgba(56, 189, 248, 0.45);
+      color: #bae6fd;
+    }
+
+    .btn-sky:hover {
+      background: rgba(56, 189, 248, 0.25);
+    }
+
+    .btn-red {
+      background: var(--red-soft);
+      border-color: rgba(239, 68, 68, 0.45);
+      color: #fecaca;
+    }
+
+    .btn-red:hover {
+      background: rgba(239, 68, 68, 0.28);
+    }
+
+    .btn-red-active {
+      background: #dc2626;
+      border-color: #f87171;
+      color: #ffffff;
+      animation: pulseGlow 1.4s infinite;
+    }
+
+    .btn-approve {
+      background: var(--amber);
+      border-color: #fbbf24;
+      color: #020617;
+      font-weight: 700;
+      padding: 5px 12px;
+    }
+
+    .btn-approve:hover {
+      background: #fbbf24;
+    }
+
+    /* Demo Control Bar */
+    .demo-bar {
+      border-top: 1px solid var(--border-subtle);
+      background: rgba(15, 23, 42, 0.96);
+      padding: 10px 24px;
+    }
+
+    .demo-bar-inner {
+      max-width: 1280px;
+      margin: 0 auto;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .demo-bar-controls {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 10px;
+    }
+
+    /* Main Container & 3-Column Grid */
+    .main-container {
+      max-width: 1280px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 24px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    .dashboard-grid {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 24px;
+    }
+
+    .panel {
+      grid-column: span 4;
+      background: var(--bg-panel);
+      border: 1px solid var(--border-subtle);
+      border-radius: 16px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      box-shadow: 0 15px 35px -10px rgba(0, 0, 0, 0.5);
+    }
+
+    @media (max-width: 1024px) {
+      .panel {
+        grid-column: span 12;
+      }
+    }
+
+    .panel-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+
+    .panel-title {
+      font-size: 13px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: #f1f5f9;
+    }
+
+    .panel-subtitle {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .panel-footer {
+      margin-top: 16px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    /* Left Panel: Two Circular Gauges */
+    .gauges-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin: auto 0;
+    }
+
+    .gauge-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 14px 10px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+
+    .gauge-meta-tag {
+      font-family: var(--font-mono);
+      font-size: 10px;
+      text-transform: uppercase;
+      padding: 2px 7px;
+      border-radius: 4px;
+      background: #0f172a;
+      color: var(--text-muted);
+      border: 1px solid #1e293b;
+      margin-bottom: 8px;
+    }
+
+    .gauge-svg-wrap {
+      position: relative;
+      width: 128px;
+      height: 128px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .gauge-ring {
+      transition: stroke-dashoffset 0.55s cubic-bezier(0.4, 0, 0.2, 1), stroke 0.35s ease;
+      transform: rotate(-90deg);
+      transform-origin: 50% 50%;
+    }
+
+    .gauge-center-label {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .gauge-pct {
+      font-family: var(--font-mono);
+      font-size: 24px;
+      font-weight: 700;
+      color: #ffffff;
+    }
+
+    .gauge-status {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--emerald);
+    }
+
+    .vend-box {
+      margin-top: 8px;
+      width: 100%;
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid #1e293b;
+      border-radius: 6px;
+      padding: 4px 8px;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: #6ee7b7;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Middle Panel: Agent Brain */
+    .brain-stats-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .brain-stat-box {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 8px 10px;
+    }
+
+    .brain-stat-label {
+      font-size: 10px;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      font-weight: 700;
+    }
+
+    .brain-stat-val {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-main);
+      margin-top: 3px;
+    }
+
+    .brain-terminal {
+      background: #030712;
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 14px;
+      min-height: 160px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .brain-terminal-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-family: var(--font-mono);
+      font-size: 10px;
+      color: var(--text-dim);
+      border-bottom: 1px solid #1e293b;
+      padding-bottom: 6px;
+      margin-bottom: 8px;
+    }
+
+    .brain-typewriter {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      line-height: 1.55;
+      color: #e0f2fe;
+    }
+
+    .cursor-blink::after {
+      content: '▋';
+      display: inline-block;
+      margin-left: 3px;
+      color: var(--sky);
+      animation: blink 1s step-end infinite;
+    }
+
+    /* Right Panel: Budget Card */
+    .budget-summary-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 14px;
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      margin-bottom: 14px;
+    }
+
+    .budget-rows {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 7px;
+      font-size: 12px;
+    }
+
+    .budget-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .allowlist-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 12px;
+    }
+
+    /* Bottom Panel: Transactions Table */
+    .feed-panel {
+      background: var(--bg-panel);
+      border: 1px solid var(--border-subtle);
+      border-radius: 16px;
+      padding: 20px;
+      box-shadow: 0 15px 35px -10px rgba(0, 0, 0, 0.5);
+    }
+
+    .tx-table-wrap {
+      overflow-x: auto;
+      margin-top: 12px;
+    }
+
+    table.tx-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 12px;
+    }
+
+    table.tx-table th {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border-subtle);
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+    }
+
+    table.tx-table td {
+      padding: 12px;
+      border-bottom: 1px solid rgba(30, 41, 59, 0.55);
+      vertical-align: middle;
+    }
+
+    table.tx-table tr:hover td {
+      background: rgba(30, 41, 59, 0.28);
+    }
+
+    /* Status Pills */
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 10px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 600;
+      font-family: var(--font-mono);
+    }
+
+    .pill-green {
+      background: var(--emerald-soft);
+      color: #6ee7b7;
+      border: 1px solid rgba(16, 185, 129, 0.35);
+    }
+
+    .pill-amber {
+      background: var(--amber-soft);
+      color: #fcd34d;
+      border: 1px solid rgba(245, 158, 11, 0.35);
+    }
+
+    .pill-red {
+      background: var(--red-soft);
+      color: #fca5a5;
+      border: 1px solid rgba(239, 68, 68, 0.35);
+    }
+
+    .pill-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+    }
+
+    /* Toasts */
+    .toast-container {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      z-index: 50;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      max-width: 380px;
+      width: 100%;
+      pointer-events: none;
+    }
+
+    .toast-card {
+      pointer-events: auto;
+      background: rgba(15, 23, 42, 0.96);
+      border: 1px solid rgba(16, 185, 129, 0.55);
+      border-radius: 12px;
+      padding: 14px;
+      color: #ecfdf5;
+      box-shadow: 0 20px 30px -10px rgba(0, 0, 0, 0.7);
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      animation: slideInRight 0.25s ease-out forwards;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0; }
+    }
+
+    @keyframes pulseGlow {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.65; }
+    }
+
+    @keyframes slideInRight {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- RED POLICY SIGNER BLOCKED / CAP INTERCEPT BANNER -->
+  <div id="blockedBanner" class="blocked-banner hidden">
+    <div class="blocked-banner-inner">
+      <div class="blocked-banner-left">
+        <span class="blocked-icon">!</span>
+        <div>
+          <span id="blockedBannerTitle" class="blocked-title">POLICY SIGNER INTERCEPTED</span>
+          <span id="blockedBannerText" class="blocked-text">Off-chain Policy Signer refused to co-sign transaction.</span>
+        </div>
+      </div>
+      <button onclick="hideBlockedBanner()" class="btn btn-red">Dismiss</button>
+    </div>
+  </div>
+
+  <!-- TOP HEADER BAR -->
+  <header class="top-header">
+    <div class="header-inner">
+      <!-- Left: GridBot Logo -->
+      <div class="brand-group">
+        <div class="logo-box">
+          <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+          </svg>
+        </div>
+        <div>
+          <div class="brand-title-row">
+            <h1 class="brand-title">GridBot</h1>
+            <span class="ws-pill">
+              <span id="wsDotCircle" class="ws-dot"></span>
+              <span id="wsStatusText">Connecting</span>
+            </span>
+          </div>
+          <p class="brand-subtitle">Autonomous Prepaid-Resource AI CFO for SA Small Businesses</p>
+        </div>
+      </div>
+
+      <!-- Center: Honesty Badge -->
+      <div>
+        <span class="honesty-badge">
+          <span style="width:8px;height:8px;border-radius:50%;background:#10b981;display:inline-block;"></span>
+          MOCK DEVICES / REAL XRPL TESTNET PAYMENTS
+        </span>
+      </div>
+
+      <!-- Right: Treasury Address + Demo Toggle -->
+      <div class="header-right">
+        <div class="treasury-pill">
+          <span class="treasury-label">Treasury</span>
+          <a id="treasuryAddressLink" href="https://testnet.xrpl.org" target="_blank" rel="noopener noreferrer"
+             class="treasury-link" title="View Treasury Account on XRPL Testnet Explorer">
+            Loading...
+          </a>
+        </div>
+
+        <button id="demoToggleBtn" onclick="toggleDemoBar()" class="btn">
+          ⚙️ Demo
+        </button>
+      </div>
+    </div>
+
+    <!-- COLLAPSIBLE DEMO CONTROL BAR (Hidden behind "Demo" toggle) -->
+    <div id="demoControlBar" class="demo-bar hidden">
+      <div class="demo-bar-inner">
+        <div style="font-size:12px;color:#cbd5e1;">
+          <strong style="color:#fbbf24;font-family:var(--font-mono);text-transform:uppercase;margin-right:6px;">[Demo Controls]</strong>
+          Force simulated meter levels or trigger a runaway agent bug:
+        </div>
+        <div class="demo-bar-controls">
+          <button onclick="drainResource('electricity')" class="btn btn-amber">
+            ⚡ Drain Electricity
+          </button>
+          <button onclick="drainResource('data')" class="btn btn-sky">
+            📶 Drain Data
+          </button>
+          <button id="rogueBtn" onclick="toggleRogueMode()" class="btn btn-red">
+            🤖 <span id="rogueBtnText">Trigger Runaway Bug</span>
+          </button>
+          <button onclick="resetDemo()" class="btn">
+            ↺ Reset
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN CONTENT -->
+  <main class="main-container">
+
+    <div class="dashboard-grid">
+
+      <!-- LEFT: TWO ANIMATED CIRCULAR GAUGES (Electricity & Data) -->
+      <section class="panel">
+        <div class="panel-header">
+          <div>
+            <h2 class="panel-title">Prepaid Resource Meters</h2>
+            <p class="panel-subtitle">2s live telemetry • <span style="color:#fbbf24;" class="mono">MOCK HARDWARE</span></p>
+          </div>
+          <span class="mono" style="font-size:11px;color:#94a3b8;background:#0f172a;padding:2px 8px;border-radius:6px;border:1px solid #1e293b;">
+            P1: Elec | P2: Data
+          </span>
+        </div>
+
+        <div class="gauges-grid">
+          <!-- ELECTRICITY GAUGE -->
+          <div class="gauge-card">
+            <span class="gauge-meta-tag">Priority 1 • Thresh 5%</span>
+            <div class="gauge-svg-wrap">
+              <svg width="124" height="124" viewBox="0 0 120 120">
+                <circle cx="60" cy="60" r="50" stroke="#1e293b" stroke-width="10" fill="transparent" />
+                <circle id="elecGaugeRing" class="gauge-ring" cx="60" cy="60" r="50"
+                        stroke="#10b981" stroke-width="10" stroke-linecap="round" fill="transparent"
+                        stroke-dasharray="314.16" stroke-dashoffset="0" />
+              </svg>
+              <div class="gauge-center-label">
+                <span style="font-size:13px;">⚡</span>
+                <span id="elecLevelText" class="gauge-pct">100%</span>
+                <span id="elecStatusLabel" class="gauge-status">Healthy</span>
+              </div>
+            </div>
+            <h3 style="font-size:13px;font-weight:700;margin-top:8px;color:#f1f5f9;">Prepaid Electricity</h3>
+            <p style="font-size:11px;color:#94a3b8;margin-top:2px;">Unit Cost: <strong class="mono" style="color:#e2e8f0;">5 RLUSD</strong></p>
+            <div id="lastStsTokenBox" class="vend-box" title="Last Vended 20-digit STS Token (Mock)">
+              STS: None vended yet
+            </div>
+          </div>
+
+          <!-- DATA GAUGE -->
+          <div class="gauge-card">
+            <span class="gauge-meta-tag">Priority 2 • Thresh 10%</span>
+            <div class="gauge-svg-wrap">
+              <svg width="124" height="124" viewBox="0 0 120 120">
+                <circle cx="60" cy="60" r="50" stroke="#1e293b" stroke-width="10" fill="transparent" />
+                <circle id="dataGaugeRing" class="gauge-ring" cx="60" cy="60" r="50"
+                        stroke="#10b981" stroke-width="10" stroke-linecap="round" fill="transparent"
+                        stroke-dasharray="314.16" stroke-dashoffset="0" />
+              </svg>
+              <div class="gauge-center-label">
+                <span style="font-size:13px;">📶</span>
+                <span id="dataLevelText" class="gauge-pct">100%</span>
+                <span id="dataStatusLabel" class="gauge-status">Healthy</span>
+              </div>
+            </div>
+            <h3 style="font-size:13px;font-weight:700;margin-top:8px;color:#f1f5f9;">Router LTE Data</h3>
+            <p style="font-size:11px;color:#94a3b8;margin-top:2px;">Unit Cost: <strong class="mono" style="color:#e2e8f0;">3 RLUSD</strong></p>
+            <div id="lastDataBundleBox" class="vend-box" style="color:#7dd3fc;" title="Last Vended LTE Data Bundle (Mock)">
+              Bundle: None vended yet
+            </div>
+          </div>
+        </div>
+
+        <div class="panel-footer">
+          <span>Gauge colors:</span>
+          <span class="mono">&ge;20% Green • &lt;20% Amber • &le;Thresh Red</span>
+        </div>
+      </section>
+
+      <!-- MIDDLE: "AGENT BRAIN" PANEL WITH LIVE TYPEWRITER REASONING -->
+      <section class="panel">
+        <div>
+          <div class="panel-header">
+            <div>
+              <h2 class="panel-title">Agent Brain</h2>
+              <p class="panel-subtitle">Proposes only • Agent key (weight 1) cannot pay alone</p>
+            </div>
+            <span id="agentModeBadge" class="mono" style="font-size:11px;padding:3px 9px;border-radius:999px;background:var(--sky-soft);color:#7dd3fc;border:1px solid rgba(56,189,248,0.35);">
+              llama-3.3-70b-versatile
+            </span>
+          </div>
+
+          <div class="brain-stats-row">
+            <div class="brain-stat-box">
+              <div class="brain-stat-label">Decision</div>
+              <div id="brainDecisionBadge" class="brain-stat-val">STANDBY</div>
+            </div>
+            <div class="brain-stat-box">
+              <div class="brain-stat-label">Resource</div>
+              <div id="brainResourceText" class="brain-stat-val">—</div>
+            </div>
+            <div class="brain-stat-box">
+              <div class="brain-stat-label">Proposed</div>
+              <div id="brainAmountText" class="brain-stat-val" style="color:#34d399;">0 RLUSD</div>
+            </div>
+          </div>
+
+          <div class="brain-terminal">
+            <div class="brain-terminal-top">
+              <span>LIVE AI REASONING</span>
+              <span id="brainTimestamp">Waiting for low-balance event...</span>
+            </div>
+            <div style="margin:auto 0;padding:4px 0;">
+              <p id="brainTypewriter" class="brain-typewriter cursor-blink">
+                Monitoring prepaid electricity and LTE router data levels. When a resource drops below threshold, Groq AI evaluates remaining daily budget and proposes an RLUSD top-up.
+              </p>
+            </div>
+            <div style="margin-top:10px;padding-top:8px;border-top:1px solid #1e293b;display:flex;justify-content:space-between;font-size:11px;" class="mono">
+              <span style="color:#64748b;">Policy Signer Outcome:</span>
+              <span id="brainOutcomeStatus" style="color:#94a3b8;">Idle</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel-footer">
+          <span>XRPL SignerList Quorum: <strong style="color:#fff;" class="mono">2</strong></span>
+          <span class="mono">Agent(1)+Policy(1)=2 | Owner(2)=2</span>
+        </div>
+      </section>
+
+      <!-- RIGHT: BUDGET CARD & POLICY -->
+      <section class="panel">
+        <div>
+          <div class="panel-header">
+            <div>
+              <h2 class="panel-title">Daily Budget &amp; Policy</h2>
+              <p style="font-size:11px;color:#6ee7b7;font-weight:600;margin-top:3px;">
+                Enforced by policy signer + XRPL multi-sign quorum
+              </p>
+            </div>
+            <button onclick="togglePolicyEditor()" class="btn" style="padding:4px 10px;font-size:11px;">
+              Edit Caps
+            </button>
+          </div>
+
+          <!-- Daily Cap Ring + Spent vs Remaining -->
+          <div class="budget-summary-card">
+            <div class="gauge-svg-wrap" style="width:112px;height:112px;flex-shrink:0;">
+              <svg width="112" height="112" viewBox="0 0 120 120">
+                <circle cx="60" cy="60" r="48" stroke="#1e293b" stroke-width="10" fill="transparent" />
+                <circle id="budgetGaugeRing" class="gauge-ring" cx="60" cy="60" r="48"
+                        stroke="#38bdf8" stroke-width="10" stroke-linecap="round" fill="transparent"
+                        stroke-dasharray="301.59" stroke-dashoffset="0" />
+              </svg>
+              <div class="gauge-center-label">
+                <span style="font-size:9px;text-transform:uppercase;color:#94a3b8;">Remaining</span>
+                <span id="budgetRemainingRingText" class="mono" style="font-size:18px;font-weight:700;color:#fff;">15.0</span>
+                <span class="mono" style="font-size:9px;color:#94a3b8;">RLUSD</span>
+              </div>
+            </div>
+
+            <div class="budget-rows">
+              <div class="budget-row">
+                <span style="color:#94a3b8;">Daily Cap:</span>
+                <span id="dailyCapText" class="mono" style="font-weight:700;color:#fff;">15 RLUSD</span>
+              </div>
+              <div class="budget-row">
+                <span style="color:#94a3b8;">Spent Today (SAST):</span>
+                <span id="spentTodayText" class="mono" style="font-weight:700;color:#7dd3fc;">0 RLUSD</span>
+              </div>
+              <div class="budget-row">
+                <span style="color:#94a3b8;">Remaining:</span>
+                <span id="budgetRemainingText" class="mono" style="font-weight:700;color:#34d399;">15 RLUSD</span>
+              </div>
+              <div class="budget-row" style="padding-top:6px;border-top:1px solid #1e293b;">
+                <span style="color:#94a3b8;">Per-Tx Cap:</span>
+                <span id="perTxCapText" class="mono" style="font-weight:700;color:#fcd34d;">10 RLUSD</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Inline Edit Caps Form -->
+          <form id="policyEditForm" onsubmit="savePolicy(event)" class="hidden" style="background:#020617;border:1px solid #334155;border-radius:10px;padding:12px;margin-bottom:12px;">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px;">
+              <div>
+                <label style="display:block;font-size:10px;text-transform:uppercase;color:#94a3b8;margin-bottom:4px;">Daily Cap (RLUSD)</label>
+                <input id="inputDailyCap" type="number" step="0.5" min="0" required
+                       style="width:100%;background:#0f172a;border:1px solid #334155;border-radius:6px;padding:5px 8px;color:#fff;" class="mono" />
+              </div>
+              <div>
+                <label style="display:block;font-size:10px;text-transform:uppercase;color:#94a3b8;margin-bottom:4px;">Per-Tx Cap (RLUSD)</label>
+                <input id="inputPerTxCap" type="number" step="0.5" min="0" required
+                       style="width:100%;background:#0f172a;border:1px solid #334155;border-radius:6px;padding:5px 8px;color:#fff;" class="mono" />
+              </div>
+            </div>
+            <div style="display:flex;justify-content:flex-end;gap:8px;">
+              <button type="button" onclick="togglePolicyEditor()" class="btn">Cancel</button>
+              <button type="submit" class="btn btn-sky">Save Policy</button>
+            </div>
+          </form>
+
+          <!-- Payee Allowlist -->
+          <div class="allowlist-card">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+              <span style="font-size:11px;font-weight:700;text-transform:uppercase;color:#94a3b8;">Payee Allowlist (Utility)</span>
+              <span class="mono" style="font-size:10px;color:#6ee7b7;">Allowlisted Only</span>
+            </div>
+            <div id="allowlistContainer" class="mono" style="font-size:11px;color:#cbd5e1;word-break:break-all;">
+              Loading allowlist...
+            </div>
+          </div>
+        </div>
+
+        <div class="panel-footer">
+          <span>Off-chain Policy Signer tracks budget; XRPL enforces multisig quorum.</span>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- BOTTOM: TRANSACTION FEED -->
+    <section class="feed-panel">
+      <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;">
+        <div>
+          <h2 class="panel-title">Transaction &amp; Policy Audit Feed</h2>
+          <p class="panel-subtitle">Live RLUSD payments on XRPL Testnet + off-chain Policy Signer blocks &amp; owner overrides</p>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;">
+          <span class="pill pill-green"><span class="pill-dot" style="background:#10b981;"></span> auto-approved</span>
+          <span class="pill pill-amber"><span class="pill-dot" style="background:#f59e0b;"></span> pending-owner</span>
+          <span class="pill pill-red"><span class="pill-dot" style="background:#ef4444;"></span> blocked</span>
+        </div>
+      </div>
+
+      <div class="tx-table-wrap">
+        <table class="tx-table">
+          <thead>
+            <tr>
+              <th>Time (SAST)</th>
+              <th>Status</th>
+              <th>Resource</th>
+              <th>Amount</th>
+              <th>Reason / Policy Signer Note</th>
+              <th style="text-align:right;">Explorer / Owner Action</th>
+            </tr>
+          </thead>
+          <tbody id="txTableBody">
+            <tr>
+              <td colspan="6" class="mono" style="text-align:center;padding:28px;color:#64748b;">
+                Loading transaction history...
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- TOAST CONTAINER -->
+  <div id="toastContainer" class="toast-container"></div>
+
+  <script>
+    const GAUGE_CIRCUMFERENCE = 2 * Math.PI * 50; // 314.159
+    const BUDGET_CIRCUMFERENCE = 2 * Math.PI * 48; // 301.593
+
+    let appState = {
+      levels: [],
+      policy: { daily_cap: 15, per_tx_cap: 10, allowed_payees: [] },
+      spentToday: 0,
+      budgetRemaining: 15,
+      rogueMode: false,
+      treasuryAddress: null,
+      transactions: [],
+    };
+
+    let typewriterTimer = null;
+    let initialLoadDone = false;
+
+    function formatTimeSAST(isoString) {
+      if (!isoString) return '—';
+      try {
+        return new Intl.DateTimeFormat('en-ZA', {
+          timeZone: 'Africa/Johannesburg',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+          hour12: false,
+        }).format(new Date(isoString));
+      } catch {
+        return isoString;
+      }
+    }
+
+    function escapeHtml(str) {
+      if (str === null || str === undefined) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function shortHash(hash) {
+      if (!hash) return '';
+      return hash.slice(0, 8) + '...' + hash.slice(-6);
+    }
+
+    function typewriteBrainText(text) {
+      const el = document.getElementById('brainTypewriter');
+      if (!el) return;
+      if (typewriterTimer) {
+        clearInterval(typewriterTimer);
+        typewriterTimer = null;
+      }
+      el.textContent = '';
+      const chars = Array.from(String(text || ''));
+      let idx = 0;
+      typewriterTimer = setInterval(() => {
+        if (idx < chars.length) {
+          el.textContent += chars[idx];
+          idx += 1;
+        } else {
+          clearInterval(typewriterTimer);
+          typewriterTimer = null;
+        }
+      }, 14);
+    }
+
+    function showToast({ title, subtitle, explorerUrl }) {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      toast.className = 'toast-card';
+      toast.innerHTML = `
+        <div style="font-size:12px;">
+          <div style="font-weight:700;margin-bottom:4px;">✅ ${escapeHtml(title)}</div>
+          <div class="mono" style="font-size:11px;color:#cbd5e1;">${escapeHtml(subtitle)}</div>
+          ${
+            explorerUrl
+              ? `<a href="${escapeHtml(explorerUrl)}" target="_blank" rel="noopener noreferrer" class="mono" style="display:inline-block;margin-top:6px;font-size:11px;color:#34d399;text-decoration:underline;">View on XRPL Testnet Explorer ↗</a>`
+              : ''
+          }
+        </div>
+        <button onclick="this.parentElement.remove()" style="background:transparent;border:none;color:#94a3b8;cursor:pointer;font-size:14px;">✕</button>
+      `;
+      container.appendChild(toast);
+      setTimeout(() => {
+        if (toast.parentElement) toast.remove();
+      }, 6500);
+    }
+
+    function showBlockedBanner(reason, status = 'blocked') {
+      const banner = document.getElementById('blockedBanner');
+      const titleEl = document.getElementById('blockedBannerTitle');
+      const textEl = document.getElementById('blockedBannerText');
+
+      if (status === 'pending_owner') {
+        titleEl.textContent = 'POLICY SIGNER REFUSED AUTO-SIGN (CAP EXCEEDED → PENDING OWNER)';
+      } else {
+        titleEl.textContent = 'POLICY SIGNER BLOCKED TRANSACTION';
+      }
+      textEl.textContent = reason || 'Off-chain Policy Signer refused to co-sign transaction.';
+      banner.classList.remove('hidden');
+    }
+
+    function hideBlockedBanner() {
+      document.getElementById('blockedBanner').classList.add('hidden');
+    }
+
+    function renderHeader() {
+      const link = document.getElementById('treasuryAddressLink');
+      if (appState.treasuryAddress) {
+        link.textContent = appState.treasuryAddress;
+        link.href = `https://testnet.xrpl.org/accounts/${appState.treasuryAddress}`;
+      } else {
+        link.textContent = 'Unavailable';
+      }
+
+      const rogueBtn = document.getElementById('rogueBtn');
+      const rogueBtnText = document.getElementById('rogueBtnText');
+      const agentModeBadge = document.getElementById('agentModeBadge');
+
+      if (appState.rogueMode) {
+        rogueBtnText.textContent = 'Stop Runaway Bug (ACTIVE)';
+        rogueBtn.className = 'btn btn-red-active';
+        agentModeBadge.textContent = '⚠️ ROGUE LOOP ACTIVE';
+        agentModeBadge.style.background = 'rgba(239, 68, 68, 0.25)';
+        agentModeBadge.style.color = '#fca5a5';
+      } else {
+        rogueBtnText.textContent = 'Trigger Runaway Bug';
+        rogueBtn.className = 'btn btn-red';
+        agentModeBadge.textContent = 'llama-3.3-70b-versatile';
+        agentModeBadge.style.background = 'var(--sky-soft)';
+        agentModeBadge.style.color = '#7dd3fc';
+      }
+    }
+
+    function updateSingleGauge(ringId, textId, statusId, level, threshold) {
+      const ring = document.getElementById(ringId);
+      const text = document.getElementById(textId);
+      const status = document.getElementById(statusId);
+      if (!ring || !text || !status) return;
+
+      const pct = Math.max(0, Math.min(100, Number(level) || 0));
+      const offset = GAUGE_CIRCUMFERENCE - (pct / 100) * GAUGE_CIRCUMFERENCE;
+      ring.style.strokeDashoffset = offset.toFixed(2);
+      text.textContent = `${pct.toFixed(0)}%`;
+
+      // Red under/at threshold, amber under 20%, emerald >= 20%
+      if (pct <= threshold) {
+        ring.setAttribute('stroke', '#ef4444');
+        status.textContent = 'CRITICAL LOW';
+        status.style.color = '#f87171';
+      } else if (pct < 20) {
+        ring.setAttribute('stroke', '#f59e0b');
+        status.textContent = 'LOW (<20%)';
+        status.style.color = '#fbbf24';
+      } else {
+        ring.setAttribute('stroke', '#10b981');
+        status.textContent = 'Healthy';
+        status.style.color = '#10b981';
+      }
+    }
+
+    function renderGauges(levels) {
+      if (!Array.isArray(levels)) return;
+      appState.levels = levels;
+      const elec = levels.find((r) => r.id === 'electricity');
+      const data = levels.find((r) => r.id === 'data');
+      if (elec) updateSingleGauge('elecGaugeRing', 'elecLevelText', 'elecStatusLabel', elec.level, elec.threshold);
+      if (data) updateSingleGauge('dataGaugeRing', 'dataLevelText', 'dataStatusLabel', data.level, data.threshold);
+    }
+
+    function renderBudget() {
+      const dailyCap = Number(appState.policy?.daily_cap ?? 15);
+      const perTxCap = Number(appState.policy?.per_tx_cap ?? 10);
+      const spent = Number(appState.spentToday ?? 0);
+      const remaining = Math.max(0, Number(appState.budgetRemaining ?? Math.max(0, dailyCap - spent)));
+
+      document.getElementById('dailyCapText').textContent = `${dailyCap} RLUSD`;
+      document.getElementById('spentTodayText').textContent = `${spent} RLUSD`;
+      document.getElementById('budgetRemainingText').textContent = `${remaining} RLUSD`;
+      document.getElementById('perTxCapText').textContent = `${perTxCap} RLUSD`;
+      document.getElementById('budgetRemainingRingText').textContent = remaining.toFixed(1);
+
+      const ring = document.getElementById('budgetGaugeRing');
+      const ratioRemaining = dailyCap > 0 ? Math.max(0, Math.min(1, remaining / dailyCap)) : 0;
+      const offset = BUDGET_CIRCUMFERENCE - ratioRemaining * BUDGET_CIRCUMFERENCE;
+      ring.style.strokeDashoffset = offset.toFixed(2);
+
+      if (remaining <= 0) {
+        ring.setAttribute('stroke', '#ef4444');
+      } else if (ratioRemaining < 0.25) {
+        ring.setAttribute('stroke', '#f59e0b');
+      } else {
+        ring.setAttribute('stroke', '#38bdf8');
+      }
+
+      const allowlistEl = document.getElementById('allowlistContainer');
+      const payees = appState.policy?.allowed_payees || [];
+      if (payees.length === 0) {
+        allowlistEl.innerHTML = '<span style="color:#64748b;">No allowlisted payees</span>';
+      } else {
+        allowlistEl.innerHTML = payees
+          .map((addr) => `<div style="padding:4px 8px;background:#0f172a;border:1px solid #1e293b;border-radius:6px;color:#6ee7b7;">${escapeHtml(addr)}</div>`)
+          .join('');
+      }
+    }
+
+    function renderDecision(decisionPayload) {
+      if (!decisionPayload) return;
+      const proposal = decisionPayload.proposal || {};
+      const payment = decisionPayload.payment || {};
+      const vend = decisionPayload.vend || null;
+
+      const decBadge = document.getElementById('brainDecisionBadge');
+      const resText = document.getElementById('brainResourceText');
+      const amtText = document.getElementById('brainAmountText');
+      const tsText = document.getElementById('brainTimestamp');
+      const outcomeStatus = document.getElementById('brainOutcomeStatus');
+
+      const dec = (proposal.decision || 'wait').toUpperCase();
+      decBadge.textContent = dec;
+      decBadge.style.color = dec === 'BUY' ? '#34d399' : dec === 'ESCALATE' ? '#fbbf24' : '#cbd5e1';
+
+      resText.textContent = proposal.resource || '—';
+      amtText.textContent = `${proposal.amount ?? 0} RLUSD`;
+      tsText.textContent = formatTimeSAST(decisionPayload.timestamp);
+
+      typewriteBrainText(proposal.reason || 'No reasoning provided.');
+
+      if (payment.status === 'auto_approved') {
+        outcomeStatus.textContent = '✓ Auto-Approved (Agent + Policy = 2)';
+        outcomeStatus.style.color = '#34d399';
+        showToast({
+          title: `Paid ${proposal.amount} RLUSD (${proposal.resource})`,
+          subtitle: vend?.token
+            ? `STS Token: ${vend.token}`
+            : vend?.bundle
+            ? `Vended: ${vend.bundle}`
+            : `TX: ${shortHash(payment.txHash)}`,
+          explorerUrl: payment.explorerUrl,
+        });
+      } else if (payment.status === 'pending_owner') {
+        outcomeStatus.textContent = '⚠ Cap Exceeded → Pending Owner';
+        outcomeStatus.style.color = '#fbbf24';
+        showBlockedBanner(payment.reason, 'pending_owner');
+      } else if (payment.status === 'blocked') {
+        outcomeStatus.textContent = '✕ Blocked by Policy Signer';
+        outcomeStatus.style.color = '#f87171';
+        showBlockedBanner(payment.reason, 'blocked');
+      } else {
+        outcomeStatus.textContent = payment.status || 'Waited';
+        outcomeStatus.style.color = '#94a3b8';
+      }
+
+      if (vend?.token) {
+        document.getElementById('lastStsTokenBox').textContent = `STS: ${vend.token}`;
+      }
+      if (vend?.bundle) {
+        document.getElementById('lastDataBundleBox').textContent = `Bundle: ${vend.bundle}`;
+      }
+    }
+
+    function statusPillHtml(status) {
+      if (status === 'auto_approved') {
+        return `<span class="pill pill-green"><span class="pill-dot" style="background:#10b981;"></span> auto-approved</span>`;
+      }
+      if (status === 'owner_approved') {
+        return `<span class="pill pill-green"><span class="pill-dot" style="background:#34d399;"></span> owner-approved</span>`;
+      }
+      if (status === 'pending_owner') {
+        return `<span class="pill pill-amber"><span class="pill-dot" style="background:#f59e0b;"></span> pending</span>`;
+      }
+      return `<span class="pill pill-red"><span class="pill-dot" style="background:#ef4444;"></span> blocked</span>`;
+    }
+
+    function renderTransactions(transactions) {
+      if (!Array.isArray(transactions)) return;
+      appState.transactions = transactions;
+
+      const tbody = document.getElementById('txTableBody');
+      if (transactions.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="6" class="mono" style="text-align:center;padding:28px;color:#64748b;">
+              No transactions yet. Click "⚙️ Demo" above to drain Electricity or Data!
+            </td>
+          </tr>`;
+        return;
+      }
+
+      tbody.innerHTML = transactions
+        .map((tx) => {
+          const explorerUrl =
+            tx.explorerUrl ||
+            (tx.tx_hash ? `https://testnet.xrpl.org/transactions/${tx.tx_hash}` : null);
+
+          const note = tx.blocked_reason
+            ? `<div style="color:#e2e8f0;">${escapeHtml(tx.reason || '')}</div>
+               <div class="mono" style="font-size:11px;margin-top:3px;color:${
+                 tx.status === 'pending_owner' ? '#fcd34d' : '#fca5a5'
+               };">↳ ${escapeHtml(tx.blocked_reason)}</div>`
+            : `<div style="color:#e2e8f0;">${escapeHtml(tx.reason || '')}</div>`;
+
+          let actionCell = '';
+          if (tx.status === 'pending_owner') {
+            actionCell = `
+              <button id="approveBtn-${escapeHtml(tx.id)}" onclick="approveTransaction('${escapeHtml(tx.id)}')" class="btn btn-approve">
+                Approve
+              </button>`;
+          } else if (explorerUrl) {
+            actionCell = `
+              <a href="${escapeHtml(explorerUrl)}" target="_blank" rel="noopener noreferrer" class="mono" style="color:#38bdf8;text-decoration:underline;">
+                ${escapeHtml(shortHash(tx.tx_hash))} ↗
+              </a>`;
+          } else {
+            actionCell = `<span class="mono" style="color:#64748b;">—</span>`;
+          }
+
+          return `
+            <tr>
+              <td class="mono" style="color:#94a3b8;white-space:nowrap;">${escapeHtml(formatTimeSAST(tx.ts))}</td>
+              <td style="white-space:nowrap;">${statusPillHtml(tx.status)}</td>
+              <td class="mono" style="text-transform:uppercase;color:#f1f5f9;white-space:nowrap;">
+                ${tx.resource === 'electricity' ? '⚡ electricity' : tx.resource === 'data' ? '📶 data' : escapeHtml(tx.resource)}
+              </td>
+              <td class="mono" style="font-weight:700;color:#fff;white-space:nowrap;">${escapeHtml(tx.amount)} RLUSD</td>
+              <td style="max-width:440px;">${note}</td>
+              <td style="text-align:right;white-space:nowrap;">${actionCell}</td>
+            </tr>`;
+        })
+        .join('');
+    }
+
+    function toggleDemoBar() {
+      document.getElementById('demoControlBar').classList.toggle('hidden');
+    }
+
+    function togglePolicyEditor() {
+      const form = document.getElementById('policyEditForm');
+      if (form.classList.contains('hidden')) {
+        document.getElementById('inputDailyCap').value = appState.policy?.daily_cap ?? 15;
+        document.getElementById('inputPerTxCap').value = appState.policy?.per_tx_cap ?? 10;
+        form.classList.remove('hidden');
+      } else {
+        form.classList.add('hidden');
+      }
+    }
+
+    async function savePolicy(e) {
+      e.preventDefault();
+      const daily_cap = Number(document.getElementById('inputDailyCap').value);
+      const per_tx_cap = Number(document.getElementById('inputPerTxCap').value);
+
+      try {
+        const res = await fetch('/api/policy', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ daily_cap, per_tx_cap }),
+        });
+        const data = await res.json();
+        if (data.ok) {
+          appState.policy = data.policy;
+          appState.spentToday = data.spentToday;
+          appState.budgetRemaining = data.budgetRemaining;
+          renderBudget();
+          document.getElementById('policyEditForm').classList.add('hidden');
+          showToast({
+            title: 'Policy Updated',
+            subtitle: `Daily Cap: ${daily_cap} RLUSD | Per-Tx Cap: ${per_tx_cap} RLUSD`,
+          });
+        }
+      } catch (err) {
+        console.error('Failed to update policy:', err);
+      }
+    }
+
+    async function drainResource(resource) {
+      try {
+        await fetch(`/api/demo/drain/${resource}`, { method: 'POST' });
+      } catch (err) {
+        console.error(`Failed to drain ${resource}:`, err);
+      }
+    }
+
+    async function toggleRogueMode() {
+      try {
+        const res = await fetch('/api/demo/rogue', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ enabled: !appState.rogueMode }),
+        });
+        const data = await res.json();
+        if (data.ok) {
+          appState.rogueMode = data.rogueMode;
+          renderHeader();
+        }
+      } catch (err) {
+        console.error('Failed to toggle rogue mode:', err);
+      }
+    }
+
+    async function resetDemo() {
+      try {
+        const res = await fetch('/api/demo/reset', { method: 'POST' });
+        const data = await res.json();
+        if (data.ok) {
+          appState.rogueMode = false;
+          hideBlockedBanner();
+          renderHeader();
+          if (data.levels) renderGauges(data.levels);
+          typewriteBrainText('Demo reset: rogue mode stopped and simulated meters refilled to 100%.');
+        }
+      } catch (err) {
+        console.error('Failed to reset demo:', err);
+      }
+    }
+
+    async function approveTransaction(id) {
+      const btn = document.getElementById(`approveBtn-${id}`);
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = 'Signing...';
+      }
+
+      try {
+        const res = await fetch(`/api/approve/${id}`, { method: 'POST' });
+        const data = await res.json();
+        if (data.ok) {
+          hideBlockedBanner();
+          showToast({
+            title: `Owner Approved #${id} (${data.transaction?.amount || ''} RLUSD)`,
+            subtitle: data.vend?.token
+              ? `STS Token: ${data.vend.token}`
+              : data.vend?.bundle
+              ? `Vended: ${data.vend.bundle}`
+              : 'Signed with Owner Key (Weight 2)',
+            explorerUrl: data.explorerUrl,
+          });
+        } else {
+          showBlockedBanner(data.reason || data.error || 'Owner approval failed', 'blocked');
+        }
+      } catch (err) {
+        showBlockedBanner(`Owner approval failed: ${err.message}`, 'blocked');
+      }
+    }
+
+    function setWsBadge(connected) {
+      const circle = document.getElementById('wsDotCircle');
+      const text = document.getElementById('wsStatusText');
+      if (connected) {
+        circle.className = 'ws-dot online';
+        text.textContent = 'Live WS';
+      } else {
+        circle.className = 'ws-dot';
+        text.textContent = 'Reconnecting...';
+      }
+    }
+
+    function connectWebSocket() {
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      const wsUrl = `${protocol}//${window.location.host}`;
+      const ws = new WebSocket(wsUrl);
+
+      ws.onopen = () => setWsBadge(true);
+
+      ws.onmessage = (event) => {
+        try {
+          const msg = JSON.parse(event.data);
+          if (msg.type === 'init') {
+            appState = { ...appState, ...msg };
+            renderHeader();
+            renderGauges(msg.levels);
+            renderBudget();
+            renderTransactions(msg.transactions);
+            initialLoadDone = true;
+          } else if (msg.type === 'levels') {
+            renderGauges(msg.levels);
+          } else if (msg.type === 'low_alert') {
+            typewriteBrainText(
+              `Alert: ${msg.label} dropped to ${msg.level}% (threshold ${msg.threshold}%). Consulting Groq AI CFO...`
+            );
+          } else if (msg.type === 'decision') {
+            if (msg.levels) renderGauges(msg.levels);
+            renderDecision(msg.decision);
+          } else if (msg.type === 'budget') {
+            appState.policy = msg.policy || appState.policy;
+            appState.spentToday = msg.spentToday ?? appState.spentToday;
+            appState.budgetRemaining = msg.budgetRemaining ?? appState.budgetRemaining;
+            renderBudget();
+          } else if (msg.type === 'transactions') {
+            appState.spentToday = msg.spentToday ?? appState.spentToday;
+            appState.budgetRemaining = msg.budgetRemaining ?? appState.budgetRemaining;
+            renderBudget();
+            renderTransactions(msg.transactions);
+          } else if (msg.type === 'owner_approved') {
+            if (msg.vend?.token) document.getElementById('lastStsTokenBox').textContent = `STS: ${msg.vend.token}`;
+            if (msg.vend?.bundle) document.getElementById('lastDataBundleBox').textContent = `Bundle: ${msg.vend.bundle}`;
+          } else if (msg.type === 'rogue') {
+            appState.rogueMode = Boolean(msg.rogueMode);
+            renderHeader();
+          } else if (msg.type === 'agent_error') {
+            showBlockedBanner(msg.error, 'blocked');
+          }
+        } catch (err) {
+          console.error('WS message parse error:', err);
+        }
+      };
+
+      ws.onclose = () => {
+        setWsBadge(false);
+        setTimeout(connectWebSocket, 2000);
+      };
+
+      ws.onerror = () => ws.close();
+    }
+
+    fetch('/api/state')
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.ok && !initialLoadDone) {
+          appState = { ...appState, ...data };
+          renderHeader();
+          renderGauges(data.levels);
+          renderBudget();
+          renderTransactions(data.transactions);
+        }
+      })
+      .catch(() => {});
+
+    connectWebSocket();
+  </script>
+</body>
+</html>
