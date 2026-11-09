@@ -791,7 +791,110 @@
             >
               <span id="rogueBtnText">Trigger Runaway Bug</span>
             </button>
+            <button onclick="agentSignsAlone()" class="btn btn-red">
+              Agent signs alone
+            </button>
             <button onclick="resetDemo()" class="btn">Reset</button>
+          </div>
+        </div>
+      </div>
+      <div
+        id="ledgerProofStrip"
+        style="
+          border-top: 1px solid #1e293b;
+          background: rgba(2, 6, 23, 0.9);
+          padding: 7px 24px;
+          font-size: 11px;
+          color: #cbd5e1;
+        "
+      >
+        <div
+          style="
+            max-width: 1280px;
+            margin: 0 auto;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+          "
+        >
+          <span
+            class="mono"
+            style="
+              font-size: 10px;
+              font-weight: 700;
+              text-transform: uppercase;
+              color: #38bdf8;
+              letter-spacing: 0.05em;
+            "
+            >Ledger proof (live XRPL Testnet)</span
+          >
+          <div
+            style="
+              display: flex;
+              flex-wrap: wrap;
+              align-items: center;
+              gap: 18px;
+            "
+            class="mono"
+          >
+            <span>
+              RLUSD balance:
+              <strong id="proofRlusdBalance" style="color: #34d399"
+                >...</strong
+              >
+              <a
+                id="proofVerifyLink1"
+                href="https://testnet.xrpl.org"
+                target="_blank"
+                rel="noopener noreferrer"
+                style="
+                  color: #38bdf8;
+                  text-decoration: underline;
+                  font-size: 10px;
+                  margin-left: 4px;
+                "
+                >verify</a
+              >
+            </span>
+            <span>
+              Master key disabled:
+              <strong id="proofMasterDisabled" style="color: #34d399"
+                >...</strong
+              >
+              <a
+                id="proofVerifyLink2"
+                href="https://testnet.xrpl.org"
+                target="_blank"
+                rel="noopener noreferrer"
+                style="
+                  color: #38bdf8;
+                  text-decoration: underline;
+                  font-size: 10px;
+                  margin-left: 4px;
+                "
+                >verify</a
+              >
+            </span>
+            <span>
+              <strong id="proofSignerQuorum" style="color: #e2e8f0"
+                >SignerList quorum ...</strong
+              >
+              <a
+                id="proofVerifyLink3"
+                href="https://testnet.xrpl.org"
+                target="_blank"
+                rel="noopener noreferrer"
+                style="
+                  color: #38bdf8;
+                  text-decoration: underline;
+                  font-size: 10px;
+                  margin-left: 4px;
+                "
+                >verify</a
+              >
+            </span>
           </div>
         </div>
       </div>
@@ -1396,7 +1499,7 @@
               : `<div style="color:#e2e8f0" title="${escapeHtml(tx.reason || "")}">${escapeHtml(tx.reason || "")}</div>`;
             let action;
             if (tx.status === "pending_owner") {
-              action = `<button id="approveBtn-${escapeHtml(tx.id)}" onclick="approveTransaction('${escapeHtml(tx.id)}')" class="btn btn-approve">Approve</button>`;
+              action = `<button id="approveBtn-${escapeHtml(tx.id)}" onclick="approveTransaction('${escapeHtml(tx.id)}')" class="btn btn-approve">Approve</button> <button id="rejectBtn-${escapeHtml(tx.id)}" onclick="rejectTransaction('${escapeHtml(tx.id)}')" class="btn btn-red" style="margin-left:6px;padding:5px 10px">Reject</button>`;
             } else if (url) {
               action = `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" class="mono" style="color:#38bdf8;text-decoration:underline">${escapeHtml(shortHash(tx.tx_hash))}</a>`;
             } else {
@@ -1430,6 +1533,25 @@
         }
       }
 
+      const PASSCODE_STORAGE_KEY = "gridbot_owner_passcode";
+
+      function getPasscode() {
+        let code = sessionStorage.getItem(PASSCODE_STORAGE_KEY);
+        if (!code) {
+          const entered = prompt("Owner passcode");
+          if (entered !== null && entered.trim() !== "") {
+            code = entered.trim();
+            sessionStorage.setItem(PASSCODE_STORAGE_KEY, code);
+          }
+        }
+        return code || "";
+      }
+
+      function clearPasscodeOn401() {
+        sessionStorage.removeItem(PASSCODE_STORAGE_KEY);
+        showBlockedBanner("Wrong owner passcode", "blocked");
+      }
+
       async function savePolicy(e) {
         e.preventDefault();
         const daily_cap = Number(
@@ -1438,12 +1560,21 @@
         const per_tx_cap = Number(
           document.getElementById("inputPerTxCap").value,
         );
+        const passcode = getPasscode();
+        if (!passcode) return;
         try {
           const res = await fetch("/api/policy", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: {
+              "Content-Type": "application/json",
+              "x-owner-passcode": passcode,
+            },
             body: JSON.stringify({ daily_cap, per_tx_cap }),
           });
+          if (res.status === 401) {
+            clearPasscodeOn401();
+            return;
+          }
           const data = await res.json();
           if (data.ok) {
             appState.policy = data.policy;
@@ -1455,11 +1586,17 @@
               title: "Policy updated",
               subtitle: `Daily cap ${daily_cap} | Per-payment cap ${per_tx_cap} RLUSD`,
             });
+          } else {
+            showBlockedBanner(
+              data.error || data.reason || "Policy update failed",
+              "blocked",
+            );
           }
         } catch (err) {
           console.error("Failed to update policy:", err);
         }
       }
+      // /api/demo/* routes stay open (demo only)
       async function drainResource(r) {
         try {
           await fetch(`/api/demo/drain/${r}`, { method: "POST" });
@@ -1479,6 +1616,7 @@
             appState.rogueMode = data.rogueMode;
             renderHeader();
           }
+
         } catch (err) {
           console.error("Failed to toggle rogue mode:", err);
         }
@@ -1500,14 +1638,96 @@
           console.error("Failed to reset demo:", err);
         }
       }
+
+      async function agentSignsAlone() {
+        const btn = document.getElementById("soloSignBtn");
+        if (btn) {
+          btn.disabled = true;
+          btn.textContent = "Submitting to XRPL...";
+        }
+        try {
+          const res = await fetch("/api/demo/solo-sign", { method: "POST" });
+          const data = await res.json();
+          const code = data.code || data.engineResult || "tefBAD_QUORUM";
+          showBlockedBanner(
+            `LEDGER REJECTED: ${code}. The agent cannot pay without the policy signer.`,
+            "blocked",
+          );
+        } catch (err) {
+          showBlockedBanner(
+            `LEDGER REJECTED: ${err.message}. The agent cannot pay without the policy signer.`,
+            "blocked",
+          );
+        } finally {
+          if (btn) {
+            btn.disabled = false;
+            btn.textContent = "Agent signs alone";
+          }
+        }
+      }
+
+      async function refreshXrplProof() {
+        try {
+          const res = await fetch("/api/xrpl-proof");
+          const data = await res.json();
+          if (!data || !data.ok) return;
+
+          const balEl = document.getElementById("proofRlusdBalance");
+          if (balEl) {
+            const num = Number(data.rlusdBalance || 0);
+            balEl.textContent = `${num.toFixed(2)} RLUSD`;
+          }
+
+          const masterEl = document.getElementById("proofMasterDisabled");
+          if (masterEl) {
+            masterEl.textContent = data.masterKeyDisabled ? "yes" : "no";
+          }
+
+          const quorumEl = document.getElementById("proofSignerQuorum");
+          if (quorumEl) {
+            const entries = Array.isArray(data.signerEntries) ? data.signerEntries : [];
+            const weightOf = (role) => {
+              const found = entries.find((e) => e.role === role);
+              return found ? found.weight : 1;
+            };
+            const agentW = weightOf("agent");
+            const policyW = weightOf("policy");
+            const ownerW = entries.find((e) => e.role === "owner")?.weight ?? 2;
+            quorumEl.textContent = `SignerList quorum ${data.signerQuorum ?? 2} (agent ${agentW}, policy ${policyW}, owner ${ownerW})`;
+          }
+
+          if (data.treasuryAddress) {
+            const verifyUrl = `https://testnet.xrpl.org/accounts/${data.treasuryAddress}`;
+            ["proofVerifyLink1", "proofVerifyLink2", "proofVerifyLink3"].forEach((id) => {
+              const link = document.getElementById(id);
+              if (link) link.href = verifyUrl;
+            });
+          }
+        } catch (err) {
+          console.error("Failed to refresh XRPL proof:", err);
+        }
+      }
       async function approveTransaction(id) {
+        const passcode = getPasscode();
+        if (!passcode) return;
         const btn = document.getElementById(`approveBtn-${id}`);
         if (btn) {
           btn.disabled = true;
           btn.textContent = "Signing...";
         }
         try {
-          const res = await fetch(`/api/approve/${id}`, { method: "POST" });
+          const res = await fetch(`/api/approve/${id}`, {
+            method: "POST",
+            headers: { "x-owner-passcode": passcode },
+          });
+          if (res.status === 401) {
+            if (btn) {
+              btn.disabled = false;
+              btn.textContent = "Approve";
+            }
+            clearPasscodeOn401();
+            return;
+          }
           const data = await res.json();
           if (data.ok) {
             hideBlockedBanner();
@@ -1528,6 +1748,45 @@
           }
         } catch (err) {
           showBlockedBanner(`Owner approval failed: ${err.message}`, "blocked");
+        }
+      }
+
+      async function rejectTransaction(id) {
+        const passcode = getPasscode();
+        if (!passcode) return;
+        const btn = document.getElementById(`rejectBtn-${id}`);
+        if (btn) {
+          btn.disabled = true;
+          btn.textContent = "Rejecting...";
+        }
+        try {
+          const res = await fetch(`/api/reject/${id}`, {
+            method: "POST",
+            headers: { "x-owner-passcode": passcode },
+          });
+          if (res.status === 401) {
+            if (btn) {
+              btn.disabled = false;
+              btn.textContent = "Reject";
+            }
+            clearPasscodeOn401();
+            return;
+          }
+          const data = await res.json();
+          if (data.ok) {
+            hideBlockedBanner();
+            showToast({
+              title: `Rejected #${id}`,
+              subtitle: "Marked as blocked (rejected by owner)",
+            });
+          } else {
+            showBlockedBanner(
+              data.reason || data.error || "Reject failed",
+              "blocked",
+            );
+          }
+        } catch (err) {
+          showBlockedBanner(`Reject failed: ${err.message}`, "blocked");
         }
       }
 
@@ -1613,6 +1872,8 @@
         .catch(() => {});
 
       connectWebSocket();
+      refreshXrplProof();
+      setInterval(refreshXrplProof, 10000);
     </script>
   </body>
 </html>

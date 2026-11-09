@@ -1,21 +1,30 @@
 // server.js
-// Express + WebSocket (ws) backend for GridBot.
+// Express + WebSocket (ws) backend for the GridBot Main App (port 3000).
 //
-// HONESTY NOTE:
-// The XRP Ledger does NOT track the daily budget or per-transaction caps.
-// Those spending rules live off-chain in policy-signer.js and Supabase, which refuse
-// to co-sign over the cap. The ledger enforces that no payment executes without the
-// required multisig quorum (agent weight 1 + policy weight 1 = 2, or owner weight 2 = 2).
+// HONESTY & ISOLATION NOTE:
+// The Main App holds ONLY the agent key (wallets.agent.json) and public addresses (wallets.public.json).
+// It has NO database credentials and NO policy or owner keys.
+// All policy state and transaction history come from GET /state on the independent Policy Service (port 4000).
+// /api/approve/:id, /api/reject/:id, and /api/policy are thin proxies to the Policy Service's /owner/*
+// endpoints, forwarding the x-owner-passcode header from the browser without ever storing it.
 
 require('dotenv').config();
 const http = require('http');
-const fs = require('fs');
 const path = require('path');
 const express = require('express');
 const WebSocket = require('ws');
 
-const { getPolicy, updatePolicy, spentToday, listTx, getTx } = require('./db');
-const { ownerApprove, closeXrplClient } = require('./policy-signer');
+const {
+  getState,
+  getTx,
+  getXrplProof,
+  submitAgentSoloSignDemo,
+  proxyOwnerApprove,
+  proxyOwnerReject,
+  proxyOwnerPolicy,
+  loadPublicWallets,
+  closeXrplClient,
+} = require('./policy-client');
 const { setLevel, getResource } = require('./resources');
 const {
   emitter: monitorEmitter,
@@ -23,6 +32,7 @@ const {
   stop: stopMonitor,
   getSnapshot,
   checkNow,
+  resetLatch,
 } = require('./monitor');
 const {
   handleLow,
@@ -84,33 +94,13 @@ function broadcast(type, payload = {}) {
 }
 
 /**
- * Computes current budget summary (off-chain policy + spentToday + remaining).
- */
-async function getBudgetSummary() {
-  const policy = await getPolicy();
-  const spent = await spentToday();
-  const dailyCap = Number(policy.daily_cap);
-  const perTxCap = Number(policy.per_tx_cap);
-  const budgetRemaining = Math.max(0, Math.round((dailyCap - spent) * 1e6) / 1e6);
-
-  return {
-    policy,
-    spentToday: spent,
-    dailyCap,
-    perTxCap,
-    budgetRemaining,
-  };
-}
-
-const { ensureLocalWalletsFile } = require('./setup-wallets');
-
-/**
- * Loads public wallet addresses (never seeds) for UI display.
+ * Loads public wallet addresses from wallets.public.json for UI display.
  */
 function getPublicWallets() {
   try {
-    const raw = ensureLocalWalletsFile();
+    const raw = loadPublicWallets();
     return {
+      issuerAddress: raw?.issuer?.address || null,
       treasuryAddress: raw?.treasury?.address || null,
       utilityAddress: raw?.utility?.address || null,
       agentAddress: raw?.agent?.address || null,
@@ -119,6 +109,7 @@ function getPublicWallets() {
     };
   } catch (err) {
     return {
+      issuerAddress: null,
       treasuryAddress: null,
       utilityAddress: null,
       agentAddress: null,
@@ -129,12 +120,21 @@ function getPublicWallets() {
 }
 
 /**
- * Builds the complete application state for GET /api/state and initial WS connection.
+ * Builds the complete application state for GET /api/state and initial WS connection
+ * by querying GET /state on the Policy Service.
  */
 async function buildFullState() {
   const levels = getSnapshot();
-  const { policy, spentToday: spent, budgetRemaining } = await getBudgetSummary();
-  const rawTransactions = await listTx(50);
+  const policyState = await getState();
+  const policy = policyState.policy;
+  const spent = Number(policyState.spentToday || 0);
+  const dailyCap = Number(policy.daily_cap);
+  const budgetRemaining =
+    policyState.budgetRemaining !== undefined
+      ? Number(policyState.budgetRemaining)
+      : Math.max(0, Math.round((dailyCap - spent) * 1e6) / 1e6);
+
+  const rawTransactions = policyState.transactions || [];
   const transactions = rawTransactions.map(decorateTx);
   const wallets = getPublicWallets();
 
@@ -152,13 +152,20 @@ async function buildFullState() {
 }
 
 /**
- * Broadcasts budget_update + recent transactions + current levels.
+ * Broadcasts budget + recent transactions by querying GET /state on the Policy Service.
  */
 async function broadcastBudgetAndTxUpdate(triggerReason = 'update') {
   try {
-    const { policy, spentToday: spent, budgetRemaining } = await getBudgetSummary();
-    const rawTransactions = await listTx(50);
-    const transactions = rawTransactions.map(decorateTx);
+    const policyState = await getState();
+    const policy = policyState.policy;
+    const spent = Number(policyState.spentToday || 0);
+    const dailyCap = Number(policy.daily_cap);
+    const budgetRemaining =
+      policyState.budgetRemaining !== undefined
+        ? Number(policyState.budgetRemaining)
+        : Math.max(0, Math.round((dailyCap - spent) * 1e6) / 1e6);
+
+    const transactions = (policyState.transactions || []).map(decorateTx);
 
     broadcast('budget', {
       policy,
@@ -172,8 +179,11 @@ async function broadcastBudgetAndTxUpdate(triggerReason = 'update') {
       spentToday: spent,
       budgetRemaining,
     });
+
+    return { policy, spentToday: spent, budgetRemaining, transactions };
   } catch (err) {
     console.error('[Server] Failed to broadcast budget/tx update:', err.message);
+    return null;
   }
 }
 
@@ -181,15 +191,12 @@ async function broadcastBudgetAndTxUpdate(triggerReason = 'update') {
 // Wire Monitor & Agent Events -> WebSocket Broadcasts
 // ============================================================================
 
-// 1. Every 2s tick from monitor.js -> broadcast 'levels'
 monitorEmitter.on('level', (levels) => {
   broadcast('levels', { levels });
 });
 
-// Prevent overlapping handleLow calls for the same resource at the exact same moment
 const activeLowHandlers = new Set();
 
-// 2. Monitor 'low' -> agent.handleLow -> broadcast happens via agentEvents 'decision'
 monitorEmitter.on('low', async (lowEvent) => {
   const resourceId = lowEvent.id;
   if (activeLowHandlers.has(resourceId)) return;
@@ -215,9 +222,10 @@ monitorEmitter.on('low', async (lowEvent) => {
   }
 });
 
-// 3. Whenever agent finishes a decision (from 'low' OR from rogue mode tick) -> broadcast
 agentEvents.on('decision', async (result) => {
   const txHash = result?.payment?.txHash || null;
+  const isDeduped = Boolean(result?.payment?.deduped);
+
   const enrichedResult = {
     ...result,
     payment: result.payment
@@ -228,32 +236,35 @@ agentEvents.on('decision', async (result) => {
       : null,
   };
 
-  // Broadcast agent decision (includes proposal with reason, payment result, and vend token/bundle)
-  broadcast('decision', {
-    decision: enrichedResult,
-    levels: getSnapshot(),
-  });
+  // Only broadcast decision & re-fetch transactions if this wasn't a silent 60s deduped rogue tick
+  if (!isDeduped) {
+    broadcast('decision', {
+      decision: enrichedResult,
+      levels: getSnapshot(),
+    });
+  }
 
-  // Also broadcast updated levels (in case vend() refilled the resource to 100%)
   broadcast('levels', { levels: getSnapshot() });
 
-  // Broadcast updated transactions list & budget remaining
-  await broadcastBudgetAndTxUpdate('agent_decision');
+  if (isDeduped) {
+    return;
+  }
 
-  // 4. Send Telegram notification to OWNER_CHAT_ID
+  const latestState = await broadcastBudgetAndTxUpdate('agent_decision');
+
+  // Send Telegram notification if configured
   try {
     const payStatus = result?.payment?.status;
     const proposal = result?.proposal || {};
 
     if (payStatus === 'pending_owner' && result?.payment?.id !== undefined) {
-      const { budgetRemaining } = await getBudgetSummary();
       await notifyPendingOwner({
         id: result.payment.id,
         resource: proposal.resource,
         amount: proposal.amount,
         reason: proposal.reason,
         blockedReason: result.payment.reason,
-        remainingBudget: budgetRemaining,
+        remainingBudget: latestState?.budgetRemaining,
       });
     } else if (payStatus === 'auto_approved') {
       await notifyAutoApproved({
@@ -277,7 +288,6 @@ agentEvents.on('rogue', ({ rogueMode }) => {
 // REST API Endpoints
 // ============================================================================
 
-// GET /api/state -> (levels, policy, spentToday, budgetRemaining, rogueMode, recent transactions)
 app.get('/api/state', async (req, res) => {
   try {
     const state = await buildFullState();
@@ -288,14 +298,35 @@ app.get('/api/state', async (req, res) => {
   }
 });
 
-// POST /api/demo/drain/:resource -> forces resource level to 6
+// Part 5a: Read-only XRPL on-ledger proof (no keys required)
+app.get('/api/xrpl-proof', async (req, res) => {
+  try {
+    const proof = await getXrplProof();
+    res.json({ ok: true, ...proof });
+  } catch (err) {
+    console.error('[GET /api/xrpl-proof] Error:', err.message);
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+// /api/demo/* routes stay open (demo only)
+// Part 5b: Agent attempts to sign & submit a 1 RLUSD Payment alone (expect tefBAD_QUORUM)
+app.post('/api/demo/solo-sign', async (req, res) => {
+  try {
+    const result = await submitAgentSoloSignDemo();
+    res.json(result);
+  } catch (err) {
+    console.error('[POST /api/demo/solo-sign] Error:', err.message);
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
 app.post('/api/demo/drain/:resource', (req, res) => {
   try {
     const resourceId = req.params.resource;
-    getResource(resourceId); // validates resource exists ('electricity' or 'data')
+    getResource(resourceId);
 
     const newLevel = setLevel(resourceId, 6);
-    const levels = checkNow(); // immediately emits 'level' and evaluates 'low'
+    const levels = checkNow();
 
     res.json({
       ok: true,
@@ -309,7 +340,6 @@ app.post('/api/demo/drain/:resource', (req, res) => {
   }
 });
 
-// POST /api/demo/rogue -> toggles rogue mode (or sets explicit boolean if { enabled } passed)
 app.post('/api/demo/rogue', (req, res) => {
   try {
     const nextState =
@@ -326,13 +356,14 @@ app.post('/api/demo/rogue', (req, res) => {
   }
 });
 
-// POST /api/demo/reset -> stops rogue mode and refills both resources to 100%
 app.post('/api/demo/reset', async (req, res) => {
   try {
     setRogueMode(false);
     setLevel('electricity', 100);
     setLevel('data', 100);
-    const levels = checkNow();
+    resetLatch();
+    const levels = getSnapshot();
+    broadcast('levels', { levels });
 
     res.json({
       ok: true,
@@ -345,49 +376,29 @@ app.post('/api/demo/reset', async (req, res) => {
   }
 });
 
-// POST /api/policy -> updates daily_cap, per_tx_cap, and/or allowed_payees
+/**
+ * POST /api/policy -> Thin proxy to Policy Service POST /owner/policy.
+ * Forwards x-owner-passcode header from the browser (never stored on the main app).
+ */
 app.post('/api/policy', async (req, res) => {
   try {
-    const { daily_cap, per_tx_cap, allowed_payees } = req.body || {};
-    const updates = {};
+    const passcode = req.headers['x-owner-passcode'] || '';
+    const { status, ok, data } = await proxyOwnerPolicy(req.body, passcode);
 
-    if (daily_cap !== undefined) {
-      const numDaily = Number(daily_cap);
-      if (!Number.isFinite(numDaily) || numDaily < 0) {
-        return res.status(400).json({ ok: false, error: 'daily_cap must be a non-negative number' });
-      }
-      updates.daily_cap = numDaily;
+    if (!ok) {
+      return res.status(status).json({
+        ok: false,
+        error: data?.error || data?.reason || 'Policy update rejected by policy service',
+      });
     }
 
-    if (per_tx_cap !== undefined) {
-      const numPerTx = Number(per_tx_cap);
-      if (!Number.isFinite(numPerTx) || numPerTx < 0) {
-        return res.status(400).json({ ok: false, error: 'per_tx_cap must be a non-negative number' });
-      }
-      updates.per_tx_cap = numPerTx;
-    }
-
-    if (allowed_payees !== undefined) {
-      if (!Array.isArray(allowed_payees)) {
-        return res.status(400).json({ ok: false, error: 'allowed_payees must be an array of addresses' });
-      }
-      updates.allowed_payees = allowed_payees;
-    }
-
-    const updatedPolicy = await updatePolicy(updates);
-    const { spentToday: spent, budgetRemaining } = await getBudgetSummary();
-
-    broadcast('budget', {
-      policy: updatedPolicy,
-      spentToday: spent,
-      budgetRemaining,
-    });
+    await broadcastBudgetAndTxUpdate('policy_updated');
 
     res.json({
       ok: true,
-      policy: updatedPolicy,
-      spentToday: spent,
-      budgetRemaining,
+      policy: data.policy,
+      spentToday: data.spentToday,
+      budgetRemaining: data.budgetRemaining,
     });
   } catch (err) {
     console.error('[POST /api/policy] Error:', err.message);
@@ -395,17 +406,28 @@ app.post('/api/policy', async (req, res) => {
   }
 });
 
-// POST /api/approve/:id -> calls ownerApprove(id), vends resource if approved, and broadcasts updates
+/**
+ * POST /api/approve/:id -> Thin proxy to Policy Service POST /owner/approve/:id.
+ * Forwards x-owner-passcode header from the browser (never stored on the main app).
+ */
 app.post('/api/approve/:id', async (req, res) => {
   try {
     const rawId = req.params.id;
     const txId = /^\d+$/.test(rawId) ? Number(rawId) : rawId;
+    const passcode = req.headers['x-owner-passcode'] || '';
 
     const txBefore = await getTx(txId);
-    const approveResult = await ownerApprove(txId);
+    const { status, ok, data: approveResult } = await proxyOwnerApprove(txId, passcode);
+
+    if (status === 401) {
+      return res.status(401).json({
+        ok: false,
+        error: approveResult?.error || 'Unauthorized: invalid x-owner-passcode',
+      });
+    }
 
     let vendResult = null;
-    if (approveResult.status === 'owner_approved') {
+    if (ok && approveResult.status === 'owner_approved') {
       try {
         const plugin = getResource(txBefore.resource);
         vendResult = plugin.vend(txBefore.amount);
@@ -427,8 +449,7 @@ app.post('/api/approve/:id', async (req, res) => {
       vend: vendResult,
     });
 
-    const statusCode = approveResult.status === 'owner_approved' ? 200 : 400;
-    res.status(statusCode).json({
+    res.status(status).json({
       ok: approveResult.status === 'owner_approved',
       ...approveResult,
       explorerUrl: explorerUrl(approveResult.txHash),
@@ -437,6 +458,32 @@ app.post('/api/approve/:id', async (req, res) => {
     });
   } catch (err) {
     console.error('[POST /api/approve/:id] Error:', err.message);
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+/**
+ * POST /api/reject/:id -> Thin proxy to Policy Service POST /owner/reject/:id.
+ * Forwards x-owner-passcode header from the browser (never stored on the main app).
+ */
+app.post('/api/reject/:id', async (req, res) => {
+  try {
+    const rawId = req.params.id;
+    const txId = /^\d+$/.test(rawId) ? Number(rawId) : rawId;
+    const passcode = req.headers['x-owner-passcode'] || '';
+
+    const { status, ok, data } = await proxyOwnerReject(txId, passcode);
+    if (!ok) {
+      return res.status(status).json({
+        ok: false,
+        error: data?.error || data?.reason || 'Reject failed',
+      });
+    }
+
+    await broadcastBudgetAndTxUpdate('owner_reject');
+    res.json({ ok: true, ...data });
+  } catch (err) {
+    console.error('[POST /api/reject/:id] Error:', err.message);
     res.status(500).json({ ok: false, error: err.message });
   }
 });
@@ -487,7 +534,7 @@ function startServer() {
 
   startMonitor(2000);
   server.listen(PORT, () => {
-    console.log(`GridBot server running at http://localhost:${PORT}`);
+    console.log(`GridBot Main App running at http://localhost:${PORT}`);
   });
   return server;
 }

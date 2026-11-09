@@ -2,19 +2,16 @@
 // Autonomous AI CFO decision module for GridBot using Groq (llama-3.3-70b-versatile).
 //
 // HONESTY NOTE:
-// This AI agent can ONLY propose actions. It never holds keys, signs, or executes payments.
-// Every proposal is sent to the off-chain Policy Signer (policy-signer.js), which checks the
-// owner's off-chain daily budget, per-tx cap, and payee allowlist before co-signing on XRPL.
+// This AI agent can ONLY propose actions and sign with its weight-1 agent key via policy-client.js.
+// Every proposal is sent to the independent Policy Service (port 4000), which enforces the
+// off-chain daily budget, per-tx cap, velocity limit, and payee allowlist before co-signing.
 // The XRP Ledger enforces the 2-of-2 multisig quorum on-chain.
 
 require('dotenv').config();
 const EventEmitter = require('events');
 const Groq = require('groq-sdk');
-const fs = require('fs');
-const path = require('path');
 
-const { getPolicy, spentToday } = require('./db');
-const { requestPayment } = require('./policy-signer');
+const { requestPayment, getState, loadPublicWallets } = require('./policy-client');
 const { listResources, getResource } = require('./resources');
 
 const MODEL_CANDIDATES = [
@@ -41,21 +38,27 @@ function getGroqClient() {
   return groqClient;
 }
 
-const { ensureLocalWalletsFile } = require('./setup-wallets');
-
 function loadUtilityAddress() {
-  const wallets = ensureLocalWalletsFile();
-  return wallets?.utility?.address;
+  const pub = loadPublicWallets();
+  return pub?.utility?.address;
+}
+
+function calcRlusdNeededToRefill(level, percentPerRLUSD) {
+  const missing = Math.max(0, 100 - Number(level || 0));
+  const rate = Number(percentPerRLUSD) || 20;
+  return Math.ceil((missing / rate) * 100) / 100;
 }
 
 const SYSTEM_PROMPT = `You are GridBot's autonomous AI CFO decision module for a South African small business (internet cafe / co-working space).
 Your job is to evaluate low prepaid resource alerts (electricity meter and LTE router data) and return a single JSON proposal.
 
 STRICT RULES:
-1. You can ONLY propose. You never sign transactions or move money yourself.
-2. When the remaining daily budget is tight and both electricity and data are low (or near low), ALWAYS prioritize "electricity" because electricity also powers the LTE router and cafe computers, and explicitly state in your "reason" that electricity is prioritized because it also powers the router.
-3. Never exceed the per-transaction cap (perTxCap) in a single "buy" proposal. If a required purchase needs more than perTxCap (or exceeds the remaining daily budget), choose "escalate" so the business owner can review and sign with their owner key.
-4. Output STRICT JSON only. Do NOT wrap in markdown code fences. Do NOT include any text before or after the JSON object.
+1. You can ONLY propose. You never co-sign policy rules or move money by yourself.
+2. The proposed "amount" should be the RLUSD needed to refill the target resource to about 100% (use the provided rlusdNeededToRefill field), capped at perTxCapRLUSD.
+3. Never exceed perTxCapRLUSD in a single "buy" proposal; if more than perTxCapRLUSD is needed (or if it exceeds remainingDailyBudgetRLUSD), either propose up to perTxCapRLUSD or choose "escalate".
+4. If both resources are low and the remaining daily budget cannot cover both, ALWAYS buy "electricity" first (because electricity also powers the LTE router and cafe computers) and explicitly say so in the "reason".
+5. Never switch to a different resource than the triggered lowResource without explicitly explaining why in the "reason".
+6. Output STRICT JSON only. No markdown code fences.
 
 Required JSON schema:
 {
@@ -69,13 +72,15 @@ Required JSON schema:
  * Formats current time in Africa/Johannesburg (SAST).
  */
 function getTimeOfDaySAST() {
-  return new Intl.DateTimeFormat('en-ZA', {
-    timeZone: 'Africa/Johannesburg',
-    hour: '2-digit',
-    minute: '2-digit',
-    second: '2-digit',
-    hour12: false,
-  }).format(new Date()) + ' SAST (Africa/Johannesburg)';
+  return (
+    new Intl.DateTimeFormat('en-ZA', {
+      timeZone: 'Africa/Johannesburg',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false,
+    }).format(new Date()) + ' SAST (Africa/Johannesburg)'
+  );
 }
 
 /**
@@ -91,7 +96,6 @@ function parseAndValidateDecision(rawText, fallbackResource, maxPerTxCap) {
       throw new Error('Empty response from LLM');
     }
 
-    // Strip <think>...</think> reasoning blocks and markdown code fences if present
     let cleaned = rawText
       .trim()
       .replace(/<think>[\s\S]*?<\/think>/gi, '')
@@ -99,7 +103,6 @@ function parseAndValidateDecision(rawText, fallbackResource, maxPerTxCap) {
       .replace(/\s*```$/i, '')
       .trim();
 
-    // Extract first JSON object if extra text leaked around it
     const firstBrace = cleaned.indexOf('{');
     const lastBrace = cleaned.lastIndexOf('}');
     if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
@@ -110,7 +113,6 @@ function parseAndValidateDecision(rawText, fallbackResource, maxPerTxCap) {
     try {
       parsed = JSON.parse(cleaned);
     } catch {
-      // Repair common LLM JSON quirks: trailing commas, unquoted keys, single quotes
       const repaired = cleaned
         .replace(/,\s*([}\]])/g, '$1')
         .replace(/([{,]\s*)([a-zA-Z_][a-zA-Z0-9_]*)\s*:/g, '$1"$2":');
@@ -129,7 +131,6 @@ function parseAndValidateDecision(rawText, fallbackResource, maxPerTxCap) {
       throw new Error('Missing or invalid fields in parsed JSON');
     }
 
-    // Clamp amount: for "wait", 0; for "buy", clamp between [0.01, maxPerTxCap]; for "escalate", clamp [0.01, 100]
     let amount = Math.round(rawAmount * 100) / 100;
     if (decision === 'wait') {
       amount = 0;
@@ -159,9 +160,6 @@ function parseAndValidateDecision(rawText, fallbackResource, maxPerTxCap) {
   }
 }
 
-/**
- * Discovers an available chat model from Groq if our default returns 404 model_not_found.
- */
 async function resolveAvailableGroqModel(groq) {
   try {
     const list = await groq.models.list();
@@ -169,7 +167,6 @@ async function resolveAvailableGroqModel(groq) {
       .map((m) => m.id)
       .filter((id) => id && !/whisper|tts|guard|embed|playai/i.test(id));
 
-    // Prefer llama-3.3 / llama-4 / gpt-oss / llama-3.1
     const preferred = ids.find((id) => /llama-3\.3|llama-4|gpt-oss|llama-3\.1|qwen|gemma/i.test(id));
     return preferred || ids[0] || null;
   } catch {
@@ -177,14 +174,10 @@ async function resolveAvailableGroqModel(groq) {
   }
 }
 
-/**
- * Calls Groq to get a structured JSON proposal. Automatically falls back if a model ID is deprecated/restricted.
- */
 async function askAiDecision(context) {
   const groq = getGroqClient();
   const userPrompt = JSON.stringify(context, null, 2);
 
-  // Build ordered list starting with the last working model
   const modelsToTry = [
     activeModelName,
     ...MODEL_CANDIDATES.filter((m) => m !== activeModelName),
@@ -223,7 +216,6 @@ async function askAiDecision(context) {
     }
   }
 
-  // Last resort: query groq.models.list() for whatever model the API key actually has access to
   try {
     const discoveredModel = await resolveAvailableGroqModel(groq);
     if (discoveredModel) {
@@ -271,7 +263,7 @@ function isRogueMode() {
 }
 
 /**
- * Single rogue mode tick: skips AI and fires a buy request directly to Policy Signer.
+ * Single rogue mode tick: skips AI and fires a buy request every second to the Policy Service.
  */
 async function runRogueTick() {
   if (!rogueMode || rogueInFlight) return;
@@ -281,9 +273,9 @@ async function runRogueTick() {
   try {
     const resourceId = rogueCounter % 2 === 1 ? 'electricity' : 'data';
     const plugin = getResource(resourceId);
-    const amount = plugin.unitCostRLUSD; // e.g., 5 RLUSD or 3 RLUSD
+    const amount = plugin.unitCostRLUSD;
     const payee = loadUtilityAddress();
-    const reason = `[ROGUE MODE #${rogueCounter}] Unchecked runaway agent attempting rapid purchase of ${resourceId} (${amount} RLUSD)`;
+    const reason = `[ROGUE MODE #${rogueCounter}] Runaway agent attempting rapid purchase of ${resourceId} (${amount} RLUSD)`;
 
     const paymentResult = await requestPayment({
       resource: resourceId,
@@ -318,18 +310,12 @@ async function runRogueTick() {
   }
 }
 
-/**
- * Toggles Rogue Mode on or off.
- * When ON, skips AI and fires a buy request every 1 second in a loop so the
- * off-chain Policy Signer rapidly hits the daily cap and blocks/queues excess spend.
- */
 function setRogueMode(enabled) {
   rogueMode = Boolean(enabled);
 
   if (rogueMode) {
     if (!rogueTimer) {
       rogueCounter = 0;
-      // Fire immediately then every 1000ms
       runRogueTick();
       rogueTimer = setInterval(runRogueTick, 1000);
     }
@@ -346,16 +332,6 @@ function setRogueMode(enabled) {
 // Main Low-Resource Handler
 // ============================================================================
 
-/**
- * Handles a 'low' event from monitor.js (or a manual trigger).
- * 1. Gathers all resource levels, remaining daily budget, per-tx cap, unit costs, and time of day.
- * 2. Queries Groq (llama-3.3-70b-versatile) for a JSON proposal (unless rogue mode is active).
- * 3. If decision is "buy" or "escalate", calls requestPayment() on the Policy Signer.
- * 4. If payment is auto_approved or owner_approved, calls the resource plugin's vend(amount).
- * 5. Returns a complete result object and emits 'decision' on agentEvents.
- *
- * @param {object|string} lowEventOrResourceId - Event payload from monitor 'low' or resource id string
- */
 async function handleLow(lowEventOrResourceId) {
   const resourceId =
     typeof lowEventOrResourceId === 'string'
@@ -364,37 +340,51 @@ async function handleLow(lowEventOrResourceId) {
 
   const lowPlugin = getResource(resourceId);
 
-  // Gather policy and budget state
-  const policy = await getPolicy();
-  const spent = await spentToday();
+  const state = await getState();
+  const policy = state.policy;
+  const spent = Number(state.spentToday || 0);
   const dailyCap = Number(policy.daily_cap);
   const perTxCap = Number(policy.per_tx_cap);
-  const remainingDailyBudget = Math.max(0, Math.round((dailyCap - spent) * 1e6) / 1e6);
+  const remainingDailyBudget =
+    state.budgetRemaining !== undefined
+      ? Number(state.budgetRemaining)
+      : Math.max(0, Math.round((dailyCap - spent) * 1e6) / 1e6);
 
-  // Gather ALL resource levels and unit costs
-  const allResources = listResources().map((r) => ({
-    id: r.id,
-    label: r.label,
-    levelPercent: r.getLevel(),
-    thresholdPercent: r.threshold,
-    priority: r.priority,
-    unitCostRLUSD: r.unitCostRLUSD,
-    isLow: r.getLevel() <= r.threshold,
-  }));
+  const allResources = listResources().map((r) => {
+    const levelPercent = r.getLevel();
+    const percentPerRLUSD = r.percentPerRLUSD;
+    const rlusdNeededToRefill = calcRlusdNeededToRefill(levelPercent, percentPerRLUSD);
+    return {
+      id: r.id,
+      label: r.label,
+      levelPercent,
+      thresholdPercent: r.threshold,
+      priority: r.priority,
+      unitCostRLUSD: r.unitCostRLUSD,
+      percentPerRLUSD,
+      rlusdNeededToRefill,
+      isLow: levelPercent <= r.threshold,
+    };
+  });
 
   const unitCosts = {};
   for (const r of allResources) {
     unitCosts[r.id] = r.unitCostRLUSD;
   }
 
+  const lowLevelPercent = lowPlugin.getLevel();
+  const lowRlusdNeeded = calcRlusdNeededToRefill(lowLevelPercent, lowPlugin.percentPerRLUSD);
+
   const context = {
     lowResource: {
       id: lowPlugin.id,
       label: lowPlugin.label,
-      levelPercent: lowPlugin.getLevel(),
+      levelPercent: lowLevelPercent,
       thresholdPercent: lowPlugin.threshold,
       priority: lowPlugin.priority,
       unitCostRLUSD: lowPlugin.unitCostRLUSD,
+      percentPerRLUSD: lowPlugin.percentPerRLUSD,
+      rlusdNeededToRefill: lowRlusdNeeded,
     },
     allResources,
     remainingDailyBudgetRLUSD: remainingDailyBudget,
@@ -410,7 +400,7 @@ async function handleLow(lowEventOrResourceId) {
     proposal = {
       decision: 'buy',
       resource: lowPlugin.id,
-      amount: lowPlugin.unitCostRLUSD,
+      amount: Math.min(perTxCap, lowRlusdNeeded || lowPlugin.unitCostRLUSD),
       reason: '[ROGUE MODE] Skipping AI analysis and firing immediate buy request.',
       fallback: false,
     };
@@ -425,11 +415,12 @@ async function handleLow(lowEventOrResourceId) {
   let vendResult = null;
 
   if (proposal.decision === 'buy' || proposal.decision === 'escalate') {
-    // Even if the AI chose "escalate" (or "buy"), requestPayment() enforces all caps and allowlist:
-    // - If within caps -> signs (agent + policy) -> auto_approved
-    // - If over per_tx_cap or daily_cap -> logs pending_owner for owner signature
+    const targetNeeded = calcRlusdNeededToRefill(
+      targetPlugin.getLevel(),
+      targetPlugin.percentPerRLUSD
+    );
     const amountToRequest =
-      proposal.amount > 0 ? proposal.amount : targetPlugin.unitCostRLUSD;
+      proposal.amount > 0 ? proposal.amount : Math.min(perTxCap, targetNeeded || targetPlugin.unitCostRLUSD);
 
     paymentResult = await requestPayment({
       resource: targetPlugin.id,
@@ -445,7 +436,6 @@ async function handleLow(lowEventOrResourceId) {
       vendResult = targetPlugin.vend(amountToRequest);
     }
   } else {
-    // decision === 'wait' -> no payment requested
     paymentResult = {
       status: 'waited',
       reason: proposal.reason,
@@ -470,6 +460,7 @@ module.exports = {
   handleLow,
   askAiDecision,
   parseAndValidateDecision,
+  calcRlusdNeededToRefill,
   setRogueMode,
   isRogueMode,
   agentEvents,

@@ -5,9 +5,15 @@ node_modules/
 .env
 .env.*
 !.env.example
+policy-service/.env
 
 # XRPL Wallet Seeds (Testnet / Mainnet)
 wallets.json
+wallets.agent.json
+policy-service/wallets.keys.json
+split-wallets.js
+wallets.agent.json
+wallets.public.json
 
 # OS / Editor files
 .DS_Store

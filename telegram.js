@@ -1,21 +1,15 @@
 // telegram.js
-// Telegram Owner Notification & Multisig Override Bot for GridBot.
-// Uses node-telegram-bot-api (TELEGRAM_BOT_TOKEN and OWNER_CHAT_ID in .env).
-//
-// Features:
-// 1. When a transaction becomes pending_owner, sends a message to OWNER_CHAT_ID with
-//    resource, amount, reason, remaining daily budget, and inline buttons [Approve] [Reject].
-// 2. [Approve] -> calls ownerApprove(id) (signs with Owner Key weight 2), vends the resource,
-//    and replies with the XRPL Testnet explorer link (plus keypad token if electricity).
-// 3. [Reject] -> updates row to status 'blocked' with blocked_reason 'rejected by owner'.
-// 4. When a payment succeeds automatically (auto_approved), sends a short notification,
-//    including "Enter on meter: XXXX XXXX XXXX XXXX XXXX" for electricity.
-// 5. Strictly responds ONLY to OWNER_CHAT_ID.
+// Telegram Owner NotificationBot for GridBot Main App.
+// Uses policy-client.js to read state from the isolated Policy Service.
 
 require('dotenv').config();
 const TelegramBot = require('node-telegram-bot-api');
-const { getPolicy, spentToday, getTx, updateTx } = require('./db');
-const { ownerApprove } = require('./policy-signer');
+const {
+  getState,
+  getTx,
+  proxyOwnerApprove,
+  proxyOwnerReject,
+} = require('./policy-client');
 const { getResource } = require('./resources');
 
 const XRPL_EXPLORER_BASE =
@@ -39,20 +33,12 @@ function getBotConfig() {
 let bot = null;
 let onStateChangedCallback = null;
 
-/**
- * Checks whether an incoming Telegram message or callback query is from OWNER_CHAT_ID.
- */
 function isAuthorizedOwner(chatId) {
   const { ownerChatId } = getBotConfig();
   if (!ownerChatId) return false;
   return String(chatId) === String(ownerChatId);
 }
 
-/**
- * Initializes the Telegram bot (polling mode) if TELEGRAM_BOT_TOKEN is configured.
- * @param {object} [options]
- * @param {Function} [options.onStateChanged] - Callback invoked after Approve/Reject so server.js can broadcast WS updates
- */
 function initTelegram({ onStateChanged } = {}) {
   if (typeof onStateChanged === 'function') {
     onStateChangedCallback = onStateChanged;
@@ -71,22 +57,27 @@ function initTelegram({ onStateChanged } = {}) {
   bot = new TelegramBot(token, { polling: true });
 
   bot.on('polling_error', (err) => {
-    console.warn('[Telegram Polling Warning]:', err.message || err);
+    const msg = String(err?.message || err || '');
+    if (msg.includes('ECONNRESET') || msg.includes('ETIMEDOUT') || msg.includes('ENOTFOUND')) {
+      // Transient idle socket reset or brief network drop; node-telegram-bot-api automatically retries on the next poll
+      return;
+    }
+    console.warn('[Telegram Polling Warning]:', msg);
   });
 
-  // Helper command so owner can check their chat ID or status if needed, but ONLY responds to OWNER_CHAT_ID
   bot.on('message', async (msg) => {
     const chatId = msg?.chat?.id;
     if (!isAuthorizedOwner(chatId)) {
-      return; // Strictly ignore any chat other than OWNER_CHAT_ID
+      return;
     }
 
     const text = (msg.text || '').trim();
     if (text === '/start' || text === '/status') {
       try {
-        const policy = await getPolicy();
-        const spent = await spentToday();
-        const remaining = Math.max(0, Math.round((Number(policy.daily_cap) - spent) * 1e6) / 1e6);
+        const state = await getState();
+        const policy = state.policy;
+        const spent = Number(state.spentToday || 0);
+        const remaining = Number(state.budgetRemaining || 0);
         await bot.sendMessage(
           chatId,
           `⚡ *GridBot AI CFO Connected*\n` +
@@ -101,12 +92,10 @@ function initTelegram({ onStateChanged } = {}) {
     }
   });
 
-  // Handle inline button clicks: approve:<id> or reject:<id>
   bot.on('callback_query', async (query) => {
     const chatId = query?.message?.chat?.id;
     const messageId = query?.message?.message_id;
 
-    // Strictly respond ONLY to OWNER_CHAT_ID
     if (!isAuthorizedOwner(chatId)) {
       try {
         await bot.answerCallbackQuery(query.id, {
@@ -135,14 +124,16 @@ function initTelegram({ onStateChanged } = {}) {
         return;
       }
 
+      const passcode = (process.env.OWNER_PASSCODE || '').trim();
+
       if (action === 'approve') {
         await bot.answerCallbackQuery(query.id, {
-          text: 'Signing with Owner Key (weight 2) on XRPL Testnet...',
+          text: 'Requesting Policy Service owner approval...',
         });
 
-        const approveRes = await ownerApprove(txId);
+        const { ok, data: approveRes } = await proxyOwnerApprove(txId, passcode);
 
-        if (approveRes.status === 'owner_approved') {
+        if (ok && approveRes.status === 'owner_approved') {
           let vendResult = null;
           try {
             const plugin = getResource(txRow.resource);
@@ -152,7 +143,7 @@ function initTelegram({ onStateChanged } = {}) {
           }
 
           const link = explorerUrl(approveRes.txHash);
-          let replyLines = [
+          const replyLines = [
             `✅ *Owner Approved (#${txId})*`,
             `• Resource: ${txRow.resource}`,
             `• Amount: ${txRow.amount} RLUSD`,
@@ -165,7 +156,6 @@ function initTelegram({ onStateChanged } = {}) {
             replyLines.push(`• Vended: ${vendResult.bundle}`);
           }
 
-          // Remove inline buttons on original prompt so it can't be clicked twice
           if (messageId) {
             try {
               await bot.editMessageReplyMarkup(
@@ -191,43 +181,45 @@ function initTelegram({ onStateChanged } = {}) {
         } else {
           await bot.sendMessage(
             chatId,
-            `❌ Owner approval failed for #${txId}: ${approveRes.reason || 'Unknown error'}`
+            `❌ Owner approval failed for #${txId}: ${
+              approveRes?.error || approveRes?.reason || 'Requires owner passcode on dashboard'
+            }`
           );
-          if (onStateChangedCallback) {
-            await onStateChangedCallback({ type: 'error', txId });
-          }
         }
       } else if (action === 'reject') {
-        const updated = await updateTx(txId, {
-          status: 'blocked',
-          blocked_reason: 'rejected by owner',
-        });
-
-        await bot.answerCallbackQuery(query.id, {
-          text: 'Transaction rejected and marked blocked.',
-        });
-
-        if (messageId) {
-          try {
-            await bot.editMessageReplyMarkup(
-              { inline_keyboard: [] },
-              { chat_id: chatId, message_id: messageId }
-            );
-          } catch {}
-        }
-
-        await bot.sendMessage(
-          chatId,
-          `🚫 *Rejected (#${txId})*\nMarked as \`blocked\` (reason: "rejected by owner").`,
-          { parse_mode: 'Markdown' }
-        );
-
-        if (onStateChangedCallback) {
-          await onStateChangedCallback({
-            type: 'owner_rejected',
-            txId,
-            transaction: updated,
+        const { ok, data: rejectRes } = await proxyOwnerReject(txId, passcode);
+        if (ok) {
+          await bot.answerCallbackQuery(query.id, {
+            text: 'Transaction rejected and marked blocked.',
           });
+
+          if (messageId) {
+            try {
+              await bot.editMessageReplyMarkup(
+                { inline_keyboard: [] },
+                { chat_id: chatId, message_id: messageId }
+              );
+            } catch {}
+          }
+
+          await bot.sendMessage(
+            chatId,
+            `🚫 *Rejected (#${txId})*\nMarked as \`blocked\` (reason: "rejected by owner").`,
+            { parse_mode: 'Markdown' }
+          );
+
+          if (onStateChangedCallback) {
+            await onStateChangedCallback({
+              type: 'owner_rejected',
+              txId,
+              transaction: rejectRes.transaction,
+            });
+          }
+        } else {
+          await bot.sendMessage(
+            chatId,
+            `❌ Reject failed for #${txId}: ${rejectRes?.error || 'Requires owner passcode'}`
+          );
         }
       }
     } catch (err) {
@@ -244,10 +236,6 @@ function initTelegram({ onStateChanged } = {}) {
   return bot;
 }
 
-/**
- * Sends a notification to OWNER_CHAT_ID when a transaction becomes pending_owner,
- * with inline buttons [Approve] [Reject].
- */
 async function notifyPendingOwner({ id, resource, amount, reason, blockedReason, remainingBudget }) {
   const { ownerChatId } = getBotConfig();
   if (!bot || !ownerChatId) return;
@@ -255,9 +243,8 @@ async function notifyPendingOwner({ id, resource, amount, reason, blockedReason,
   try {
     let rem = remainingBudget;
     if (rem === undefined) {
-      const policy = await getPolicy();
-      const spent = await spentToday();
-      rem = Math.max(0, Math.round((Number(policy.daily_cap) - spent) * 1e6) / 1e6);
+      const state = await getState();
+      rem = Number(state.budgetRemaining || 0);
     }
 
     const lines = [
@@ -285,10 +272,6 @@ async function notifyPendingOwner({ id, resource, amount, reason, blockedReason,
   }
 }
 
-/**
- * Sends a short notification to OWNER_CHAT_ID when a payment succeeds automatically.
- * Includes the 20-digit STS token formatted for keypad entry ("Enter on meter: ...") for electricity.
- */
 async function notifyAutoApproved({ resource, amount, reason, txHash, vend }) {
   const { ownerChatId } = getBotConfig();
   if (!bot || !ownerChatId) return;

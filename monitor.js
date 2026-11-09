@@ -1,42 +1,61 @@
 // monitor.js
 // Background resource monitor that ticks every 2 seconds, drains simulated
-// resources, and emits 'level' (every tick) and 'low' (once per low episode
-// when a resource drops at or below its threshold until refilled above threshold).
+// resources, and emits 'level' (every tick) and 'low' (when a resource drops
+// at or below its threshold, retrying at most once every 15 seconds if it
+// remains at or below threshold until refilled).
 
 const EventEmitter = require('events');
 const { listResources, getResource } = require('./resources');
 
 const TICK_MS = 2000;
+const LOW_RETRY_MS = 15000; // Re-emit 'low' at most once every 15s while still <= threshold
 const emitter = new EventEmitter();
 
 let timer = null;
-// Tracks which resources have already fired 'low' during the current low-balance episode
-const lowFired = new Set();
+// Map of resourceId -> timestamp (ms) of the last emitted 'low' event
+const lastLowFiredAt = new Map();
+
+/**
+ * Resets the low-event latch/timers for all resources (or a single resource id).
+ */
+function resetLatch(resourceId) {
+  if (resourceId) {
+    lastLowFiredAt.delete(resourceId);
+  } else {
+    lastLowFiredAt.clear();
+  }
+}
 
 /**
  * Checks all resources' current levels against their thresholds.
- * Resets the lowFired latch when a resource is refilled above threshold,
- * and emits 'low' once when a resource is below (or at) threshold.
+ * - If level > threshold: clears the latch for that resource.
+ * - If level <= threshold: emits 'low' immediately if not yet fired, or retries if >= 15s
+ *   have elapsed since the last 'low' emission for that resource.
  */
 function evaluateLevels(snapshot) {
+  const now = Date.now();
+
   for (const item of snapshot) {
     const plugin = getResource(item.id);
     if (item.level > item.threshold) {
       // Resource has been refilled above threshold -> reset latch
-      lowFired.delete(item.id);
-    } else if (item.level <= item.threshold && !lowFired.has(item.id)) {
-      // Dropped to/below threshold for the first time since full -> fire 'low' once
-      lowFired.add(item.id);
-      emitter.emit('low', {
-        id: plugin.id,
-        label: plugin.label,
-        level: item.level,
-        threshold: plugin.threshold,
-        priority: plugin.priority,
-        unitCostRLUSD: plugin.unitCostRLUSD,
-        resource: plugin,
-        ts: new Date().toISOString(),
-      });
+      lastLowFiredAt.delete(item.id);
+    } else {
+      const lastTs = lastLowFiredAt.get(item.id);
+      if (lastTs === undefined || now - lastTs >= LOW_RETRY_MS) {
+        lastLowFiredAt.set(item.id, now);
+        emitter.emit('low', {
+          id: plugin.id,
+          label: plugin.label,
+          level: item.level,
+          threshold: plugin.threshold,
+          priority: plugin.priority,
+          unitCostRLUSD: plugin.unitCostRLUSD,
+          percentPerRLUSD: plugin.percentPerRLUSD,
+          resource: plugin,
+          ts: new Date(now).toISOString(),
+        });
+      }
     }
   }
 }
@@ -52,13 +71,14 @@ function getSnapshot() {
     threshold: r.threshold,
     priority: r.priority,
     unitCostRLUSD: r.unitCostRLUSD,
+    percentPerRLUSD: r.percentPerRLUSD,
     isMock: true,
   }));
 }
 
 /**
  * Single 2-second monitor tick: drains each resource a little, emits 'level',
- * and emits 'low' if any resource crossed below its threshold.
+ * and emits 'low' if any resource crossed (or remained >=15s) below its threshold.
  */
 function tick() {
   const plugins = listResources();
@@ -76,10 +96,9 @@ function tick() {
  */
 function start(intervalMs = TICK_MS) {
   if (timer) return emitter;
-  // Sync initial latch state before first tick
   for (const r of listResources()) {
     if (r.getLevel() > r.threshold) {
-      lowFired.delete(r.id);
+      lastLowFiredAt.delete(r.id);
     }
   }
   timer = setInterval(tick, intervalMs);
@@ -112,5 +131,6 @@ module.exports = {
   stop,
   tick,
   checkNow,
+  resetLatch,
   getSnapshot,
 };
