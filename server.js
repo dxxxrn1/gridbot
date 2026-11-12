@@ -11,6 +11,7 @@
 require('dotenv').config();
 const http = require('http');
 const path = require('path');
+const { spawn, execSync } = require('child_process');
 const express = require('express');
 const WebSocket = require('ws');
 
@@ -22,6 +23,9 @@ const {
   proxyOwnerApprove,
   proxyOwnerReject,
   proxyOwnerPolicy,
+  listStaff,
+  createStaff,
+  deleteStaff,
   loadPublicWallets,
   closeXrplClient,
 } = require('./policy-client');
@@ -36,12 +40,22 @@ const {
 } = require('./monitor');
 const {
   handleLow,
+  handleStaffRequest,
+  STAFF_SKU_CATALOG,
   setRogueMode,
   isRogueMode,
   agentEvents,
 } = require('./agent');
 const {
+  login: authLogin,
+  logout: authLogout,
+  getUserFromReq,
+  requireAuth,
+  requireOwner,
+} = require('./auth');
+const {
   initTelegram,
+  notifyLowWarning,
   notifyPendingOwner,
   notifyAutoApproved,
 } = require('./telegram');
@@ -75,6 +89,9 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
+wss.on('error', () => {
+  // Handled by server.on('error')
+});
 
 /**
  * Broadcasts a JSON message to all connected WebSocket clients.
@@ -195,6 +212,15 @@ monitorEmitter.on('level', (levels) => {
   broadcast('levels', { levels });
 });
 
+monitorEmitter.on('warning', async (warnEvent) => {
+  broadcast('warn_alert', warnEvent);
+  try {
+    await notifyLowWarning(warnEvent);
+  } catch (err) {
+    console.warn('[Server -> Telegram] Low warning error:', err.message);
+  }
+});
+
 const activeLowHandlers = new Set();
 
 monitorEmitter.on('low', async (lowEvent) => {
@@ -265,6 +291,7 @@ agentEvents.on('decision', async (result) => {
         reason: proposal.reason,
         blockedReason: result.payment.reason,
         remainingBudget: latestState?.budgetRemaining,
+        requestedBy: result.requestedBy || 'Autonomous Monitor',
       });
     } else if (payStatus === 'auto_approved') {
       await notifyAutoApproved({
@@ -273,6 +300,7 @@ agentEvents.on('decision', async (result) => {
         reason: proposal.reason,
         txHash,
         vend: result.vend,
+        requestedBy: result.requestedBy || 'Autonomous Monitor',
       });
     }
   } catch (tgErr) {
@@ -285,13 +313,115 @@ agentEvents.on('rogue', ({ rogueMode }) => {
 });
 
 // ============================================================================
+// Auth & Staff Request Endpoints
+// ============================================================================
+
+app.post('/api/auth/login', async (req, res) => {
+  try {
+    const result = await authLogin(req.body || {});
+    if (!result.ok) {
+      return res.status(401).json(result);
+    }
+    res.json(result);
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+app.post('/api/auth/logout', (req, res) => {
+  authLogout(req);
+  res.json({ ok: true });
+});
+
+app.get('/api/auth/me', (req, res) => {
+  const user = getUserFromReq(req);
+  if (!user) {
+    return res.status(401).json({ ok: false, user: null });
+  }
+  res.json({ ok: true, user });
+});
+
+/**
+ * Staff Management API Endpoints
+ */
+app.get('/api/staff', requireAuth, async (req, res) => {
+  try {
+    const staff = await listStaff();
+    res.json({ ok: true, staff });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+app.post('/api/staff', requireOwner, async (req, res) => {
+  try {
+    const { status, ok, data } = await createStaff(req.body, req.ownerPasscode);
+    res.status(status || (ok ? 200 : 400)).json(data || { ok, error: 'Staff creation failed' });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+app.delete('/api/staff/:id', requireOwner, async (req, res) => {
+  try {
+    const { status, ok, data } = await deleteStaff(req.params.id, req.ownerPasscode);
+    res.status(status || (ok ? 200 : 400)).json(data || { ok, error: 'Staff deletion failed' });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+app.post('/api/staff/request', requireAuth, async (req, res) => {
+  try {
+    const { requestText } = req.body || {};
+    if (!requestText || typeof requestText !== 'string' || !requestText.trim()) {
+      return res.status(400).json({
+        ok: false,
+        error: 'Please enter a plain-language operational request (e.g. "Meter is beeping, need electricity token").',
+      });
+    }
+
+    const result = await handleStaffRequest({
+      staffUser: req.user,
+      requestText: requestText.trim(),
+    });
+
+    const txHash = result?.payment?.txHash || null;
+    res.json({
+      ok: true,
+      mode: result.mode,
+      requestedBy: result.requestedBy,
+      staffUser: result.staffUser,
+      proposal: result.proposal,
+      payment: result.payment
+        ? {
+            ...result.payment,
+            explorerUrl: explorerUrl(txHash),
+          }
+        : null,
+      vend: result.vend,
+      proofLotEvidence: result.proofLotEvidence,
+      levels: getSnapshot(),
+    });
+  } catch (err) {
+    console.error('[POST /api/staff/request] Error:', err.message);
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+// ============================================================================
 // REST API Endpoints
 // ============================================================================
 
 app.get('/api/state', async (req, res) => {
   try {
     const state = await buildFullState();
-    res.json({ ok: true, ...state });
+    res.json({
+      ok: true,
+      ...state,
+      skuCatalog: STAFF_SKU_CATALOG,
+      currentUser: getUserFromReq(req),
+    });
   } catch (err) {
     console.error('[GET /api/state] Error:', err.message);
     res.status(500).json({ ok: false, error: err.message });
@@ -378,11 +508,11 @@ app.post('/api/demo/reset', async (req, res) => {
 
 /**
  * POST /api/policy -> Thin proxy to Policy Service POST /owner/policy.
- * Forwards x-owner-passcode header from the browser (never stored on the main app).
+ * Protected by requireOwner (accepts either x-owner-passcode OR an authenticated owner session token).
  */
-app.post('/api/policy', async (req, res) => {
+app.post('/api/policy', requireOwner, async (req, res) => {
   try {
-    const passcode = req.headers['x-owner-passcode'] || '';
+    const passcode = req.ownerPasscode || req.headers['x-owner-passcode'] || '';
     const { status, ok, data } = await proxyOwnerPolicy(req.body, passcode);
 
     if (!ok) {
@@ -408,13 +538,13 @@ app.post('/api/policy', async (req, res) => {
 
 /**
  * POST /api/approve/:id -> Thin proxy to Policy Service POST /owner/approve/:id.
- * Forwards x-owner-passcode header from the browser (never stored on the main app).
+ * Protected by requireOwner (accepts either x-owner-passcode OR an authenticated owner session token).
  */
-app.post('/api/approve/:id', async (req, res) => {
+app.post('/api/approve/:id', requireOwner, async (req, res) => {
   try {
     const rawId = req.params.id;
     const txId = /^\d+$/.test(rawId) ? Number(rawId) : rawId;
-    const passcode = req.headers['x-owner-passcode'] || '';
+    const passcode = req.ownerPasscode || req.headers['x-owner-passcode'] || '';
 
     const txBefore = await getTx(txId);
     const { status, ok, data: approveResult } = await proxyOwnerApprove(txId, passcode);
@@ -464,13 +594,13 @@ app.post('/api/approve/:id', async (req, res) => {
 
 /**
  * POST /api/reject/:id -> Thin proxy to Policy Service POST /owner/reject/:id.
- * Forwards x-owner-passcode header from the browser (never stored on the main app).
+ * Protected by requireOwner (accepts either x-owner-passcode OR an authenticated owner session token).
  */
-app.post('/api/reject/:id', async (req, res) => {
+app.post('/api/reject/:id', requireOwner, async (req, res) => {
   try {
     const rawId = req.params.id;
     const txId = /^\d+$/.test(rawId) ? Number(rawId) : rawId;
-    const passcode = req.headers['x-owner-passcode'] || '';
+    const passcode = req.ownerPasscode || req.headers['x-owner-passcode'] || '';
 
     const { status, ok, data } = await proxyOwnerReject(txId, passcode);
     if (!ok) {
@@ -513,9 +643,109 @@ wss.on('connection', async (ws) => {
 // Server Startup & Graceful Shutdown
 // ============================================================================
 
-function startServer() {
+let spawnedPolicyProcess = null;
+
+/**
+ * Ensures the independent Policy Service (port 4000) is running.
+ * If it is not already running in a second terminal, spawns `node policy-service/server.js`
+ * as a separate OS child process so `node server.js` works out-of-the-box in one terminal.
+ */
+async function ensurePolicyServiceRunning() {
+  const policyUrl = (process.env.POLICY_SERVICE_URL || 'http://localhost:4000').replace(/\/$/, '');
+  const token = (process.env.AGENT_API_TOKEN || '').trim();
+
+  try {
+    const probe = await fetch(`${policyUrl}/state`, {
+      headers: { 'x-agent-token': token },
+    });
+    if (probe.ok || probe.status === 401) {
+      return;
+    }
+  } catch (_) {
+    // Policy Service not running yet — spawn it as a separate OS process
+  }
+
+  const policyDir = path.join(__dirname, 'policy-service');
+  const policyEntry = path.join(policyDir, 'server.js');
+  console.log('[Server] Spawning isolated Policy Service process (port 4000)...');
+
+  spawnedPolicyProcess = spawn(process.execPath, [policyEntry], {
+    cwd: policyDir,
+    stdio: 'inherit',
+  });
+
+  spawnedPolicyProcess.on('exit', (code) => {
+    if (code !== 0 && code !== null) {
+      console.warn(`[Server] Policy Service child process exited with code ${code}`);
+    }
+    spawnedPolicyProcess = null;
+  });
+
+  // Wait up to 2.5s for port 4000 to start accepting requests
+  for (let i = 0; i < 10; i++) {
+    await new Promise((r) => setTimeout(r, 250));
+    try {
+      const check = await fetch(`${policyUrl}/state`, {
+        headers: { 'x-agent-token': token },
+      });
+      if (check.ok || check.status === 401) {
+        break;
+      }
+    } catch (_) {}
+  }
+}
+
+/**
+ * Frees a TCP port on Windows if an older Node process from a previous terminal is still holding it.
+ */
+async function freePortIfInUse(port) {
+  let killed = false;
+  try {
+    const out = execSync(`netstat -ano`, { encoding: 'utf8' });
+    const lines = out
+      .split(/\r?\n/)
+      .filter((l) => l.includes('LISTENING') && l.includes(`:${port}`));
+    const pids = new Set();
+    for (const line of lines) {
+      const parts = line.trim().split(/\s+/);
+      const pid = Number(parts[parts.length - 1]);
+      if (pid && pid !== process.pid) {
+        pids.add(pid);
+      }
+    }
+    for (const pid of pids) {
+      console.log(`[Server] Stopping previous process on port ${port} (PID ${pid})...`);
+      try {
+        execSync(`taskkill /F /T /PID ${pid}`, { stdio: 'ignore' });
+        killed = true;
+      } catch (_) {}
+    }
+  } catch (_) {}
+
+  if (killed) {
+    await new Promise((r) => setTimeout(r, 500));
+  }
+}
+
+async function startServer() {
+  await freePortIfInUse(PORT);
+  await freePortIfInUse(4000);
+  await ensurePolicyServiceRunning();
+
   initTelegram({
     onStateChanged: async (evt) => {
+      if (evt.type === 'proactive_topup' && evt.resource) {
+        const promptText =
+          evt.resource === 'data'
+            ? 'Proactive 25% low-balance top-up: need 3 RLUSD emergency LTE data'
+            : 'Proactive 25% low-balance top-up: need 5 RLUSD prepaid electricity token';
+        await handleStaffRequest({
+          staffUser: { username: 'owner_telegram', displayName: 'Owner (Telegram 25% Alert)', role: 'owner' },
+          requestText: promptText,
+        });
+        return;
+      }
+
       broadcast('levels', { levels: getSnapshot() });
       await broadcastBudgetAndTxUpdate(`telegram_${evt.type}`);
       if (evt.type === 'owner_approved') {
@@ -533,6 +763,22 @@ function startServer() {
   });
 
   startMonitor(2000);
+
+  let retries = 0;
+  server.on('error', async (err) => {
+    if (err.code === 'EADDRINUSE' && retries < 3) {
+      retries += 1;
+      console.warn(`[Server] Port ${PORT} still busy, freeing and retrying (${retries}/3)...`);
+      await freePortIfInUse(PORT);
+      setTimeout(() => {
+        server.close();
+        server.listen(PORT);
+      }, 500);
+    } else {
+      console.error('[Server] Fatal listen error:', err.message);
+    }
+  });
+
   server.listen(PORT, () => {
     console.log(`GridBot Main App running at http://localhost:${PORT}`);
   });
@@ -546,6 +792,9 @@ if (require.main === module) {
 process.on('SIGINT', async () => {
   stopMonitor();
   setRogueMode(false);
+  if (spawnedPolicyProcess) {
+    spawnedPolicyProcess.kill('SIGINT');
+  }
   await closeXrplClient();
   process.exit(0);
 });

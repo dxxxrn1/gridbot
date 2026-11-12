@@ -3,20 +3,22 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>GridBot | Autonomous Prepaid-Resource Agent on XRPL</title>
+    <title>GridBot | Autonomous Prepaid-Resource AI CFO</title>
     <style>
       :root {
-        --bg: #060911;
-        --panel: rgba(15, 23, 42, 0.78);
-        --card: rgba(2, 6, 23, 0.65);
-        --line: rgba(30, 41, 59, 0.9);
-        --text: #e2e8f0;
-        --muted: #94a3b8;
-        --dim: #64748b;
-        --green: #10b981;
-        --amber: #f59e0b;
-        --red: #ef4444;
-        --sky: #38bdf8;
+        --bg: #03081c;
+        --sidebar-bg: linear-gradient(180deg, rgba(6, 11, 40, 0.96) 0%, rgba(10, 14, 35, 0.98) 100%);
+        --panel: linear-gradient(127.09deg, rgba(6, 11, 40, 0.94) 19.41%, rgba(10, 14, 35, 0.49) 76.65%);
+        --card: rgba(6, 12, 42, 0.85);
+        --line: rgba(255, 255, 255, 0.08);
+        --text: #ffffff;
+        --muted: #a0aec0;
+        --dim: #718096;
+        --green: #01b574;
+        --amber: #ffb547;
+        --red: #e31a1a;
+        --sky: #21d4fd;
+        --blue-accent: #0075ff;
         --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
         --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
       }
@@ -28,20 +30,12 @@
       body {
         min-height: 100vh;
         display: flex;
-        flex-direction: column;
         font-family: var(--sans);
         background:
           var(--bg)
-            radial-gradient(
-              at 15% 10%,
-              rgba(16, 185, 129, 0.09),
-              transparent 45%
-            ),
-          radial-gradient(
-            at 85% 15%,
-            rgba(56, 189, 248, 0.09),
-            transparent 45%
-          );
+          radial-gradient(at 15% 15%, rgba(0, 117, 255, 0.28), transparent 48%),
+          radial-gradient(at 85% 25%, rgba(11, 61, 189, 0.25), transparent 50%),
+          radial-gradient(at 50% 95%, rgba(0, 117, 255, 0.2), transparent 55%);
         color: var(--text);
         -webkit-font-smoothing: antialiased;
       }
@@ -51,11 +45,232 @@
       .mono {
         font-family: var(--mono);
       }
-      /* blocked banner */
+
+      /* Splash Screen */
+      .splash-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 120;
+        background:
+          #030718
+          radial-gradient(at 50% 20%, rgba(0, 117, 255, 0.22), transparent 55%),
+          radial-gradient(at 80% 80%, rgba(56, 189, 248, 0.14), transparent 55%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        transition: opacity 0.35s ease;
+      }
+      .splash-card {
+        width: 100%;
+        max-width: 520px;
+        background: linear-gradient(127.09deg, rgba(11, 20, 55, 0.96) 19.41%, rgba(6, 11, 40, 0.96) 76.65%);
+        border: 1px solid rgba(0, 117, 255, 0.42);
+        border-radius: 20px;
+        padding: 32px 28px;
+        box-shadow: 0 25px 70px -12px rgba(0, 0, 0, 0.85), 0 0 40px rgba(0, 117, 255, 0.12);
+        text-align: center;
+      }
+      .splash-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font: 700 10px var(--mono);
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        padding: 4px 12px;
+        border-radius: 999px;
+        background: rgba(0, 117, 255, 0.14);
+        border: 1px solid rgba(0, 117, 255, 0.45);
+        color: #7dd3fc;
+        margin-bottom: 16px;
+      }
+      .splash-checks {
+        margin: 20px 0 24px;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        text-align: left;
+      }
+      .splash-check-row {
+        background: rgba(6, 11, 40, 0.88);
+        border: 1px solid rgba(45, 72, 138, 0.45);
+        border-radius: 12px;
+        padding: 12px 14px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        font: 12px var(--mono);
+      }
+      .splash-check-label {
+        color: var(--muted);
+        font-size: 11px;
+      }
+      .splash-check-val {
+        color: #34d399;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .splash-verify-link {
+        color: #38bdf8;
+        font-size: 10px;
+        text-decoration: underline;
+      }
+
+      /* Sign-In Page Overlay */
+      .auth-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 100;
+        background:
+          #060911
+          radial-gradient(at 25% 15%, rgba(16, 185, 129, 0.14), transparent 50%),
+          radial-gradient(at 80% 80%, rgba(56, 189, 248, 0.12), transparent 50%);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+      }
+      .auth-card {
+        width: 100%;
+        max-width: 410px;
+        background: rgba(15, 23, 42, 0.94);
+        border: 1px solid #1e293b;
+        border-radius: 18px;
+        padding: 32px 28px;
+        box-shadow: 0 25px 60px -12px rgba(0, 0, 0, 0.85);
+      }
+      .auth-brand {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        gap: 10px;
+        margin-bottom: 24px;
+      }
+      .auth-logo-lg {
+        width: 48px;
+        height: 48px;
+        border-radius: 14px;
+        background: linear-gradient(
+          135deg,
+          rgba(16, 185, 129, 0.22),
+          rgba(56, 189, 248, 0.22)
+        );
+        border: 1px solid rgba(16, 185, 129, 0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--green);
+        box-shadow: 0 0 24px rgba(16, 185, 129, 0.18);
+      }
+      .auth-title {
+        font-size: 22px;
+        font-weight: 700;
+        color: #fff;
+        letter-spacing: -0.02em;
+      }
+      .auth-sub {
+        font-size: 13px;
+        color: var(--muted);
+        line-height: 1.4;
+      }
+      .auth-field {
+        margin-bottom: 16px;
+      }
+      .auth-field label {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--muted);
+        margin-bottom: 6px;
+      }
+      .auth-input-wrap {
+        position: relative;
+        display: flex;
+        align-items: center;
+      }
+      .auth-input {
+        width: 100%;
+        background: #020617;
+        border: 1px solid #334155;
+        border-radius: 10px;
+        padding: 11px 14px;
+        color: #fff;
+        font: 14px var(--sans);
+        outline: none;
+        transition:
+          border-color 0.15s,
+          box-shadow 0.15s;
+      }
+      .auth-input:focus {
+        border-color: var(--sky);
+        box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.15);
+      }
+      .auth-pw-toggle {
+        position: absolute;
+        right: 10px;
+        background: transparent;
+        border: none;
+        color: var(--muted);
+        font: 600 11px var(--mono);
+        cursor: pointer;
+        padding: 4px 6px;
+        border-radius: 4px;
+      }
+      .auth-pw-toggle:hover {
+        color: #fff;
+      }
+      .auth-error {
+        background: rgba(239, 68, 68, 0.15);
+        border: 1px solid rgba(239, 68, 68, 0.4);
+        color: #fca5a5;
+        font-size: 12px;
+        padding: 9px 12px;
+        border-radius: 8px;
+        margin-bottom: 16px;
+      }
+      .auth-submit {
+        width: 100%;
+        cursor: pointer;
+        padding: 12px 16px;
+        border-radius: 10px;
+        border: 1px solid rgba(16, 185, 129, 0.55);
+        background: linear-gradient(135deg, #10b981, #059669);
+        color: #020617;
+        font: 700 14px var(--sans);
+        letter-spacing: 0.01em;
+        transition: filter 0.15s;
+        margin-top: 4px;
+      }
+      .auth-submit:hover {
+        filter: brightness(1.08);
+      }
+      .auth-footer {
+        margin-top: 20px;
+        padding-top: 14px;
+        border-top: 1px solid #1e293b;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        font: 11px var(--mono);
+        color: var(--dim);
+      }
+
+      /* Blocked Banner */
       .blocked-banner {
         background: rgba(69, 10, 10, 0.97);
         border-bottom: 2px solid var(--red);
-        padding: 22px 24px;
+        padding: 16px 24px;
         color: #fee2e2;
         z-index: 40;
         animation: flashRed 1s ease-out;
@@ -74,14 +289,14 @@
         gap: 14px;
       }
       .blocked-icon {
-        width: 40px;
-        height: 40px;
+        width: 36px;
+        height: 36px;
         border-radius: 50%;
         background: rgba(239, 68, 68, 0.25);
         border: 1px solid #f87171;
         color: #fca5a5;
         font-weight: 700;
-        font-size: 22px;
+        font-size: 20px;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -90,42 +305,48 @@
       .blocked-title {
         display: block;
         font-weight: 800;
-        font-size: 18px;
-        letter-spacing: 0.04em;
+        font-size: 15px;
+        letter-spacing: 0.03em;
         color: #fca5a5;
-        margin-bottom: 4px;
+        margin-bottom: 3px;
       }
       .blocked-text {
-        font-size: 14px;
+        font-size: 13px;
         font-family: var(--mono);
       }
-      /* header */
-      .top-header {
-        position: sticky;
-        top: 0;
-        z-index: 30;
-        background: rgba(7, 11, 20, 0.88);
-        backdrop-filter: blur(12px);
-        border-bottom: 1px solid var(--line);
-      }
-      .header-inner {
-        max-width: 1280px;
-        margin: 0 auto;
-        padding: 14px 24px;
+
+      /* Vision UI Layout Structure */
+      .app-layout {
         display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        justify-content: space-between;
-        gap: 16px;
+        width: 100vw;
+        height: 100vh;
+        overflow: hidden;
       }
-      .brand {
+
+      /* Left Sidebar */
+      .sidebar {
+        width: 250px;
+        background: var(--sidebar-bg);
+        border-right: 1px solid var(--line);
+        display: flex;
+        flex-direction: column;
+        padding: 22px 16px;
+        flex-shrink: 0;
+        overflow-y: auto;
+        backdrop-filter: blur(14px);
+        box-shadow: 4px 0 24px rgba(0, 0, 0, 0.4);
+      }
+      .sidebar-brand {
         display: flex;
         align-items: center;
         gap: 12px;
+        padding-bottom: 20px;
+        border-bottom: 1px solid var(--line);
+        margin-bottom: 18px;
       }
       .logo {
-        width: 40px;
-        height: 40px;
+        width: 38px;
+        height: 38px;
         border-radius: 12px;
         background: linear-gradient(
           135deg,
@@ -137,22 +358,212 @@
         align-items: center;
         justify-content: center;
         color: var(--green);
-      }
-      .brand-row {
-        display: flex;
-        align-items: center;
-        gap: 10px;
+        flex-shrink: 0;
       }
       .brand-title {
-        font-size: 20px;
+        font-size: 18px;
         font-weight: 700;
         color: #fff;
         letter-spacing: -0.02em;
       }
       .brand-sub {
-        font-size: 12px;
+        font-size: 10px;
+        color: var(--sky);
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        margin-top: 1px;
+      }
+      .nav-section-label {
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--dim);
+        padding: 6px 10px;
+        margin-bottom: 4px;
+      }
+      .sidebar-nav {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+      .nav-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        width: 100%;
+        padding: 9px 12px;
+        border-radius: 14px;
+        border: 1px solid transparent;
+        background: transparent;
         color: var(--muted);
-        margin-top: 2px;
+        font: 600 13px var(--sans);
+        cursor: pointer;
+        transition: all 0.16s ease;
+        text-align: left;
+      }
+      .nav-item:hover {
+        background: rgba(26, 31, 55, 0.72);
+        color: #fff;
+      }
+      .nav-item.active {
+        background: #1a1f37;
+        border-color: rgba(45, 72, 138, 0.48);
+        color: #fff;
+        box-shadow: 0 8px 24px rgba(0, 117, 255, 0.16);
+      }
+      .nav-icon {
+        width: 30px;
+        height: 30px;
+        border-radius: 10px;
+        background: #1a1f37;
+        color: var(--blue-accent);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        transition: all 0.16s ease;
+      }
+      .nav-item:hover .nav-icon {
+        background: rgba(0, 117, 255, 0.18);
+        color: #60a5fa;
+      }
+      .nav-item.active .nav-icon {
+        background: var(--blue-accent);
+        color: #fff;
+        box-shadow: 0 4px 12px rgba(0, 117, 255, 0.45);
+      }
+      .nav-text {
+        flex: 1;
+      }
+      .nav-badge {
+        background: var(--amber);
+        color: #030718;
+        font: 700 10px var(--mono);
+        padding: 1px 7px;
+        border-radius: 999px;
+      }
+
+      /* Sidebar Footer / User Profile */
+      .sidebar-footer {
+        margin-top: auto;
+        padding-top: 16px;
+        border-top: 1px solid var(--line);
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+      .user-card {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        background: rgba(11, 20, 55, 0.85);
+        border: 1px solid var(--line);
+        border-radius: 14px;
+        padding: 10px 12px;
+      }
+      .user-card.owner {
+        border-color: rgba(245, 158, 11, 0.45);
+        background: rgba(245, 158, 11, 0.08);
+      }
+      .user-avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        background: #1e293b;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 15px;
+      }
+      .user-info {
+        flex: 1;
+        min-width: 0;
+      }
+      .user-name {
+        font-size: 12px;
+        font-weight: 700;
+        color: #fff;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .user-role {
+        font: 700 9px var(--mono);
+        color: var(--muted);
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+      .sidebar-actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 6px;
+      }
+      .side-btn {
+        cursor: pointer;
+        font: 600 11px var(--sans);
+        padding: 7px 10px;
+        border-radius: 10px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: #0f1535;
+        color: var(--muted);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 5px;
+        transition: 0.15s;
+      }
+      .side-btn:hover {
+        background: #1a224d;
+        color: #fff;
+      }
+      .side-btn.logout:hover {
+        border-color: rgba(227, 26, 26, 0.55);
+        color: #fca5a5;
+      }
+
+      /* Workspace Area */
+      .workspace {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+        overflow-y: auto;
+      }
+      .workspace-header {
+        position: sticky;
+        top: 0;
+        z-index: 20;
+        background: rgba(6, 11, 40, 0.88);
+        backdrop-filter: blur(16px);
+        border-bottom: 1px solid var(--line);
+        padding: 16px 28px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        flex-wrap: wrap;
+      }
+      .breadcrumb-wrap {
+        display: flex;
+        flex-direction: column;
+      }
+      .breadcrumb-sub {
+        font-size: 11px;
+        color: var(--dim);
+        font-weight: 600;
+      }
+      .breadcrumb-title {
+        font-size: 18px;
+        font-weight: 700;
+        color: #fff;
+        letter-spacing: -0.02em;
+      }
+      .header-right {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
       }
       .ws-pill {
         display: inline-flex;
@@ -160,11 +571,11 @@
         gap: 6px;
         font-size: 11px;
         font-weight: 600;
-        padding: 2px 9px;
+        padding: 5px 11px;
         border-radius: 999px;
-        background: #1e293b;
+        background: #0f1535;
         color: var(--muted);
-        border: 1px solid #334155;
+        border: 1px solid rgba(255, 255, 255, 0.1);
       }
       .ws-dot {
         width: 7px;
@@ -176,29 +587,10 @@
         background: var(--green);
         box-shadow: 0 0 8px var(--green);
       }
-      .badge {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        padding: 6px 14px;
-        border-radius: 999px;
-        font-size: 11px;
-        font-weight: 700;
-        letter-spacing: 0.06em;
-        text-transform: uppercase;
-        background: rgba(56, 189, 248, 0.1);
-        border: 1px solid rgba(56, 189, 248, 0.4);
-        color: #bae6fd;
-      }
-      .header-right {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-      }
       .treasury {
-        background: rgba(15, 23, 42, 0.9);
+        background: rgba(6, 12, 42, 0.88);
         border: 1px solid var(--line);
-        border-radius: 8px;
+        border-radius: 10px;
         padding: 6px 12px;
         display: flex;
         align-items: center;
@@ -213,59 +605,52 @@
       }
       .treasury a {
         font-family: var(--mono);
-        font-size: 12px;
+        font-size: 11px;
         color: #6ee7b7;
       }
-      /* buttons */
       .btn {
         cursor: pointer;
         font: 600 12px var(--sans);
         padding: 6px 12px;
-        border-radius: 8px;
-        border: 1px solid #334155;
-        background: #0f172a;
+        border-radius: 10px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: #0f1535;
         color: var(--text);
         transition: 0.18s;
       }
       .btn:hover {
-        background: #1e293b;
-        border-color: #475569;
+        background: #1a224d;
+        border-color: rgba(0, 117, 255, 0.45);
       }
       .btn-amber {
-        background: rgba(245, 158, 11, 0.15);
-        border-color: rgba(245, 158, 11, 0.45);
+        background: rgba(255, 181, 71, 0.14);
+        border-color: rgba(255, 181, 71, 0.45);
         color: #fde68a;
       }
       .btn-sky {
-        background: rgba(56, 189, 248, 0.15);
-        border-color: rgba(56, 189, 248, 0.45);
-        color: #bae6fd;
+        background: rgba(0, 117, 255, 0.18);
+        border-color: rgba(0, 117, 255, 0.48);
+        color: #93c5fd;
       }
       .btn-red {
-        background: rgba(239, 68, 68, 0.15);
-        border-color: rgba(239, 68, 68, 0.45);
+        background: rgba(227, 26, 26, 0.16);
+        border-color: rgba(227, 26, 26, 0.45);
         color: #fecaca;
-      }
-      .btn-red-active {
-        background: #dc2626;
-        border-color: #f87171;
-        color: #fff;
-        animation: pulse 1.4s infinite;
       }
       .btn-approve {
         background: var(--amber);
         border-color: #fbbf24;
-        color: #020617;
+        color: #03081c;
         font-weight: 700;
       }
+
+      /* Demo controls bar */
       .demo-bar {
-        border-top: 1px solid var(--line);
-        background: rgba(15, 23, 42, 0.96);
-        padding: 10px 24px;
+        border-bottom: 1px solid var(--line);
+        background: rgba(6, 11, 40, 0.92);
+        padding: 10px 28px;
       }
       .demo-inner {
-        max-width: 1280px;
-        margin: 0 auto;
         display: flex;
         flex-wrap: wrap;
         align-items: center;
@@ -283,21 +668,20 @@
         flex-wrap: wrap;
         gap: 10px;
       }
-      /* layout */
-      .main {
-        max-width: 1280px;
-        width: 100%;
-        margin: 0 auto;
-        padding: 24px;
-        flex: 1;
+
+      /* Tab Views */
+      .tab-view {
+        padding: 24px 28px;
         display: flex;
         flex-direction: column;
-        gap: 24px;
+        gap: 22px;
       }
+
+      /* Dashboard Grid */
       .grid {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
-        gap: 24px;
+        gap: 20px;
       }
       @media (max-width: 1024px) {
         .grid {
@@ -315,10 +699,11 @@
       }
       .panel-header {
         display: flex;
-        align-items: flex-start;
+        align-items: center;
         justify-content: space-between;
-        gap: 8px;
+        gap: 12px;
         margin-bottom: 14px;
+        flex-wrap: wrap;
       }
       .panel-title {
         font-size: 14px;
@@ -339,7 +724,8 @@
         font-size: 11px;
         color: var(--muted);
       }
-      /* gauges */
+
+      /* Circular Gauges */
       .gauges {
         display: grid;
         grid-template-columns: 1fr 1fr;
@@ -369,8 +755,8 @@
       }
       .gauge-wrap {
         position: relative;
-        width: 128px;
-        height: 128px;
+        width: 124px;
+        height: 124px;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -429,7 +815,8 @@
         overflow: hidden;
         text-overflow: ellipsis;
       }
-      /* brain */
+
+      /* Agent Brain */
       .stats {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
@@ -474,7 +861,7 @@
         margin-bottom: 8px;
       }
       .typewriter {
-        font: 16px/1.6 var(--mono);
+        font: 14px/1.55 var(--mono);
         color: #e0f2fe;
       }
       .cursor::after {
@@ -494,14 +881,15 @@
       }
       .model {
         font: 11px var(--mono);
-        padding: 3px 9px;
+        padding: 3px 10px;
         border-radius: 999px;
         background: rgba(56, 189, 248, 0.15);
         color: #7dd3fc;
         border: 1px solid rgba(56, 189, 248, 0.35);
         white-space: nowrap;
       }
-      /* budget */
+
+      /* Budget */
       .budget-card {
         background: var(--card);
         border: 1px solid var(--line);
@@ -527,29 +915,6 @@
       .budget-row b {
         font-family: var(--mono);
       }
-      .edit-form {
-        background: #020617;
-        border: 1px solid #334155;
-        border-radius: 10px;
-        padding: 12px;
-        margin-bottom: 12px;
-      }
-      .edit-form label {
-        display: block;
-        font-size: 10px;
-        text-transform: uppercase;
-        color: var(--muted);
-        margin-bottom: 4px;
-      }
-      .edit-form input {
-        width: 100%;
-        background: #0f172a;
-        border: 1px solid #334155;
-        border-radius: 6px;
-        padding: 5px 8px;
-        color: #fff;
-        font-family: var(--mono);
-      }
       .allow-card {
         background: var(--card);
         border: 1px solid var(--line);
@@ -566,166 +931,489 @@
         text-transform: uppercase;
         color: var(--muted);
       }
-      /* feed */
-      .feed {
+
+      /* Staff Operational Purchase Request Panel */
+      .staff-card {
+        background: var(--panel);
+        border: 1px solid var(--line);
+        border-radius: 16px;
+        padding: 20px 22px;
+        box-shadow: 0 15px 35px -10px rgba(0, 0, 0, 0.5);
+      }
+      .staff-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        flex-wrap: wrap;
+        padding-bottom: 12px;
+        border-bottom: 1px solid var(--line);
+        margin-bottom: 12px;
+      }
+      .staff-header-left {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+      .staff-title {
+        font-size: 15px;
+        font-weight: 700;
+        color: #fff;
+      }
+      .staff-desc {
+        font-size: 13px;
+        color: var(--muted);
+        margin-bottom: 14px;
+        line-height: 1.5;
+      }
+      .staff-input-row {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 12px;
+      }
+      .staff-input {
+        flex: 1;
+        background: #030712;
+        border: 1px solid #334155;
+        border-radius: 10px;
+        padding: 11px 14px;
+        color: #fff;
+        font: 13px var(--sans);
+        outline: none;
+        transition: border-color 0.15s;
+      }
+      .staff-input:focus {
+        border-color: var(--sky);
+      }
+      .btn-submit-req {
+        cursor: pointer;
+        padding: 11px 18px;
+        border-radius: 10px;
+        border: 1px solid rgba(56, 189, 248, 0.5);
+        background: linear-gradient(135deg, #0ea5e9, #0284c7);
+        color: #fff;
+        font: 700 13px var(--sans);
+        white-space: nowrap;
+        transition: filter 0.15s;
+      }
+      .btn-submit-req:hover:not(:disabled) {
+        filter: brightness(1.1);
+      }
+      .preset-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      .preset-chip {
+        cursor: pointer;
+        background: rgba(15, 23, 42, 0.9);
+        border: 1px solid #334155;
+        color: #cbd5e1;
+        padding: 7px 12px;
+        border-radius: 8px;
+        font: 500 12px var(--sans);
+        transition: all 0.15s;
+      }
+      .preset-chip:hover {
+        border-color: var(--sky);
+        color: #fff;
+        background: rgba(56, 189, 248, 0.1);
+      }
+      .preset-chip.amber {
+        border-color: rgba(245, 158, 11, 0.55);
+        color: #fde68a;
+      }
+
+      /* Tables & Audit Views */
+      .table-card {
         background: var(--panel);
         border: 1px solid var(--line);
         border-radius: 16px;
         padding: 20px;
         box-shadow: 0 15px 35px -10px rgba(0, 0, 0, 0.5);
       }
+      .table-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 14px;
+        flex-wrap: wrap;
+        margin-bottom: 16px;
+      }
+      .filter-group {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-wrap: wrap;
+      }
+      .filter-btn {
+        cursor: pointer;
+        background: #0f172a;
+        border: 1px solid #334155;
+        color: var(--muted);
+        padding: 6px 12px;
+        border-radius: 8px;
+        font: 600 12px var(--sans);
+        transition: 0.15s;
+      }
+      .filter-btn:hover {
+        color: #fff;
+        border-color: var(--sky);
+      }
+      .filter-btn.active {
+        background: rgba(56, 189, 248, 0.15);
+        border-color: var(--sky);
+        color: #7dd3fc;
+      }
+      .search-box {
+        background: #020617;
+        border: 1px solid #334155;
+        border-radius: 8px;
+        padding: 6px 12px;
+        color: #fff;
+        font: 12px var(--sans);
+        outline: none;
+        width: 220px;
+      }
+      .search-box:focus {
+        border-color: var(--sky);
+      }
       .table-wrap {
         overflow-x: auto;
-        margin-top: 12px;
       }
       table {
         width: 100%;
         border-collapse: collapse;
-        text-align: left;
-        font-size: 12px;
+        font-size: 13px;
       }
       th {
-        padding: 10px 12px;
-        border-bottom: 1px solid var(--line);
-        font-size: 11px;
-        font-weight: 700;
+        font-family: var(--mono);
+        font-size: 10px;
         text-transform: uppercase;
-        letter-spacing: 0.05em;
-        color: var(--muted);
+        color: var(--dim);
+        font-weight: 700;
+        text-align: left;
+        padding: 10px 12px;
+        border-bottom: 1px solid #1e293b;
       }
       td {
-        padding: 12px;
-        border-bottom: 1px solid rgba(30, 41, 59, 0.55);
+        padding: 12px 12px;
+        border-bottom: 1px solid #131d31;
         vertical-align: middle;
       }
-      tr:hover td {
-        background: rgba(30, 41, 59, 0.28);
-      }
-      td:nth-child(5) > div {
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-        max-width: 420px;
+      tr:last-child td {
+        border-bottom: none;
       }
       .pill {
         display: inline-flex;
         align-items: center;
         gap: 6px;
-        padding: 3px 10px;
+        padding: 3px 9px;
         border-radius: 999px;
-        font: 600 11px var(--mono);
-      }
-      .pill-dot {
-        width: 6px;
-        height: 6px;
-        border-radius: 50%;
+        font: 700 10px var(--mono);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        white-space: nowrap;
       }
       .pill-green {
-        background: rgba(16, 185, 129, 0.15);
+        background: rgba(16, 185, 129, 0.14);
         color: #6ee7b7;
-        border: 1px solid rgba(16, 185, 129, 0.35);
+        border: 1px solid rgba(16, 185, 129, 0.4);
       }
       .pill-amber {
-        background: rgba(245, 158, 11, 0.15);
-        color: #fcd34d;
-        border: 1px solid rgba(245, 158, 11, 0.35);
+        background: rgba(245, 158, 11, 0.14);
+        color: #fde68a;
+        border: 1px solid rgba(245, 158, 11, 0.4);
       }
       .pill-red {
-        background: rgba(239, 68, 68, 0.15);
+        background: rgba(239, 68, 68, 0.14);
         color: #fca5a5;
-        border: 1px solid rgba(239, 68, 68, 0.35);
+        border: 1px solid rgba(239, 68, 68, 0.4);
       }
-      /* toasts */
+      .pill-dot {
+        width: 5px;
+        height: 5px;
+        border-radius: 50%;
+      }
+
+      /* Staff Management Specific */
+      .staff-role-badge {
+        font: 700 10px var(--mono);
+        text-transform: uppercase;
+        padding: 2px 8px;
+        border-radius: 6px;
+      }
+      .staff-role-badge.owner {
+        background: rgba(245, 158, 11, 0.15);
+        color: #fde68a;
+        border: 1px solid rgba(245, 158, 11, 0.4);
+      }
+      .staff-role-badge.staff {
+        background: rgba(56, 189, 248, 0.15);
+        color: #bae6fd;
+        border: 1px solid rgba(56, 189, 248, 0.4);
+      }
+      .add-staff-card {
+        background: var(--card);
+        border: 1px solid #1e293b;
+        border-radius: 14px;
+        padding: 18px 20px;
+        margin-bottom: 20px;
+      }
+      .form-grid {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr) auto;
+        gap: 12px;
+        align-items: flex-end;
+      }
+      @media (max-width: 900px) {
+        .form-grid {
+          grid-template-columns: 1fr 1fr;
+        }
+      }
+      .form-group label {
+        display: block;
+        font-size: 11px;
+        font-weight: 700;
+        text-transform: uppercase;
+        color: var(--muted);
+        margin-bottom: 6px;
+      }
+      .form-input {
+        width: 100%;
+        background: #060b28;
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        border-radius: 10px;
+        padding: 9px 12px;
+        color: #fff;
+        font: 13px var(--sans);
+        outline: none;
+      }
+      .form-input:focus {
+        border-color: var(--blue-accent);
+      }
+
+      /* Toasts */
       .toasts {
         position: fixed;
-        bottom: 20px;
-        right: 20px;
-        z-index: 50;
+        bottom: 24px;
+        right: 24px;
         display: flex;
         flex-direction: column;
         gap: 10px;
-        max-width: 380px;
-        width: 100%;
+        z-index: 90;
         pointer-events: none;
       }
       .toast {
         pointer-events: auto;
-        background: rgba(15, 23, 42, 0.96);
-        border: 1px solid rgba(16, 185, 129, 0.55);
+        background: rgba(6, 11, 40, 0.96);
+        border: 1px solid rgba(0, 117, 255, 0.35);
+        border-left: 4px solid var(--blue-accent);
         border-radius: 12px;
-        padding: 14px;
-        color: #ecfdf5;
-        box-shadow: 0 20px 30px -10px rgba(0, 0, 0, 0.7);
+        padding: 12px 16px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.65);
+        max-width: 380px;
         display: flex;
+        align-items: flex-start;
         justify-content: space-between;
         gap: 12px;
-        font-size: 12px;
         animation: slideIn 0.25s ease-out;
       }
       .toast-x {
-        background: none;
+        background: transparent;
         border: none;
-        color: var(--muted);
+        color: var(--dim);
         cursor: pointer;
         font-size: 14px;
       }
+
+      /* Mobile Header Actions & Bottom Tab Navigation */
+      .mobile-header-actions {
+        display: none;
+        align-items: center;
+        gap: 8px;
+      }
+      .mobile-bottom-nav {
+        display: none;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        z-index: 60;
+        background: rgba(6, 11, 40, 0.96);
+        backdrop-filter: blur(18px);
+        -webkit-backdrop-filter: blur(18px);
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        padding: 8px 10px calc(8px + env(safe-area-inset-bottom, 0px));
+        justify-content: space-around;
+        align-items: center;
+        box-shadow: 0 -8px 28px rgba(0, 0, 0, 0.55);
+      }
+      .mobile-nav-item {
+        position: relative;
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        padding: 6px 4px;
+        border: none;
+        background: transparent;
+        color: var(--muted);
+        font: 600 10px var(--sans);
+        cursor: pointer;
+        border-radius: 12px;
+        transition: all 0.16s ease;
+      }
+      .mobile-nav-icon {
+        width: 34px;
+        height: 30px;
+        border-radius: 10px;
+        background: #0f1535;
+        color: var(--blue-accent);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.16s ease;
+      }
+      .mobile-nav-item.active {
+        color: #ffffff;
+      }
+      .mobile-nav-item.active .mobile-nav-icon {
+        background: var(--blue-accent);
+        color: #ffffff;
+        box-shadow: 0 4px 14px rgba(0, 117, 255, 0.5);
+      }
+      .mobile-nav-badge {
+        position: absolute;
+        top: 2px;
+        right: calc(50% - 22px);
+        background: var(--amber);
+        color: #03081c;
+        font: 800 9px var(--mono);
+        padding: 1px 5px;
+        border-radius: 999px;
+        min-width: 16px;
+        text-align: center;
+      }
+
+      @media (max-width: 820px) {
+        .app-layout {
+          flex-direction: column;
+          height: auto;
+          min-height: 100vh;
+          overflow: visible;
+        }
+        .sidebar {
+          display: none;
+        }
+        .mobile-header-actions {
+          display: flex;
+        }
+        .mobile-bottom-nav {
+          display: flex;
+        }
+        .workspace {
+          overflow-y: visible;
+          padding-bottom: 84px;
+        }
+        .workspace-header {
+          padding: 12px 16px;
+          gap: 10px;
+        }
+        .breadcrumb-title {
+          font-size: 16px;
+        }
+        .header-right {
+          width: 100%;
+          justify-content: space-between;
+          gap: 8px;
+        }
+        .treasury {
+          padding: 5px 10px;
+          font-size: 11px;
+        }
+        .demo-bar {
+          padding: 10px 16px;
+        }
+        .tab-view {
+          padding: 14px 14px 20px;
+          gap: 16px;
+        }
+        .panel {
+          padding: 16px;
+          border-radius: 14px;
+        }
+        .staff-input-row {
+          flex-direction: column;
+          align-items: stretch;
+        }
+        .btn-submit-req {
+          width: 100%;
+          justify-content: center;
+        }
+        .preset-row {
+          flex-wrap: nowrap;
+          overflow-x: auto;
+          padding-bottom: 4px;
+          -webkit-overflow-scrolling: touch;
+        }
+        .preset-chip {
+          flex-shrink: 0;
+        }
+        .form-grid {
+          grid-template-columns: 1fr;
+        }
+        .table-card {
+          overflow-x: auto;
+          -webkit-overflow-scrolling: touch;
+        }
+        .toasts {
+          bottom: 82px;
+          right: 12px;
+          left: 12px;
+        }
+        .toast {
+          max-width: 100%;
+        }
+      }
+
       @keyframes blink {
         50% {
           opacity: 0;
         }
       }
-      @keyframes pulse {
-        50% {
-          opacity: 0.65;
-        }
-      }
-      @keyframes slideIn {
-        from {
-          transform: translateX(100%);
-          opacity: 0;
-        }
-        to {
-          transform: none;
-          opacity: 1;
-        }
-      }
       @keyframes flashRed {
         0% {
-          background: #dc2626;
+          background: rgba(220, 38, 38, 0.6);
         }
         100% {
           background: rgba(69, 10, 10, 0.97);
         }
       }
+      @keyframes slideIn {
+        from {
+          transform: translateY(12px);
+          opacity: 0;
+        }
+        to {
+          transform: translateY(0);
+          opacity: 1;
+        }
+      }
     </style>
   </head>
   <body>
-    <div id="blockedBanner" class="blocked-banner hidden">
-      <div class="blocked-inner">
-        <div class="blocked-left">
-          <span class="blocked-icon">!</span>
-          <div>
-            <span id="blockedBannerTitle" class="blocked-title"
-              >BLOCKED BY POLICY SIGNER</span
-            >
-            <span id="blockedBannerText" class="blocked-text"
-              >The policy signer refused to co-sign this payment.</span
-            >
-          </div>
-        </div>
-        <button onclick="hideBlockedBanner()" class="btn btn-red">
-          Dismiss
-        </button>
-      </div>
-    </div>
-
-    <header class="top-header">
-      <div class="header-inner">
-        <div class="brand">
-          <div class="logo">
+    <!-- Ledger Proof Splash Screen -->
+    <div id="splashOverlay" class="splash-overlay">
+      <div class="splash-card">
+        <div class="auth-brand" style="margin-bottom: 10px">
+          <div class="auth-logo-lg">
             <svg
-              width="24"
-              height="24"
+              width="28"
+              height="28"
               fill="none"
               stroke="currentColor"
               stroke-width="2.2"
@@ -739,481 +1427,990 @@
             </svg>
           </div>
           <div>
-            <div class="brand-row">
-              <h1 class="brand-title">GridBot</h1>
-              <span class="ws-pill"
-                ><span id="wsDotCircle" class="ws-dot"></span
-                ><span id="wsStatusText">Connecting</span></span
-              >
+            <div class="auth-title">GridBot</div>
+            <div class="auth-sub">
+              Autonomous Prepaid-Resource Agent for SA Small Businesses
             </div>
-            <p class="brand-sub">
-              Autonomous prepaid-resource agent for SA small businesses
-            </p>
           </div>
         </div>
-        <span class="badge">Mock devices / Real XRPL testnet payments</span>
-        <div class="header-right">
-          <div class="treasury">
-            <span class="treasury-label">Treasury</span>
-            <a
-              id="treasuryAddressLink"
-              href="https://testnet.xrpl.org"
-              target="_blank"
-              rel="noopener noreferrer"
-              >Loading...</a
-            >
-          </div>
-          <button id="demoToggleBtn" onclick="toggleDemoBar()" class="btn">
-            Demo
-          </button>
-        </div>
-      </div>
-      <div id="demoControlBar" class="demo-bar hidden">
-        <div class="demo-inner">
-          <div>
-            <strong>Demo controls</strong> &nbsp;Force a low balance or trigger
-            a runaway agent
-          </div>
-          <div class="demo-btns">
-            <button
-              onclick="drainResource('electricity')"
-              class="btn btn-amber"
-            >
-              Drain Electricity
-            </button>
-            <button onclick="drainResource('data')" class="btn btn-sky">
-              Drain Data
-            </button>
-            <button
-              id="rogueBtn"
-              onclick="toggleRogueMode()"
-              class="btn btn-red"
-            >
-              <span id="rogueBtnText">Trigger Runaway Bug</span>
-            </button>
-            <button onclick="agentSignsAlone()" class="btn btn-red">
-              Agent signs alone
-            </button>
-            <button onclick="resetDemo()" class="btn">Reset</button>
-          </div>
-        </div>
-      </div>
-      <div
-        id="ledgerProofStrip"
-        style="
-          border-top: 1px solid #1e293b;
-          background: rgba(2, 6, 23, 0.9);
-          padding: 7px 24px;
-          font-size: 11px;
-          color: #cbd5e1;
-        "
-      >
-        <div
-          style="
-            max-width: 1280px;
-            margin: 0 auto;
-            display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-            justify-content: space-between;
-            gap: 12px;
-          "
-        >
-          <span
-            class="mono"
-            style="
-              font-size: 10px;
-              font-weight: 700;
-              text-transform: uppercase;
-              color: #38bdf8;
-              letter-spacing: 0.05em;
-            "
-            >Ledger proof (live XRPL Testnet)</span
-          >
-          <div
-            style="
-              display: flex;
-              flex-wrap: wrap;
-              align-items: center;
-              gap: 18px;
-            "
-            class="mono"
-          >
-            <span>
-              RLUSD balance:
-              <strong id="proofRlusdBalance" style="color: #34d399"
-                >...</strong
-              >
+
+        <span class="splash-badge">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          Ledger Proof (Live XRPL Testnet)
+        </span>
+
+        <div class="splash-checks">
+          <div class="splash-check-row">
+            <span class="splash-check-label">RLUSD Treasury Balance</span>
+            <span class="splash-check-val">
+              <strong id="proofRlusdBalance">956.00 RLUSD</strong>
               <a
                 id="proofVerifyLink1"
                 href="https://testnet.xrpl.org"
                 target="_blank"
                 rel="noopener noreferrer"
-                style="
-                  color: #38bdf8;
-                  text-decoration: underline;
-                  font-size: 10px;
-                  margin-left: 4px;
-                "
+                class="splash-verify-link"
                 >verify</a
               >
             </span>
-            <span>
-              Master key disabled:
-              <strong id="proofMasterDisabled" style="color: #34d399"
-                >...</strong
-              >
+          </div>
+
+          <div class="splash-check-row">
+            <span class="splash-check-label">Master Key Disabled</span>
+            <span class="splash-check-val">
+              <strong id="proofMasterDisabled">yes</strong>
               <a
                 id="proofVerifyLink2"
                 href="https://testnet.xrpl.org"
                 target="_blank"
                 rel="noopener noreferrer"
-                style="
-                  color: #38bdf8;
-                  text-decoration: underline;
-                  font-size: 10px;
-                  margin-left: 4px;
-                "
+                class="splash-verify-link"
                 >verify</a
               >
             </span>
-            <span>
-              <strong id="proofSignerQuorum" style="color: #e2e8f0"
-                >SignerList quorum ...</strong
+          </div>
+
+          <div class="splash-check-row">
+            <span class="splash-check-label">Multi-Sign Security</span>
+            <span class="splash-check-val" style="color: #e2e8f0">
+              <strong id="proofSignerQuorum"
+                >SignerList quorum 2 (agent 1, policy 1, owner 2)</strong
               >
               <a
                 id="proofVerifyLink3"
                 href="https://testnet.xrpl.org"
                 target="_blank"
                 rel="noopener noreferrer"
-                style="
-                  color: #38bdf8;
-                  text-decoration: underline;
-                  font-size: 10px;
-                  margin-left: 4px;
-                "
+                class="splash-verify-link"
                 >verify</a
               >
             </span>
           </div>
         </div>
+
+        <button onclick="dismissSplashScreen()" class="auth-submit">
+          Continue to GridBot &rarr;
+        </button>
       </div>
-    </header>
+    </div>
 
-    <main class="main">
-      <div class="grid">
-        <section class="panel">
-          <div class="panel-header">
-            <h2 class="panel-title">Prepaid Resources</h2>
-          </div>
-          <div class="gauges">
-            <div class="gauge-card">
-              <span class="tag">Alert at 5%</span>
-              <div class="gauge-wrap">
-                <svg width="124" height="124" viewBox="0 0 120 120">
-                  <circle
-                    cx="60"
-                    cy="60"
-                    r="50"
-                    stroke="#1e293b"
-                    stroke-width="10"
-                    fill="transparent"
-                  />
-                  <circle
-                    id="elecGaugeRing"
-                    class="ring"
-                    cx="60"
-                    cy="60"
-                    r="50"
-                    stroke="#10b981"
-                    stroke-width="10"
-                    stroke-linecap="round"
-                    fill="transparent"
-                    stroke-dasharray="314.16"
-                    stroke-dashoffset="0"
-                  />
-                </svg>
-                <div class="gauge-center">
-                  <span id="elecLevelText" class="gauge-pct">100%</span
-                  ><span id="elecStatusLabel" class="gauge-status"
-                    >Healthy</span
-                  >
-                </div>
-              </div>
-              <h3 class="gauge-name">Electricity</h3>
-              <p class="gauge-cost">Unit cost <b>5 RLUSD</b></p>
-              <div
-                id="lastStsTokenBox"
-                class="vend-box"
-                title="Last vended STS token (mock)"
-              >
-                STS: none yet
-              </div>
-            </div>
-            <div class="gauge-card">
-              <span class="tag">Alert at 10%</span>
-              <div class="gauge-wrap">
-                <svg width="124" height="124" viewBox="0 0 120 120">
-                  <circle
-                    cx="60"
-                    cy="60"
-                    r="50"
-                    stroke="#1e293b"
-                    stroke-width="10"
-                    fill="transparent"
-                  />
-                  <circle
-                    id="dataGaugeRing"
-                    class="ring"
-                    cx="60"
-                    cy="60"
-                    r="50"
-                    stroke="#10b981"
-                    stroke-width="10"
-                    stroke-linecap="round"
-                    fill="transparent"
-                    stroke-dasharray="314.16"
-                    stroke-dashoffset="0"
-                  />
-                </svg>
-                <div class="gauge-center">
-                  <span id="dataLevelText" class="gauge-pct">100%</span
-                  ><span id="dataStatusLabel" class="gauge-status"
-                    >Healthy</span
-                  >
-                </div>
-              </div>
-              <h3 class="gauge-name">Router Data</h3>
-              <p class="gauge-cost">Unit cost <b>3 RLUSD</b></p>
-              <div
-                id="lastDataBundleBox"
-                class="vend-box"
-                style="color: #7dd3fc"
-                title="Last vended data bundle (mock)"
-              >
-                Bundle: none yet
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section class="panel">
-          <div class="panel-header">
-            <div>
-              <h2 class="panel-title">Agent Brain</h2>
-              <p class="panel-sub">Proposes only. Cannot pay alone.</p>
-            </div>
-            <span id="agentModeBadge" class="model"
-              >llama-3.3-70b-versatile</span
+    <!-- Proper Sign-In Page Overlay -->
+    <div id="authOverlay" class="auth-overlay">
+      <div class="auth-card">
+        <div class="auth-brand">
+          <div class="auth-logo-lg">
+            <svg
+              width="26"
+              height="26"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.2"
+              viewBox="0 0 24 24"
             >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M13 10V3L4 14h7v7l9-11h-7z"
+              />
+            </svg>
           </div>
-          <div class="stats">
-            <div class="stat">
-              <div class="stat-label">Decision</div>
-              <div id="brainDecisionBadge" class="stat-val">STANDBY</div>
-            </div>
-            <div class="stat">
-              <div class="stat-label">Resource</div>
-              <div id="brainResourceText" class="stat-val">-</div>
-            </div>
-            <div class="stat">
-              <div class="stat-label">Proposed</div>
-              <div id="brainAmountText" class="stat-val" style="color: #34d399">
-                0 RLUSD
-              </div>
+          <div>
+            <div class="auth-title">GridBot</div>
+            <div class="auth-sub">
+              Sign in to your Internet Cafe Operations &amp; Treasury Portal
             </div>
           </div>
-          <div class="terminal">
-            <div class="terminal-top">
-              <span>AI REASONING</span
-              ><span id="brainTimestamp">Waiting...</span>
-            </div>
-            <div style="margin: auto 0; padding: 4px 0">
-              <p id="brainTypewriter" class="typewriter cursor">
-                Watching electricity and data levels. When one runs low, the
-                agent proposes a top-up.
-              </p>
-            </div>
-            <div class="outcome">
-              <span>Policy signer:</span
-              ><span id="brainOutcomeStatus">Idle</span>
-            </div>
-          </div>
-        </section>
+        </div>
 
-        <section class="panel">
-          <div class="panel-header">
-            <h2 class="panel-title">Daily Budget</h2>
+        <div id="authErrorBox" class="auth-error hidden"></div>
+
+        <form onsubmit="handleSignInSubmit(event)">
+          <div class="auth-field">
+            <label for="loginUsername">Username</label>
+            <div class="auth-input-wrap">
+              <input
+                id="loginUsername"
+                type="text"
+                class="auth-input"
+                placeholder="Enter your username"
+                autocomplete="username"
+                required
+              />
+            </div>
+          </div>
+
+          <div class="auth-field">
+            <label for="loginPassword">Password</label>
+            <div class="auth-input-wrap">
+              <input
+                id="loginPassword"
+                type="password"
+                class="auth-input"
+                style="padding-right: 58px"
+                placeholder="Enter your password"
+                autocomplete="current-password"
+                required
+              />
+              <button
+                type="button"
+                id="pwToggleBtn"
+                class="auth-pw-toggle"
+                onclick="togglePasswordVisibility()"
+              >
+                SHOW
+              </button>
+            </div>
+          </div>
+
+          <button id="loginSubmitBtn" type="submit" class="auth-submit">
+            Sign In to GridBot
+          </button>
+        </form>
+
+        <div class="auth-footer">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          <span>Protected by XRPL 2-of-2 Multi-Sign &amp; Policy Guard</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- App Layout (Vision UI Style) -->
+    <div class="app-layout">
+      <!-- Left Sidebar -->
+      <aside class="sidebar">
+        <div class="sidebar-brand">
+          <div class="logo">
+            <svg
+              width="22"
+              height="22"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.2"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M13 10V3L4 14h7v7l9-11h-7z"
+              />
+            </svg>
+          </div>
+          <div>
+            <div class="brand-title">GridBot</div>
+            <div class="brand-sub">AI CFO &amp; TREASURY</div>
+          </div>
+        </div>
+
+        <div class="nav-section-label">MAIN MENU</div>
+        <nav class="sidebar-nav">
+          <button
+            id="nav-dashboard"
+            class="nav-item active"
+            onclick="switchTab('dashboard')"
+          >
+            <span class="nav-icon">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+            </span>
+            <span class="nav-text">Dashboard</span>
+          </button>
+          <button
+            id="nav-history"
+            class="nav-item"
+            onclick="switchTab('history')"
+          >
+            <span class="nav-icon">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+            </span>
+            <span class="nav-text">Transactions</span>
+            <span id="navPendingBadge" class="nav-badge hidden">0</span>
+          </button>
+          <button id="nav-staff" class="nav-item" onclick="switchTab('staff')">
+            <span class="nav-icon">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            </span>
+            <span class="nav-text">Staff Management</span>
+          </button>
+          <button
+            id="nav-policy"
+            class="nav-item"
+            onclick="switchTab('policy')"
+          >
+            <span class="nav-icon">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            </span>
+            <span class="nav-text">Policy &amp; Treasury</span>
+          </button>
+        </nav>
+
+        <div class="sidebar-footer">
+          <div id="sidebarUserCard" class="user-card staff">
+            <div class="user-avatar" id="sidebarAvatar">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            </div>
+            <div class="user-info">
+              <div id="sidebarUserName" class="user-name">Loading...</div>
+              <div id="sidebarUserRole" class="user-role">STAFF MEMBER</div>
+            </div>
+          </div>
+
+          <div class="sidebar-actions">
             <button
-              onclick="togglePolicyEditor()"
-              class="btn"
-              style="padding: 4px 10px; font-size: 11px"
+              onclick="openSplashScreen()"
+              class="side-btn"
+              title="View On-Chain XRPL Ledger Proof"
             >
-              Edit caps
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+              Ledger
+            </button>
+            <button
+              onclick="openSignInModal()"
+              class="side-btn logout"
+              title="Sign Out"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+              Sign Out
             </button>
           </div>
-          <div class="budget-card">
-            <div
-              class="gauge-wrap"
-              style="width: 112px; height: 112px; flex-shrink: 0"
-            >
-              <svg width="112" height="112" viewBox="0 0 120 120">
-                <circle
-                  cx="60"
-                  cy="60"
-                  r="48"
-                  stroke="#1e293b"
-                  stroke-width="10"
-                  fill="transparent"
-                />
-                <circle
-                  id="budgetGaugeRing"
-                  class="ring"
-                  cx="60"
-                  cy="60"
-                  r="48"
-                  stroke="#38bdf8"
-                  stroke-width="10"
-                  stroke-linecap="round"
-                  fill="transparent"
-                  stroke-dasharray="301.59"
-                  stroke-dashoffset="0"
-                />
-              </svg>
-              <div class="gauge-center">
-                <span
-                  style="
-                    font-size: 9px;
-                    text-transform: uppercase;
-                    color: #94a3b8;
-                  "
-                  >Left</span
+        </div>
+      </aside>
+
+      <!-- Workspace Area -->
+      <div class="workspace">
+        <div id="blockedBanner" class="blocked-banner hidden">
+          <div class="blocked-inner">
+            <div class="blocked-left">
+              <span class="blocked-icon">!</span>
+              <div>
+                <span id="blockedBannerTitle" class="blocked-title"
+                  >BLOCKED BY POLICY SIGNER</span
                 >
-                <span
-                  id="budgetRemainingRingText"
-                  class="mono"
-                  style="font-size: 18px; font-weight: 700; color: #fff"
-                  >15.0</span
-                >
-                <span class="mono" style="font-size: 9px; color: #94a3b8"
-                  >RLUSD</span
+                <span id="blockedBannerText" class="blocked-text"
+                  >The policy signer refused to co-sign this payment.</span
                 >
               </div>
             </div>
-            <div class="budget-rows">
-              <div class="budget-row">
-                <span>Daily cap</span
-                ><b id="dailyCapText" style="color: #fff">15 RLUSD</b>
-              </div>
-              <div class="budget-row">
-                <span>Spent today</span
-                ><b id="spentTodayText" style="color: #7dd3fc">0 RLUSD</b>
-              </div>
-              <div class="budget-row">
-                <span>Remaining</span
-                ><b id="budgetRemainingText" style="color: #34d399">15 RLUSD</b>
-              </div>
-              <div
-                class="budget-row"
-                style="padding-top: 6px; border-top: 1px solid #1e293b"
+            <button onclick="hideBlockedBanner()" class="btn btn-red">
+              Dismiss
+            </button>
+          </div>
+        </div>
+
+        <header class="workspace-header">
+          <div class="breadcrumb-wrap">
+            <span class="breadcrumb-sub">Pages /</span>
+            <h2 id="currentViewTitle" class="breadcrumb-title">Dashboard</h2>
+          </div>
+          <div class="header-right">
+            <div class="ws-pill">
+              <span id="wsDotCircle" class="ws-dot"></span>
+              <span id="wsStatusText">Connecting</span>
+            </div>
+            <div class="treasury">
+              <span class="treasury-label">Treasury</span>
+              <a
+                id="treasuryAddressLink"
+                href="https://testnet.xrpl.org"
+                target="_blank"
+                rel="noopener noreferrer"
+                >Loading...</a
               >
-                <span>Per-payment cap</span
-                ><b id="perTxCapText" style="color: #fcd34d">10 RLUSD</b>
-              </div>
             </div>
-          </div>
-          <form
-            id="policyEditForm"
-            onsubmit="savePolicy(event)"
-            class="edit-form hidden"
-          >
-            <div
-              style="
-                display: grid;
-                grid-template-columns: 1fr 1fr;
-                gap: 10px;
-                margin-bottom: 10px;
-              "
-            >
-              <div>
-                <label>Daily cap</label
-                ><input
-                  id="inputDailyCap"
-                  type="number"
-                  step="0.5"
-                  min="0"
-                  required
-                />
-              </div>
-              <div>
-                <label>Per-payment cap</label
-                ><input
-                  id="inputPerTxCap"
-                  type="number"
-                  step="0.5"
-                  min="0"
-                  required
-                />
-              </div>
-            </div>
-            <div style="display: flex; justify-content: flex-end; gap: 8px">
-              <button type="button" onclick="togglePolicyEditor()" class="btn">
-                Cancel
+            <button id="demoToggleBtn" onclick="toggleDemoBar()" class="btn">
+              Demo Controls
+            </button>
+            <div class="mobile-header-actions">
+              <button onclick="openSplashScreen()" class="btn" title="Ledger Proof" aria-label="Ledger Proof" style="display:inline-flex;align-items:center;gap:4px;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
               </button>
-              <button type="submit" class="btn btn-sky">Save</button>
-            </div>
-          </form>
-          <div class="allow-card">
-            <div class="allow-head"><span>Allowed payee</span></div>
-            <div
-              id="allowlistContainer"
-              class="mono"
-              style="font-size: 11px; color: #cbd5e1; word-break: break-all"
-            >
-              Loading...
+              <button onclick="openSignInModal()" class="btn btn-red" title="Sign Out" aria-label="Sign Out" style="display:inline-flex;align-items:center;gap:4px;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+              </button>
             </div>
           </div>
-          <div class="panel-footer">
-            Limits: policy signer (off-chain). Payments: XRPL multi-sign.
+        </header>
+
+        <div id="demoControlBar" class="demo-bar hidden">
+          <div class="demo-inner">
+            <div>
+              <strong>Demo Controls</strong> &nbsp;Simulate live utility meter
+              drain or reset to 100%
+            </div>
+            <div class="demo-btns">
+              <button
+                onclick="drainResource('electricity')"
+                class="btn btn-amber"
+              >
+                Drain Electricity
+              </button>
+              <button onclick="drainResource('data')" class="btn btn-sky">
+                Drain Data
+              </button>
+              <button onclick="resetDemo()" class="btn">Reset</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- VIEW 1: Dashboard -->
+        <section id="view-dashboard" class="tab-view active">
+          <!-- 3-Column Round Meters -->
+          <div class="grid">
+            <section class="panel">
+              <div class="panel-header">
+                <h2 class="panel-title">Prepaid Resources</h2>
+              </div>
+              <div class="gauges">
+                <div class="gauge-card">
+                  <span class="tag">Alert at 5%</span>
+                  <div class="gauge-wrap">
+                    <svg width="124" height="124" viewBox="0 0 120 120">
+                      <circle
+                        cx="60"
+                        cy="60"
+                        r="50"
+                        stroke="#1e293b"
+                        stroke-width="10"
+                        fill="transparent"
+                      />
+                      <circle
+                        id="elecGaugeRing"
+                        class="ring"
+                        cx="60"
+                        cy="60"
+                        r="50"
+                        stroke="#10b981"
+                        stroke-width="10"
+                        stroke-linecap="round"
+                        fill="transparent"
+                        stroke-dasharray="314.16"
+                        stroke-dashoffset="0"
+                      />
+                    </svg>
+                    <div class="gauge-center">
+                      <span id="elecLevelText" class="gauge-pct">100%</span
+                      ><span id="elecStatusLabel" class="gauge-status"
+                        >Healthy</span
+                      >
+                    </div>
+                  </div>
+                  <h3 class="gauge-name">Electricity</h3>
+                  <p class="gauge-cost">Unit cost <b>5 RLUSD</b></p>
+                  <div
+                    id="lastStsTokenBox"
+                    class="vend-box"
+                    title="Last vended STS token (mock)"
+                  >
+                    STS: none yet
+                  </div>
+                </div>
+
+                <div class="gauge-card">
+                  <span class="tag">Alert at 10%</span>
+                  <div class="gauge-wrap">
+                    <svg width="124" height="124" viewBox="0 0 120 120">
+                      <circle
+                        cx="60"
+                        cy="60"
+                        r="50"
+                        stroke="#1e293b"
+                        stroke-width="10"
+                        fill="transparent"
+                      />
+                      <circle
+                        id="dataGaugeRing"
+                        class="ring"
+                        cx="60"
+                        cy="60"
+                        r="50"
+                        stroke="#10b981"
+                        stroke-width="10"
+                        stroke-linecap="round"
+                        fill="transparent"
+                        stroke-dasharray="314.16"
+                        stroke-dashoffset="0"
+                      />
+                    </svg>
+                    <div class="gauge-center">
+                      <span id="dataLevelText" class="gauge-pct">100%</span
+                      ><span id="dataStatusLabel" class="gauge-status"
+                        >Healthy</span
+                      >
+                    </div>
+                  </div>
+                  <h3 class="gauge-name">Router Data</h3>
+                  <p class="gauge-cost">Unit cost <b>3 RLUSD</b></p>
+                  <div
+                    id="lastDataBundleBox"
+                    class="vend-box"
+                    style="color: #7dd3fc"
+                    title="Last vended data bundle (mock)"
+                  >
+                    Bundle: none yet
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <section class="panel">
+              <div class="panel-header">
+                <div>
+                  <h2 class="panel-title">Agent Brain</h2>
+                  <p class="panel-sub">Proposes only. Cannot pay alone.</p>
+                </div>
+                <span id="agentModeBadge" class="model"
+                  >llama-3.3-70b-versatile</span
+                >
+              </div>
+              <div class="stats">
+                <div class="stat">
+                  <div class="stat-label">Decision</div>
+                  <div id="brainDecisionBadge" class="stat-val">STANDBY</div>
+                </div>
+                <div class="stat">
+                  <div class="stat-label">Resource</div>
+                  <div id="brainResourceText" class="stat-val">-</div>
+                </div>
+                <div class="stat">
+                  <div class="stat-label">Proposed</div>
+                  <div
+                    id="brainAmountText"
+                    class="stat-val"
+                    style="color: #34d399"
+                  >
+                    0 RLUSD
+                  </div>
+                </div>
+              </div>
+              <div class="terminal">
+                <div class="terminal-top">
+                  <span>AI REASONING</span
+                  ><span id="brainTimestamp">Waiting...</span>
+                </div>
+                <div style="margin: auto 0; padding: 4px 0">
+                  <p id="brainTypewriter" class="typewriter cursor">
+                    Watching electricity and data levels. When one runs low, the
+                    agent proposes a top-up.
+                  </p>
+                </div>
+                <div class="outcome">
+                  <span>Policy signer:</span
+                  ><span id="brainOutcomeStatus">Idle</span>
+                </div>
+              </div>
+            </section>
+
+            <section class="panel">
+              <div class="panel-header">
+                <h2 class="panel-title">Daily Budget</h2>
+                <button
+                  id="editCapsBtn"
+                  onclick="switchTab('policy')"
+                  class="btn"
+                  style="padding: 4px 10px; font-size: 11px"
+                >
+                  Edit caps
+                </button>
+              </div>
+              <div class="budget-card">
+                <div
+                  class="gauge-wrap"
+                  style="width: 112px; height: 112px; flex-shrink: 0"
+                >
+                  <svg width="112" height="112" viewBox="0 0 120 120">
+                    <circle
+                      cx="60"
+                      cy="60"
+                      r="48"
+                      stroke="#1e293b"
+                      stroke-width="10"
+                      fill="transparent"
+                    />
+                    <circle
+                      id="budgetGaugeRing"
+                      class="ring"
+                      cx="60"
+                      cy="60"
+                      r="48"
+                      stroke="#38bdf8"
+                      stroke-width="10"
+                      stroke-linecap="round"
+                      fill="transparent"
+                      stroke-dasharray="301.59"
+                      stroke-dashoffset="0"
+                    />
+                  </svg>
+                  <div class="gauge-center">
+                    <span
+                      style="
+                        font-size: 9px;
+                        text-transform: uppercase;
+                        color: #94a3b8;
+                      "
+                      >Left</span
+                    >
+                    <span
+                      id="budgetRemainingRingText"
+                      class="mono"
+                      style="font-size: 18px; font-weight: 700; color: #fff"
+                      >15.0</span
+                    >
+                    <span class="mono" style="font-size: 9px; color: #94a3b8"
+                      >RLUSD</span
+                    >
+                  </div>
+                </div>
+                <div class="budget-rows">
+                  <div class="budget-row">
+                    <span>Daily cap</span
+                    ><b id="dailyCapText" style="color: #fff">15 RLUSD</b>
+                  </div>
+                  <div class="budget-row">
+                    <span>Spent today</span
+                    ><b id="spentTodayText" style="color: #7dd3fc">0 RLUSD</b>
+                  </div>
+                  <div class="budget-row">
+                    <span>Remaining</span
+                    ><b id="budgetRemainingText" style="color: #34d399"
+                      >15 RLUSD</b
+                    >
+                  </div>
+                  <div
+                    class="budget-row"
+                    style="padding-top: 6px; border-top: 1px solid #1e293b"
+                  >
+                    <span>Per-payment cap</span
+                    ><b id="perTxCapText" style="color: #fcd34d">10 RLUSD</b>
+                  </div>
+                </div>
+              </div>
+              <div class="allow-card">
+                <div class="allow-head"><span>Allowed payee</span></div>
+                <div
+                  id="allowlistContainer"
+                  class="mono"
+                  style="font-size: 11px; color: #cbd5e1; word-break: break-all"
+                >
+                  Loading...
+                </div>
+              </div>
+              <div class="panel-footer">
+                Limits: policy signer (off-chain). Payments: XRPL multi-sign.
+              </div>
+            </section>
+          </div>
+
+          <!-- Staff Operational Purchase Request Box -->
+          <section class="staff-card">
+            <div class="staff-header">
+              <div class="staff-header-left">
+                <span class="staff-title" style="display:inline-flex;align-items:center;gap:8px;">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                  Staff Operational Purchase Request
+                </span>
+                <span class="model">PLAIN-LANGUAGE AI SKU MATCHER</span>
+              </div>
+              <span
+                id="requesterLabel"
+                class="mono"
+                style="font-size: 11px; color: var(--muted)"
+              >
+                Requester: Cashier
+              </span>
+            </div>
+
+            <p class="staff-desc">
+              Cashiers request operational utility top-ups in plain English
+              without accessing bank logins, seed phrases, or policy rules.
+              GridBot matches the request to an approved vendor SKU and requests
+              co-signing from the Policy Service.
+            </p>
+
+            <div class="staff-input-row">
+              <input
+                id="staffRequestInput"
+                type="text"
+                class="staff-input"
+                placeholder='e.g. "Electricity meter is beeping low, need 5 RLUSD prepaid token"'
+                onkeydown="if (event.key === 'Enter') submitStaffRequest()"
+              />
+              <button
+                id="btnSubmitStaffReq"
+                class="btn-submit-req"
+                onclick="submitStaffRequest()"
+                style="display:inline-flex;align-items:center;gap:7px;"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                Submit Request
+              </button>
+            </div>
+
+            <div class="preset-row">
+              <button
+                class="preset-chip"
+                onclick="useStaffPreset('Electricity meter is beeping low, need 5 RLUSD prepaid token')"
+                style="display:inline-flex;align-items:center;gap:6px;"
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                Buy 5 RLUSD Prepaid Electricity
+              </button>
+              <button
+                class="preset-chip"
+                onclick="useStaffPreset('Fibre is down and customers are waiting, need 3 RLUSD emergency LTE data')"
+                style="display:inline-flex;align-items:center;gap:6px;"
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
+                Buy 3 RLUSD Emergency LTE Data
+              </button>
+              <button
+                class="preset-chip amber"
+                onclick="useStaffPreset('Busy weekend shift, request 12 RLUSD bulk electricity top-up (Over Cap)')"
+                style="display:inline-flex;align-items:center;gap:6px;"
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                Request 12 RLUSD Bulk Top-Up (Over Cap)
+              </button>
+            </div>
+          </section>
+
+          <!-- Recent Activity Strip on Dashboard -->
+          <section class="table-card">
+            <div class="table-header">
+              <h2 class="panel-title">Recent Transactions</h2>
+              <button onclick="switchTab('history')" class="btn btn-sky">
+                View Full Audit History &rarr;
+              </button>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Time</th>
+                    <th>Status</th>
+                    <th>Resource</th>
+                    <th>Amount</th>
+                    <th>Reason</th>
+                    <th style="text-align: right">Explorer / Action</th>
+                  </tr>
+                </thead>
+                <tbody id="txDashboardTableBody">
+                  <tr>
+                    <td
+                      colspan="6"
+                      class="mono"
+                      style="text-align: center; padding: 24px; color: #64748b"
+                    >
+                      Loading transactions...
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </section>
+        </section>
+
+        <!-- VIEW 2: Full Transaction History -->
+        <section id="view-history" class="tab-view hidden">
+          <div class="table-card">
+            <div class="table-header">
+              <div>
+                <h2 class="panel-title">Transaction Audit Feed</h2>
+                <p class="panel-sub">
+                  Complete on-chain and policy-enforced ledger audit trail
+                </p>
+              </div>
+
+              <div class="filter-group">
+                <input
+                  id="filterTxSearch"
+                  type="text"
+                  class="search-box"
+                  placeholder="Search reason, resource, hash..."
+                  oninput="applyTxFilters()"
+                />
+                <button
+                  id="filter-all"
+                  class="filter-btn active"
+                  onclick="setTxFilter('all')"
+                >
+                  All
+                </button>
+                <button
+                  id="filter-auto_approved"
+                  class="filter-btn"
+                  onclick="setTxFilter('auto_approved')"
+                >
+                  Auto-Approved
+                </button>
+                <button
+                  id="filter-pending_owner"
+                  class="filter-btn"
+                  onclick="setTxFilter('pending_owner')"
+                >
+                  Pending Owner
+                </button>
+                <button
+                  id="filter-blocked"
+                  class="filter-btn"
+                  onclick="setTxFilter('blocked')"
+                >
+                  Blocked
+                </button>
+              </div>
+            </div>
+
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Time</th>
+                    <th>Status</th>
+                    <th>Resource</th>
+                    <th>Amount</th>
+                    <th>Reason / Verification</th>
+                    <th style="text-align: right">On-Chain Explorer / Action</th>
+                  </tr>
+                </thead>
+                <tbody id="txFullTableBody">
+                  <tr>
+                    <td
+                      colspan="6"
+                      class="mono"
+                      style="text-align: center; padding: 28px; color: #64748b"
+                    >
+                      No transactions found.
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- VIEW 3: Staff Management -->
+        <section id="view-staff" class="tab-view hidden">
+          <div class="table-card">
+            <div class="table-header">
+              <div>
+                <h2 class="panel-title">Staff &amp; Cashier Management</h2>
+                <p class="panel-sub">
+                  Active cashier credentials persisted in Supabase with
+                  role-based access control
+                </p>
+              </div>
+              <button
+                id="btnToggleAddStaff"
+                onclick="toggleAddStaffCard()"
+                class="btn btn-sky"
+              >
+                + Add Cashier
+              </button>
+            </div>
+
+            <div id="staffReadOnlyNotice" class="auth-error hidden" style="background: rgba(0, 117, 255, 0.12); border-color: rgba(0, 117, 255, 0.35); color: #bae6fd; display:flex; align-items:center; gap:8px;">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              <span>You are viewing the staff directory in read-only mode. Adding or removing staff accounts is restricted to the Cafe Owner.</span>
+            </div>
+
+            <!-- Add Staff Form (Owner Only) -->
+            <div id="addStaffCard" class="add-staff-card hidden">
+              <h3 style="font-size: 13px; font-weight: 700; color: #fff; margin-bottom: 12px; display:flex; align-items:center; gap:8px;">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="23" y1="11" x2="17" y2="11"/></svg>
+                Add New Shift Cashier
+              </h3>
+              <form onsubmit="handleCreateStaffSubmit(event)">
+                <div class="form-grid">
+                  <div class="form-group">
+                    <label>Username</label>
+                    <input
+                      id="inputNewStaffUser"
+                      type="text"
+                      class="form-input"
+                      placeholder="e.g. lerato"
+                      required
+                    />
+                  </div>
+                  <div class="form-group">
+                    <label>Full Display Name</label>
+                    <input
+                      id="inputNewStaffName"
+                      type="text"
+                      class="form-input"
+                      placeholder="e.g. Lerato (Weekend Cashier)"
+                      required
+                    />
+                  </div>
+                  <div class="form-group">
+                    <label>Passcode / Password</label>
+                    <input
+                      id="inputNewStaffPass"
+                      type="password"
+                      class="form-input"
+                      placeholder="Enter secret passcode"
+                      required
+                    />
+                  </div>
+                  <div class="form-group">
+                    <label>Assigned Shift</label>
+                    <input
+                      id="inputNewStaffShift"
+                      type="text"
+                      class="form-input"
+                      placeholder="e.g. Weekend Shift (09:00 - 18:00)"
+                      value="Standard Day Shift"
+                    />
+                  </div>
+                  <button type="submit" class="btn btn-sky" style="padding: 10px 18px">
+                    Save Cashier
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            <!-- Staff Table -->
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Cashier</th>
+                    <th>Role</th>
+                    <th>Shift Hours</th>
+                    <th>Status</th>
+                    <th>Joined</th>
+                    <th style="text-align: right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="staffTableBody">
+                  <tr>
+                    <td
+                      colspan="6"
+                      class="mono"
+                      style="text-align: center; padding: 28px; color: #64748b"
+                    >
+                      Loading staff accounts from Supabase...
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- VIEW 4: Policy & Treasury -->
+        <section id="view-policy" class="tab-view hidden">
+          <div class="table-card">
+            <div class="table-header">
+              <div>
+                <h2 class="panel-title">Policy &amp; Treasury Controls</h2>
+                <p class="panel-sub">
+                  Enforced off-chain by the independent Policy Service; settled
+                  on XRPL via 2-of-2 Multi-Sig
+                </p>
+              </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px">
+              <div class="panel" style="background: var(--card)">
+                <h3 style="font-size: 13px; font-weight: 700; color: #fff; margin-bottom: 12px; display:flex; align-items:center; gap:8px;">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                  Spending Limits (Owner Only)
+                </h3>
+                <form id="policyMainForm" onsubmit="savePolicy(event)">
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px">
+                    <div class="form-group">
+                      <label>Daily Cap (RLUSD)</label>
+                      <input
+                        id="inputDailyCap"
+                        type="number"
+                        step="0.5"
+                        min="0"
+                        class="form-input"
+                        required
+                      />
+                    </div>
+                    <div class="form-group">
+                      <label>Per-Tx Cap (RLUSD)</label>
+                      <input
+                        id="inputPerTxCap"
+                        type="number"
+                        step="0.5"
+                        min="0"
+                        class="form-input"
+                        required
+                      />
+                    </div>
+                  </div>
+                  <button id="btnSavePolicyCaps" type="submit" class="btn btn-sky">
+                    Save Policy Caps
+                  </button>
+                </form>
+              </div>
+
+              <div class="panel" style="background: var(--card)">
+                <h3 style="font-size: 13px; font-weight: 700; color: #fff; margin-bottom: 12px; display:flex; align-items:center; gap:8px;">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M3 10h18"/><path d="M5 6l7-3 7 3"/><path d="M4 10v11"/><path d="M20 10v11"/><path d="M8 14v3"/><path d="M12 14v3"/><path d="M16 14v3"/></svg>
+                  Allowed Payee Whitelist
+                </h3>
+                <div id="allowlistPolicyView" class="mono" style="font-size: 11px; color: #cbd5e1; word-break: break-all">
+                  Loading...
+                </div>
+                <div class="panel-footer" style="margin-top: 16px">
+                  Only payments to verified utility vendor addresses are co-signed.
+                </div>
+              </div>
+            </div>
           </div>
         </section>
       </div>
+    </div>
 
-      <section class="feed">
-        <h2 class="panel-title">Transaction Audit Feed</h2>
-        <div class="table-wrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Time</th>
-                <th>Status</th>
-                <th>Resource</th>
-                <th>Amount</th>
-                <th>Reason</th>
-                <th style="text-align: right">Explorer / Action</th>
-              </tr>
-            </thead>
-            <tbody id="txTableBody">
-              <tr>
-                <td
-                  colspan="6"
-                  class="mono"
-                  style="text-align: center; padding: 28px; color: #64748b"
-                >
-                  Loading...
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </section>
-    </main>
+    <!-- Mobile Bottom Tab Navigation -->
+    <nav class="mobile-bottom-nav" aria-label="Mobile Navigation">
+      <button id="mnav-dashboard" class="mobile-nav-item active" onclick="switchTab('dashboard')">
+        <span class="mobile-nav-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+        </span>
+        <span>Dashboard</span>
+      </button>
+      <button id="mnav-history" class="mobile-nav-item" onclick="switchTab('history')">
+        <span class="mobile-nav-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+        </span>
+        <span>History</span>
+        <span id="mnavPendingBadge" class="mobile-nav-badge hidden">0</span>
+      </button>
+      <button id="mnav-staff" class="mobile-nav-item" onclick="switchTab('staff')">
+        <span class="mobile-nav-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        </span>
+        <span>Staff</span>
+      </button>
+      <button id="mnav-policy" class="mobile-nav-item" onclick="switchTab('policy')">
+        <span class="mobile-nav-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+        </span>
+        <span>Policy</span>
+      </button>
+    </nav>
 
     <div id="toastContainer" class="toasts"></div>
 
     <script>
       const GAUGE_C = 2 * Math.PI * 50;
       const BUDGET_C = 2 * Math.PI * 48;
+      const SESSION_TOKEN_KEY = "gridbot_session_token";
+      const SESSION_USER_KEY = "gridbot_session_user";
+      const PASSCODE_STORAGE_KEY = "gridbot_owner_passcode";
+      const SPLASH_SEEN_KEY = "gridbot_splash_seen";
+
+      let sessionToken = sessionStorage.getItem(SESSION_TOKEN_KEY) || "";
+      let currentUser = null;
+      try {
+        currentUser = JSON.parse(
+          sessionStorage.getItem(SESSION_USER_KEY) || "null",
+        );
+      } catch {
+        currentUser = null;
+      }
+
       let appState = {
         levels: [],
         policy: { daily_cap: 15, per_tx_cap: 10, allowed_payees: [] },
@@ -1222,10 +2419,375 @@
         rogueMode: false,
         treasuryAddress: null,
         transactions: [],
+        staff: [],
       };
       let typewriterTimer = null;
       let initialLoadDone = false;
+      let currentTab = "dashboard";
+      let activeTxFilter = "all";
 
+      // Splash dismissal state
+      if (sessionStorage.getItem(SPLASH_SEEN_KEY) === "1") {
+        document.getElementById("splashOverlay").classList.add("hidden");
+      }
+
+      function dismissSplashScreen() {
+        sessionStorage.setItem(SPLASH_SEEN_KEY, "1");
+        document.getElementById("splashOverlay").classList.add("hidden");
+        if (!currentUser) {
+          document.getElementById("loginUsername")?.focus();
+        }
+      }
+
+      function openSplashScreen() {
+        refreshXrplProof();
+        document.getElementById("splashOverlay").classList.remove("hidden");
+      }
+
+      // Tab Switching
+      function switchTab(tabName) {
+        currentTab = tabName;
+        ["dashboard", "history", "staff", "policy"].forEach((t) => {
+          const btn = document.getElementById(`nav-${t}`);
+          const mbtn = document.getElementById(`mnav-${t}`);
+          const view = document.getElementById(`view-${t}`);
+          if (btn) btn.classList.toggle("active", t === tabName);
+          if (mbtn) mbtn.classList.toggle("active", t === tabName);
+          if (view) view.classList.toggle("hidden", t !== tabName);
+        });
+
+        const wsEl = document.querySelector(".workspace");
+        if (wsEl) wsEl.scrollTop = 0;
+        window.scrollTo({ top: 0, behavior: "smooth" });
+
+        const titles = {
+          dashboard: "Dashboard",
+          history: "Transaction History",
+          staff: "Staff Management",
+          policy: "Policy & Treasury Controls",
+        };
+        document.getElementById("currentViewTitle").textContent =
+          titles[tabName] || "Dashboard";
+
+        if (tabName === "staff") {
+          loadStaffList();
+        }
+      }
+
+      // Password Toggle
+      function togglePasswordVisibility() {
+        const input = document.getElementById("loginPassword");
+        const btn = document.getElementById("pwToggleBtn");
+        if (input.type === "password") {
+          input.type = "text";
+          btn.textContent = "HIDE";
+        } else {
+          input.type = "password";
+          btn.textContent = "SHOW";
+        }
+      }
+
+      // Sign In / Out
+      function openSignInModal() {
+        if (sessionToken) {
+          fetch("/api/auth/logout", {
+            method: "POST",
+            headers: { "x-session-token": sessionToken },
+          }).catch(() => {});
+        }
+        sessionToken = "";
+        currentUser = null;
+        sessionStorage.removeItem(SESSION_TOKEN_KEY);
+        sessionStorage.removeItem(SESSION_USER_KEY);
+        sessionStorage.removeItem(PASSCODE_STORAGE_KEY);
+        document.getElementById("authErrorBox").classList.add("hidden");
+        document.getElementById("loginPassword").value = "";
+        document.getElementById("loginPassword").type = "password";
+        const pwBtn = document.getElementById("pwToggleBtn");
+        if (pwBtn) pwBtn.textContent = "SHOW";
+        document.getElementById("authOverlay").classList.remove("hidden");
+        document.getElementById("loginUsername").focus();
+      }
+
+      async function handleSignInSubmit(e) {
+        e.preventDefault();
+        const username = document.getElementById("loginUsername").value.trim();
+        const password = document.getElementById("loginPassword").value.trim();
+        const errBox = document.getElementById("authErrorBox");
+        const submitBtn = document.getElementById("loginSubmitBtn");
+
+        errBox.classList.add("hidden");
+        submitBtn.disabled = true;
+        submitBtn.textContent = "Signing in...";
+
+        try {
+          const res = await fetch("/api/auth/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ username, password }),
+          });
+          const data = await res.json();
+
+          if (!res.ok || !data.ok) {
+            errBox.textContent = data.error || "Invalid username or passcode";
+            errBox.classList.remove("hidden");
+            return;
+          }
+
+          sessionToken = data.token;
+          currentUser = data.user;
+          sessionStorage.setItem(SESSION_TOKEN_KEY, sessionToken);
+          sessionStorage.setItem(SESSION_USER_KEY, JSON.stringify(currentUser));
+          if (currentUser.role === "owner") {
+            sessionStorage.setItem(PASSCODE_STORAGE_KEY, password);
+          }
+
+          document.getElementById("authOverlay").classList.add("hidden");
+          applyRolePermissions();
+          renderTransactions(appState.transactions);
+          showToast({
+            title: `Signed in as ${currentUser.displayName}`,
+            subtitle: `Role: ${currentUser.role.toUpperCase()}`,
+          });
+        } catch (err) {
+          errBox.textContent = `Sign-in failed: ${err.message}`;
+          errBox.classList.remove("hidden");
+        } finally {
+          submitBtn.disabled = false;
+          submitBtn.textContent = "Sign In to GridBot";
+        }
+      }
+
+      function applyRolePermissions() {
+        const userNameEl = document.getElementById("sidebarUserName");
+        const userRoleEl = document.getElementById("sidebarUserRole");
+        const userCard = document.getElementById("sidebarUserCard");
+        const avatarEl = document.getElementById("sidebarAvatar");
+        const reqLabel = document.getElementById("requesterLabel");
+        const editCapsBtn = document.getElementById("editCapsBtn");
+        const btnToggleAddStaff = document.getElementById("btnToggleAddStaff");
+        const staffNotice = document.getElementById("staffReadOnlyNotice");
+        const btnSavePolicyCaps = document.getElementById("btnSavePolicyCaps");
+
+        if (!currentUser) {
+          document.getElementById("authOverlay").classList.remove("hidden");
+          return;
+        }
+
+        document.getElementById("authOverlay").classList.add("hidden");
+        reqLabel.textContent = `Requester: ${currentUser.displayName}`;
+        userNameEl.textContent = currentUser.displayName;
+
+        if (currentUser.role === "owner") {
+          userCard.className = "user-card owner";
+          avatarEl.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>`;
+          userRoleEl.textContent = "OWNER / ADMIN ACCESS";
+          if (editCapsBtn) editCapsBtn.classList.remove("hidden");
+          if (btnToggleAddStaff) btnToggleAddStaff.classList.remove("hidden");
+          if (staffNotice) staffNotice.classList.add("hidden");
+          if (btnSavePolicyCaps) btnSavePolicyCaps.disabled = false;
+        } else {
+          userCard.className = "user-card staff";
+          avatarEl.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`;
+          userRoleEl.textContent = "STAFF / CASHIER ACCESS";
+          if (editCapsBtn) editCapsBtn.classList.add("hidden");
+          if (btnToggleAddStaff) btnToggleAddStaff.classList.add("hidden");
+          if (staffNotice) staffNotice.classList.remove("hidden");
+          if (btnSavePolicyCaps) btnSavePolicyCaps.disabled = true;
+          document.getElementById("addStaffCard").classList.add("hidden");
+        }
+      }
+
+      function authHeaders(extra = {}) {
+        const h = { ...extra };
+        if (sessionToken) h["x-session-token"] = sessionToken;
+        const storedPass = sessionStorage.getItem(PASSCODE_STORAGE_KEY);
+        if (storedPass) h["x-owner-passcode"] = storedPass;
+        return h;
+      }
+
+      // Staff Operational Purchase Request
+      function useStaffPreset(text) {
+        const input = document.getElementById("staffRequestInput");
+        input.value = text;
+        submitStaffRequest();
+      }
+
+      async function submitStaffRequest() {
+        if (!sessionToken || !currentUser) {
+          openSignInModal();
+          return;
+        }
+        const input = document.getElementById("staffRequestInput");
+        const btn = document.getElementById("btnSubmitStaffReq");
+        const requestText = input.value.trim();
+        if (!requestText) return;
+
+        btn.disabled = true;
+        btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Submitting...`;
+        typewriteBrainText(
+          `Evaluating staff request from ${currentUser.displayName}: "${requestText}"...`,
+        );
+
+        try {
+          const res = await fetch("/api/staff/request", {
+            method: "POST",
+            headers: authHeaders({ "Content-Type": "application/json" }),
+            body: JSON.stringify({ requestText }),
+          });
+          if (res.status === 401) {
+            openSignInModal();
+            return;
+          }
+          const data = await res.json();
+          if (!data.ok) {
+            showBlockedBanner(data.error || "Staff request failed", "blocked");
+            return;
+          }
+          input.value = "";
+        } catch (err) {
+          showBlockedBanner(`Request error: ${err.message}`, "blocked");
+        } finally {
+          btn.disabled = false;
+          btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg> Submit Request`;
+        }
+      }
+
+      // Staff Management (Supabase)
+      async function loadStaffList() {
+        try {
+          const res = await fetch("/api/staff", { headers: authHeaders() });
+          const data = await res.json();
+          const staffList = Array.isArray(data?.staff) ? data.staff : [];
+          appState.staff = staffList;
+          renderStaffTable(staffList);
+        } catch (err) {
+          console.error("Failed to load staff:", err);
+        }
+      }
+
+      function toggleAddStaffCard() {
+        document.getElementById("addStaffCard").classList.toggle("hidden");
+      }
+
+      async function handleCreateStaffSubmit(e) {
+        e.preventDefault();
+        const username = document
+          .getElementById("inputNewStaffUser")
+          .value.trim();
+        const displayName = document
+          .getElementById("inputNewStaffName")
+          .value.trim();
+        const passcode = document
+          .getElementById("inputNewStaffPass")
+          .value.trim();
+        const shift = document
+          .getElementById("inputNewStaffShift")
+          .value.trim();
+
+        try {
+          const res = await fetch("/api/staff", {
+            method: "POST",
+            headers: authHeaders({ "Content-Type": "application/json" }),
+            body: JSON.stringify({
+              username,
+              displayName,
+              passcode,
+              shift,
+              role: "staff",
+            }),
+          });
+          const data = await res.json();
+          if (res.ok && (data.ok || data.staff)) {
+            showToast({
+              title: "Cashier Created in Supabase",
+              subtitle: `${displayName} (${username}) added successfully.`,
+            });
+            document.getElementById("inputNewStaffUser").value = "";
+            document.getElementById("inputNewStaffName").value = "";
+            document.getElementById("inputNewStaffPass").value = "";
+            document.getElementById("addStaffCard").classList.add("hidden");
+            loadStaffList();
+          } else {
+            showBlockedBanner(
+              data.error || "Failed to create cashier",
+              "blocked",
+            );
+          }
+        } catch (err) {
+          showBlockedBanner(`Error creating staff: ${err.message}`, "blocked");
+        }
+      }
+
+      async function deleteStaffUser(id, name) {
+        if (!confirm(`Are you sure you want to remove cashier ${name}?`))
+          return;
+        try {
+          const res = await fetch(`/api/staff/${encodeURIComponent(id)}`, {
+            method: "DELETE",
+            headers: authHeaders(),
+          });
+          const data = await res.json();
+          if (res.ok && data.ok) {
+            showToast({
+              title: "Cashier Removed",
+              subtitle: `${name} has been removed from Supabase.`,
+            });
+            loadStaffList();
+          } else {
+            showBlockedBanner(
+              data.error || "Failed to remove staff",
+              "blocked",
+            );
+          }
+        } catch (err) {
+          showBlockedBanner(`Error removing staff: ${err.message}`, "blocked");
+        }
+      }
+
+      function renderStaffTable(staffList) {
+        const body = document.getElementById("staffTableBody");
+        const isOwner = currentUser && currentUser.role === "owner";
+
+        if (!staffList || staffList.length === 0) {
+          body.innerHTML = `<tr><td colspan="6" class="mono" style="text-align:center;padding:24px;color:#64748b">No staff members found in database.</td></tr>`;
+          return;
+        }
+
+        body.innerHTML = staffList
+          .map((s) => {
+            const roleClass = s.role === "owner" ? "owner" : "staff";
+            const roleLabel = s.role === "owner" ? "Owner (Admin)" : "Cashier";
+            const deleteBtn =
+              isOwner && s.username !== "owner"
+                ? `<button onclick="deleteStaffUser('${s.id}', '${escapeHtml(s.displayName)}')" class="btn btn-red" style="padding:4px 8px;font-size:11px">Remove</button>`
+                : `<span class="mono" style="color:#64748b">-</span>`;
+
+            return `<tr>
+          <td>
+            <div style="display:flex;align-items:center;gap:10px">
+              <span style="display:inline-flex;align-items:center;color:${s.role === 'owner' ? '#fbbf24' : '#38bdf8'};">
+                ${s.role === "owner"
+                  ? '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>'
+                  : '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>'}
+              </span>
+              <div>
+                <strong style="color:#fff;display:block">${escapeHtml(s.displayName)}</strong>
+                <span class="mono" style="font-size:11px;color:#94a3b8">@${escapeHtml(s.username)}</span>
+              </div>
+            </div>
+          </td>
+          <td><span class="staff-role-badge ${roleClass}">${roleLabel}</span></td>
+          <td style="color:#cbd5e1">${escapeHtml(s.shift || "Flexible Shift")}</td>
+          <td><span class="pill pill-green"><span class="pill-dot" style="background:#10b981"></span>Active</span></td>
+          <td class="mono" style="font-size:11px;color:#94a3b8">${formatTimeSAST(s.created_at)}</td>
+          <td style="text-align:right">${deleteBtn}</td>
+        </tr>`;
+          })
+          .join("");
+      }
+
+      // Formatters
       function formatTimeSAST(iso) {
         if (!iso) return "-";
         try {
@@ -1253,6 +2815,7 @@
         return h ? h.slice(0, 8) + "..." + h.slice(-6) : "";
       }
 
+      // UI Feedback & Terminal
       function typewriteBrainText(text) {
         const el = document.getElementById("brainTypewriter");
         if (!el) return;
@@ -1278,11 +2841,11 @@
         const t = document.createElement("div");
         t.className = "toast";
         t.innerHTML = `<div>
-      <div style="font-weight:700;margin-bottom:4px">${escapeHtml(title)}</div>
-      <div class="mono" style="font-size:11px;color:#cbd5e1">${escapeHtml(subtitle)}</div>
-      ${explorerUrl ? `<a href="${escapeHtml(explorerUrl)}" target="_blank" rel="noopener noreferrer" class="mono" style="display:inline-block;margin-top:6px;font-size:11px;color:#34d399;text-decoration:underline">View on explorer</a>` : ""}
-    </div>
-    <button class="toast-x" onclick="this.parentElement.remove()">x</button>`;
+        <div style="font-weight:700;margin-bottom:4px;color:#fff">${escapeHtml(title)}</div>
+        <div class="mono" style="font-size:11px;color:#cbd5e1">${escapeHtml(subtitle)}</div>
+        ${explorerUrl ? `<a href="${escapeHtml(explorerUrl)}" target="_blank" rel="noopener noreferrer" class="mono" style="display:inline-block;margin-top:6px;font-size:11px;color:#34d399;text-decoration:underline">View on explorer</a>` : ""}
+      </div>
+      <button class="toast-x" onclick="this.parentElement.remove()">x</button>`;
         box.appendChild(t);
         setTimeout(() => {
           if (t.parentElement) t.remove();
@@ -1302,33 +2865,7 @@
         document.getElementById("blockedBanner").classList.add("hidden");
       }
 
-      function renderHeader() {
-        const link = document.getElementById("treasuryAddressLink");
-        if (appState.treasuryAddress) {
-          link.textContent = appState.treasuryAddress;
-          link.href = `https://testnet.xrpl.org/accounts/${appState.treasuryAddress}`;
-        } else {
-          link.textContent = "Unavailable";
-        }
-
-        const btn = document.getElementById("rogueBtn");
-        const txt = document.getElementById("rogueBtnText");
-        const badge = document.getElementById("agentModeBadge");
-        if (appState.rogueMode) {
-          txt.textContent = "Stop Runaway Bug";
-          btn.className = "btn btn-red-active";
-          badge.textContent = "ROGUE LOOP ACTIVE";
-          badge.style.background = "rgba(239,68,68,.25)";
-          badge.style.color = "#fca5a5";
-        } else {
-          txt.textContent = "Trigger Runaway Bug";
-          btn.className = "btn btn-red";
-          badge.textContent = "llama-3.3-70b-versatile";
-          badge.style.background = "rgba(56,189,248,.15)";
-          badge.style.color = "#7dd3fc";
-        }
-      }
-
+      // Gauges Rendering
       function updateSingleGauge(ringId, textId, statusId, level, threshold) {
         const ring = document.getElementById(ringId),
           text = document.getElementById(textId),
@@ -1343,9 +2880,9 @@
           ring.setAttribute("stroke", "#ef4444");
           status.textContent = "CRITICAL LOW";
           status.style.color = "#f87171";
-        } else if (pct < 20) {
+        } else if (pct <= 25) {
           ring.setAttribute("stroke", "#f59e0b");
-          status.textContent = "LOW";
+          status.textContent = "LOW (<=25%)";
           status.style.color = "#fbbf24";
         } else {
           ring.setAttribute("stroke", "#10b981");
@@ -1392,6 +2929,7 @@
         document.getElementById("perTxCapText").textContent = `${perTx} RLUSD`;
         document.getElementById("budgetRemainingRingText").textContent =
           left.toFixed(1);
+
         const ring = document.getElementById("budgetGaugeRing");
         const ratio = cap > 0 ? Math.max(0, Math.min(1, left / cap)) : 0;
         ring.style.strokeDashoffset = (BUDGET_C - ratio * BUDGET_C).toFixed(2);
@@ -1399,9 +2937,11 @@
           "stroke",
           left <= 0 ? "#ef4444" : ratio < 0.25 ? "#f59e0b" : "#38bdf8",
         );
+
         const list = document.getElementById("allowlistContainer");
+        const policyViewList = document.getElementById("allowlistPolicyView");
         const payees = appState.policy?.allowed_payees || [];
-        list.innerHTML =
+        const html =
           payees.length === 0
             ? '<span style="color:#64748b">No allowed payees</span>'
             : payees
@@ -1410,6 +2950,14 @@
                     `<div style="padding:4px 8px;background:#0f172a;border:1px solid #1e293b;border-radius:6px;color:#6ee7b7">${escapeHtml(a)}</div>`,
                 )
                 .join("");
+        if (list) list.innerHTML = html;
+        if (policyViewList) policyViewList.innerHTML = html;
+
+        // Populate policy inputs
+        const dInput = document.getElementById("inputDailyCap");
+        const pInput = document.getElementById("inputPerTxCap");
+        if (dInput && dInput !== document.activeElement) dInput.value = cap;
+        if (pInput && pInput !== document.activeElement) pInput.value = perTx;
       }
 
       function renderDecision(d) {
@@ -1479,77 +3027,116 @@
         return `<span class="pill pill-red"><span class="pill-dot" style="background:#ef4444"></span>blocked</span>`;
       }
 
+      // Transactions Rendering
       function renderTransactions(txs) {
         if (!Array.isArray(txs)) return;
         appState.transactions = txs;
-        const body = document.getElementById("txTableBody");
+        const pendingCount = txs.filter(
+          (t) => t.status === "pending_owner",
+        ).length;
+        const navBadge = document.getElementById("navPendingBadge");
+        if (navBadge) {
+          navBadge.textContent = pendingCount;
+          navBadge.classList.toggle("hidden", pendingCount === 0);
+        }
+        const mnavBadge = document.getElementById("mnavPendingBadge");
+        if (mnavBadge) {
+          mnavBadge.textContent = pendingCount;
+          mnavBadge.classList.toggle("hidden", pendingCount === 0);
+        }
+
+        renderDashboardRecentTx(txs.slice(0, 5));
+        applyTxFilters();
+      }
+
+      function renderDashboardRecentTx(txs) {
+        const body = document.getElementById("txDashboardTableBody");
+        if (!body) return;
         if (txs.length === 0) {
-          body.innerHTML = `<tr><td colspan="6" class="mono" style="text-align:center;padding:28px;color:#64748b">No transactions yet. Open "Demo" above to drain a meter.</td></tr>`;
+          body.innerHTML = `<tr><td colspan="6" class="mono" style="text-align:center;padding:24px;color:#64748b">No transactions recorded yet.</td></tr>`;
           return;
         }
-        body.innerHTML = txs
-          .map((tx) => {
-            const url =
-              tx.explorerUrl ||
-              (tx.tx_hash
-                ? `https://testnet.xrpl.org/transactions/${tx.tx_hash}`
-                : null);
-            const note = tx.blocked_reason
-              ? `<div style="color:${tx.status === "pending_owner" ? "#fcd34d" : "#fca5a5"}" title="${escapeHtml(tx.blocked_reason)}">${escapeHtml(tx.blocked_reason)}</div>`
-              : `<div style="color:#e2e8f0" title="${escapeHtml(tx.reason || "")}">${escapeHtml(tx.reason || "")}</div>`;
-            let action;
-            if (tx.status === "pending_owner") {
-              action = `<button id="approveBtn-${escapeHtml(tx.id)}" onclick="approveTransaction('${escapeHtml(tx.id)}')" class="btn btn-approve">Approve</button> <button id="rejectBtn-${escapeHtml(tx.id)}" onclick="rejectTransaction('${escapeHtml(tx.id)}')" class="btn btn-red" style="margin-left:6px;padding:5px 10px">Reject</button>`;
-            } else if (url) {
-              action = `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" class="mono" style="color:#38bdf8;text-decoration:underline">${escapeHtml(shortHash(tx.tx_hash))}</a>`;
-            } else {
-              action = `<span class="mono" style="color:#64748b">-</span>`;
-            }
-            return `<tr>
-      <td class="mono" style="color:#94a3b8;white-space:nowrap">${escapeHtml(formatTimeSAST(tx.ts))}</td>
-      <td style="white-space:nowrap">${statusPillHtml(tx.status)}</td>
-      <td class="mono" style="text-transform:uppercase;color:#f1f5f9;white-space:nowrap">${escapeHtml(tx.resource)}</td>
-      <td class="mono" style="font-weight:700;color:#fff;white-space:nowrap">${escapeHtml(tx.amount)} RLUSD</td>
-      <td style="max-width:440px">${note}</td>
-      <td style="text-align:right;white-space:nowrap">${action}</td>
-    </tr>`;
-          })
-          .join("");
+        body.innerHTML = txs.map(createTxRowHtml).join("");
+      }
+
+      function setTxFilter(filter) {
+        activeTxFilter = filter;
+        ["all", "auto_approved", "pending_owner", "blocked"].forEach((f) => {
+          const btn = document.getElementById(`filter-${f}`);
+          if (btn) btn.classList.toggle("active", f === filter);
+        });
+        applyTxFilters();
+      }
+
+      function applyTxFilters() {
+        const search = (
+          document.getElementById("filterTxSearch")?.value || ""
+        ).toLowerCase();
+        let list = appState.transactions || [];
+
+        if (activeTxFilter !== "all") {
+          list = list.filter((t) => t.status === activeTxFilter);
+        }
+
+        if (search) {
+          list = list.filter(
+            (t) =>
+              String(t.reason || "")
+                .toLowerCase()
+                .includes(search) ||
+              String(t.resource || "")
+                .toLowerCase()
+                .includes(search) ||
+              String(t.tx_hash || "")
+                .toLowerCase()
+                .includes(search),
+          );
+        }
+
+        const body = document.getElementById("txFullTableBody");
+        if (!body) return;
+        if (list.length === 0) {
+          body.innerHTML = `<tr><td colspan="6" class="mono" style="text-align:center;padding:28px;color:#64748b">No matching transactions.</td></tr>`;
+          return;
+        }
+        body.innerHTML = list.map(createTxRowHtml).join("");
+      }
+
+      function createTxRowHtml(tx) {
+        const isOwner = currentUser && currentUser.role === "owner";
+        const url =
+          tx.explorerUrl ||
+          (tx.tx_hash
+            ? `https://testnet.xrpl.org/transactions/${tx.tx_hash}`
+            : null);
+        const note = tx.blocked_reason
+          ? `<div style="color:${tx.status === "pending_owner" ? "#fcd34d" : "#fca5a5"}" title="${escapeHtml(tx.blocked_reason)}">${escapeHtml(tx.blocked_reason)}</div>`
+          : `<div style="color:#e2e8f0" title="${escapeHtml(tx.reason || "")}">${escapeHtml(tx.reason || "")}</div>`;
+        let action;
+        if (tx.status === "pending_owner") {
+          if (isOwner) {
+            action = `<button id="approveBtn-${escapeHtml(tx.id)}" onclick="approveTransaction('${escapeHtml(tx.id)}')" class="btn btn-approve">Approve</button> <button id="rejectBtn-${escapeHtml(tx.id)}" onclick="rejectTransaction('${escapeHtml(tx.id)}')" class="btn btn-red" style="margin-left:6px;padding:5px 10px">Reject</button>`;
+          } else {
+            action = `<span class="mono" style="color:#fcd34d;font-size:11px;display:inline-flex;align-items:center;gap:5px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Sent to Owner</span>`;
+          }
+        } else if (url) {
+          action = `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" class="mono" style="color:#38bdf8;text-decoration:underline">${escapeHtml(shortHash(tx.tx_hash))}</a>`;
+        } else {
+          action = `<span class="mono" style="color:#64748b">-</span>`;
+        }
+
+        return `<tr>
+        <td class="mono" style="color:#94a3b8;white-space:nowrap">${escapeHtml(formatTimeSAST(tx.ts))}</td>
+        <td style="white-space:nowrap">${statusPillHtml(tx.status)}</td>
+        <td class="mono" style="text-transform:uppercase;color:#f1f5f9;white-space:nowrap">${escapeHtml(tx.resource)}</td>
+        <td class="mono" style="font-weight:700;color:#fff;white-space:nowrap">${escapeHtml(tx.amount)} RLUSD</td>
+        <td style="max-width:440px">${note}</td>
+        <td style="text-align:right;white-space:nowrap">${action}</td>
+      </tr>`;
       }
 
       function toggleDemoBar() {
         document.getElementById("demoControlBar").classList.toggle("hidden");
-      }
-      function togglePolicyEditor() {
-        const form = document.getElementById("policyEditForm");
-        if (form.classList.contains("hidden")) {
-          document.getElementById("inputDailyCap").value =
-            appState.policy?.daily_cap ?? 15;
-          document.getElementById("inputPerTxCap").value =
-            appState.policy?.per_tx_cap ?? 10;
-          form.classList.remove("hidden");
-        } else {
-          form.classList.add("hidden");
-        }
-      }
-
-      const PASSCODE_STORAGE_KEY = "gridbot_owner_passcode";
-
-      function getPasscode() {
-        let code = sessionStorage.getItem(PASSCODE_STORAGE_KEY);
-        if (!code) {
-          const entered = prompt("Owner passcode");
-          if (entered !== null && entered.trim() !== "") {
-            code = entered.trim();
-            sessionStorage.setItem(PASSCODE_STORAGE_KEY, code);
-          }
-        }
-        return code || "";
-      }
-
-      function clearPasscodeOn401() {
-        sessionStorage.removeItem(PASSCODE_STORAGE_KEY);
-        showBlockedBanner("Wrong owner passcode", "blocked");
       }
 
       async function savePolicy(e) {
@@ -1560,19 +3147,14 @@
         const per_tx_cap = Number(
           document.getElementById("inputPerTxCap").value,
         );
-        const passcode = getPasscode();
-        if (!passcode) return;
         try {
           const res = await fetch("/api/policy", {
             method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "x-owner-passcode": passcode,
-            },
+            headers: authHeaders({ "Content-Type": "application/json" }),
             body: JSON.stringify({ daily_cap, per_tx_cap }),
           });
           if (res.status === 401) {
-            clearPasscodeOn401();
+            showBlockedBanner("Owner authentication required", "blocked");
             return;
           }
           const data = await res.json();
@@ -1581,9 +3163,8 @@
             appState.spentToday = data.spentToday;
             appState.budgetRemaining = data.budgetRemaining;
             renderBudget();
-            document.getElementById("policyEditForm").classList.add("hidden");
             showToast({
-              title: "Policy updated",
+              title: "Policy Updated in Supabase",
               subtitle: `Daily cap ${daily_cap} | Per-payment cap ${per_tx_cap} RLUSD`,
             });
           } else {
@@ -1596,7 +3177,7 @@
           console.error("Failed to update policy:", err);
         }
       }
-      // /api/demo/* routes stay open (demo only)
+
       async function drainResource(r) {
         try {
           await fetch(`/api/demo/drain/${r}`, { method: "POST" });
@@ -1604,23 +3185,7 @@
           console.error(`Failed to drain ${r}:`, err);
         }
       }
-      async function toggleRogueMode() {
-        try {
-          const res = await fetch("/api/demo/rogue", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ enabled: !appState.rogueMode }),
-          });
-          const data = await res.json();
-          if (data.ok) {
-            appState.rogueMode = data.rogueMode;
-            renderHeader();
-          }
 
-        } catch (err) {
-          console.error("Failed to toggle rogue mode:", err);
-        }
-      }
       async function resetDemo() {
         try {
           const res = await fetch("/api/demo/reset", { method: "POST" });
@@ -1628,41 +3193,11 @@
           if (data.ok) {
             appState.rogueMode = false;
             hideBlockedBanner();
-            renderHeader();
             if (data.levels) renderGauges(data.levels);
-            typewriteBrainText(
-              "Demo reset: runaway stopped and meters refilled to 100%.",
-            );
+            typewriteBrainText("Demo reset: meters refilled to 100%.");
           }
         } catch (err) {
           console.error("Failed to reset demo:", err);
-        }
-      }
-
-      async function agentSignsAlone() {
-        const btn = document.getElementById("soloSignBtn");
-        if (btn) {
-          btn.disabled = true;
-          btn.textContent = "Submitting to XRPL...";
-        }
-        try {
-          const res = await fetch("/api/demo/solo-sign", { method: "POST" });
-          const data = await res.json();
-          const code = data.code || data.engineResult || "tefBAD_QUORUM";
-          showBlockedBanner(
-            `LEDGER REJECTED: ${code}. The agent cannot pay without the policy signer.`,
-            "blocked",
-          );
-        } catch (err) {
-          showBlockedBanner(
-            `LEDGER REJECTED: ${err.message}. The agent cannot pay without the policy signer.`,
-            "blocked",
-          );
-        } finally {
-          if (btn) {
-            btn.disabled = false;
-            btn.textContent = "Agent signs alone";
-          }
         }
       }
 
@@ -1685,31 +3220,42 @@
 
           const quorumEl = document.getElementById("proofSignerQuorum");
           if (quorumEl) {
-            const entries = Array.isArray(data.signerEntries) ? data.signerEntries : [];
+            const entries = Array.isArray(data.signerEntries)
+              ? data.signerEntries
+              : [];
             const weightOf = (role) => {
               const found = entries.find((e) => e.role === role);
               return found ? found.weight : 1;
             };
             const agentW = weightOf("agent");
             const policyW = weightOf("policy");
-            const ownerW = entries.find((e) => e.role === "owner")?.weight ?? 2;
+            const ownerW =
+              entries.find((e) => e.role === "owner")?.weight ?? 2;
             quorumEl.textContent = `SignerList quorum ${data.signerQuorum ?? 2} (agent ${agentW}, policy ${policyW}, owner ${ownerW})`;
           }
 
           if (data.treasuryAddress) {
             const verifyUrl = `https://testnet.xrpl.org/accounts/${data.treasuryAddress}`;
-            ["proofVerifyLink1", "proofVerifyLink2", "proofVerifyLink3"].forEach((id) => {
+            [
+              "proofVerifyLink1",
+              "proofVerifyLink2",
+              "proofVerifyLink3",
+            ].forEach((id) => {
               const link = document.getElementById(id);
               if (link) link.href = verifyUrl;
             });
+            const tLink = document.getElementById("treasuryAddressLink");
+            if (tLink) {
+              tLink.textContent = data.treasuryAddress;
+              tLink.href = verifyUrl;
+            }
           }
         } catch (err) {
           console.error("Failed to refresh XRPL proof:", err);
         }
       }
+
       async function approveTransaction(id) {
-        const passcode = getPasscode();
-        if (!passcode) return;
         const btn = document.getElementById(`approveBtn-${id}`);
         if (btn) {
           btn.disabled = true;
@@ -1718,14 +3264,14 @@
         try {
           const res = await fetch(`/api/approve/${id}`, {
             method: "POST",
-            headers: { "x-owner-passcode": passcode },
+            headers: authHeaders(),
           });
           if (res.status === 401) {
             if (btn) {
               btn.disabled = false;
               btn.textContent = "Approve";
             }
-            clearPasscodeOn401();
+            showBlockedBanner("Owner authentication required", "blocked");
             return;
           }
           const data = await res.json();
@@ -1752,8 +3298,6 @@
       }
 
       async function rejectTransaction(id) {
-        const passcode = getPasscode();
-        if (!passcode) return;
         const btn = document.getElementById(`rejectBtn-${id}`);
         if (btn) {
           btn.disabled = true;
@@ -1762,14 +3306,14 @@
         try {
           const res = await fetch(`/api/reject/${id}`, {
             method: "POST",
-            headers: { "x-owner-passcode": passcode },
+            headers: authHeaders(),
           });
           if (res.status === 401) {
             if (btn) {
               btn.disabled = false;
               btn.textContent = "Reject";
             }
-            clearPasscodeOn401();
+            showBlockedBanner("Owner authentication required", "blocked");
             return;
           }
           const data = await res.json();
@@ -1808,13 +3352,20 @@
             const msg = JSON.parse(event.data);
             if (msg.type === "init") {
               appState = { ...appState, ...msg };
-              renderHeader();
               renderGauges(msg.levels);
               renderBudget();
               renderTransactions(msg.transactions);
               initialLoadDone = true;
             } else if (msg.type === "levels") {
               renderGauges(msg.levels);
+            } else if (msg.type === "warn_alert") {
+              typewriteBrainText(
+                `Early warning: ${msg.label} reached ${msg.level}% (25% warning level). Sent Telegram alert with 1-tap proactive top-up option before critical ${msg.criticalThreshold}% threshold.`,
+              );
+              showToast({
+                title: `25% Low Balance Warning: ${msg.label}`,
+                subtitle: `Telegram alert sent — top up proactively (${msg.unitCostRLUSD} RLUSD) before ${msg.criticalThreshold}% critical level.`,
+              });
             } else if (msg.type === "low_alert") {
               typewriteBrainText(
                 `${msg.label} dropped to ${msg.level}% (alert at ${msg.threshold}%). Asking the AI agent...`,
@@ -1841,9 +3392,6 @@
               if (msg.vend?.bundle)
                 document.getElementById("lastDataBundleBox").textContent =
                   `Bundle: ${msg.vend.bundle}`;
-            } else if (msg.type === "rogue") {
-              appState.rogueMode = Boolean(msg.rogueMode);
-              renderHeader();
             } else if (msg.type === "agent_error") {
               showBlockedBanner(msg.error, "blocked");
             }
@@ -1858,12 +3406,13 @@
         ws.onerror = () => ws.close();
       }
 
-      fetch("/api/state")
+      applyRolePermissions();
+
+      fetch("/api/state", { headers: authHeaders() })
         .then((r) => r.json())
         .then((data) => {
           if (data.ok && !initialLoadDone) {
             appState = { ...appState, ...data };
-            renderHeader();
             renderGauges(data.levels);
             renderBudget();
             renderTransactions(data.transactions);

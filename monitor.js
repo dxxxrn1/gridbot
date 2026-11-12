@@ -9,11 +9,14 @@ const { listResources, getResource } = require('./resources');
 
 const TICK_MS = 2000;
 const LOW_RETRY_MS = 15000; // Re-emit 'low' at most once every 15s while still <= threshold
+const WARN_LEVEL_PERCENT = 25; // Proactive early warning threshold (25%)
 const emitter = new EventEmitter();
 
 let timer = null;
 // Map of resourceId -> timestamp (ms) of the last emitted 'low' event
 const lastLowFiredAt = new Map();
+// Set of resourceIds that have already fired the 25% early warning in the current drain cycle
+const warnFiredSet = new Set();
 
 /**
  * Resets the low-event latch/timers for all resources (or a single resource id).
@@ -21,14 +24,18 @@ const lastLowFiredAt = new Map();
 function resetLatch(resourceId) {
   if (resourceId) {
     lastLowFiredAt.delete(resourceId);
+    warnFiredSet.delete(resourceId);
   } else {
     lastLowFiredAt.clear();
+    warnFiredSet.clear();
   }
 }
 
 /**
- * Checks all resources' current levels against their thresholds.
- * - If level > threshold: clears the latch for that resource.
+ * Checks all resources' current levels against the 25% early-warning threshold and critical thresholds.
+ * - If level > 25%: clears the 25% warning latch for that resource.
+ * - If threshold < level <= 25%: emits 'warning' once per drain cycle so Owner/Staff get a Telegram heads-up.
+ * - If level > threshold: clears the critical 'low' latch for that resource.
  * - If level <= threshold: emits 'low' immediately if not yet fired, or retries if >= 15s
  *   have elapsed since the last 'low' emission for that resource.
  */
@@ -37,6 +44,23 @@ function evaluateLevels(snapshot) {
 
   for (const item of snapshot) {
     const plugin = getResource(item.id);
+
+    if (item.level > WARN_LEVEL_PERCENT) {
+      warnFiredSet.delete(item.id);
+    } else if (item.level > item.threshold && !warnFiredSet.has(item.id)) {
+      warnFiredSet.add(item.id);
+      emitter.emit('warning', {
+        id: plugin.id,
+        label: plugin.label,
+        level: Math.round(item.level),
+        warnThreshold: WARN_LEVEL_PERCENT,
+        criticalThreshold: plugin.threshold,
+        unitCostRLUSD: plugin.unitCostRLUSD,
+        percentPerRLUSD: plugin.percentPerRLUSD,
+        ts: new Date(now).toISOString(),
+      });
+    }
+
     if (item.level > item.threshold) {
       // Resource has been refilled above threshold -> reset latch
       lastLowFiredAt.delete(item.id);

@@ -14,7 +14,17 @@ const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '.env') });
 const express = require('express');
 
-const { getPolicy, updatePolicy, spentToday, getTx, listTx } = require('./db');
+const {
+  getPolicy,
+  updatePolicy,
+  spentToday,
+  getTx,
+  listTx,
+  listStaffUsers,
+  createStaffUser,
+  deleteStaffUser,
+  verifyStaffUser,
+} = require('./db');
 const {
   signAndSubmitAgentRequest,
   ownerApprove,
@@ -125,6 +135,38 @@ app.get('/tx/:id', requireAgentToken, async (req, res) => {
   }
 });
 
+/**
+ * GET /staff
+ * Returns active staff users.
+ */
+app.get('/staff', requireAgentToken, async (req, res) => {
+  try {
+    const staff = await listStaffUsers();
+    res.json({ ok: true, staff });
+  } catch (err) {
+    console.error('[Policy Service GET /staff] Error:', err.message);
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+/**
+ * POST /auth/verify
+ * Validates staff or owner credentials against Supabase / local DB.
+ */
+app.post('/auth/verify', requireAgentToken, async (req, res) => {
+  try {
+    const { username, password } = req.body || {};
+    const result = await verifyStaffUser(username, password);
+    if (!result.ok) {
+      return res.status(401).json(result);
+    }
+    res.json(result);
+  } catch (err) {
+    console.error('[Policy Service POST /auth/verify] Error:', err.message);
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
 // ============================================================================
 // Owner-Authenticated Endpoints (x-owner-passcode)
 // ============================================================================
@@ -220,6 +262,36 @@ app.post('/owner/policy', requireOwnerPasscode, async (req, res) => {
   } catch (err) {
     console.error('[Policy Service POST /owner/policy] Error:', err.message);
     res.status(500).json({ error: err.message });
+  }
+});
+
+/**
+ * POST /owner/staff
+ * Creates a new cashier or staff member in Supabase / local DB.
+ */
+app.post('/owner/staff', requireOwnerPasscode, async (req, res) => {
+  try {
+    const { username, displayName, passcode, role, shift } = req.body || {};
+    const created = await createStaffUser({ username, displayName, passcode, role, shift });
+    res.json({ ok: true, staff: created });
+  } catch (err) {
+    console.error('[Policy Service POST /owner/staff] Error:', err.message);
+    res.status(400).json({ ok: false, error: err.message });
+  }
+});
+
+/**
+ * DELETE /owner/staff/:id
+ * Deletes a staff member from Supabase / local DB.
+ */
+app.delete('/owner/staff/:id', requireOwnerPasscode, async (req, res) => {
+  try {
+    const rawId = req.params.id;
+    const result = await deleteStaffUser(rawId);
+    res.json(result);
+  } catch (err) {
+    console.error('[Policy Service DELETE /owner/staff/:id] Error:', err.message);
+    res.status(400).json({ ok: false, error: err.message });
   }
 });
 

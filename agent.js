@@ -7,6 +7,10 @@
 // off-chain daily budget, per-tx cap, velocity limit, and payee allowlist before co-signing.
 // The XRP Ledger enforces the 2-of-2 multisig quorum on-chain.
 
+const dns = require('dns');
+if (typeof dns.setDefaultResultOrder === 'function') {
+  dns.setDefaultResultOrder('ipv4first');
+}
 require('dotenv').config();
 const EventEmitter = require('events');
 const Groq = require('groq-sdk');
@@ -17,10 +21,10 @@ const { listResources, getResource } = require('./resources');
 const MODEL_CANDIDATES = [
   process.env.GROQ_MODEL,
   'llama-3.3-70b-versatile',
-  'openai/gpt-oss-120b',
-  'openai/gpt-oss-20b',
-  'meta-llama/llama-4-scout-17b-16e-instruct',
   'llama-3.1-8b-instant',
+  'meta-llama/llama-4-scout-17b-16e-instruct',
+  'openai/gpt-oss-20b',
+  'openai/gpt-oss-120b',
 ].filter(Boolean);
 
 let activeModelName = MODEL_CANDIDATES[0] || 'llama-3.3-70b-versatile';
@@ -167,7 +171,12 @@ async function resolveAvailableGroqModel(groq) {
       .map((m) => m.id)
       .filter((id) => id && !/whisper|tts|guard|embed|playai/i.test(id));
 
-    const preferred = ids.find((id) => /llama-3\.3|llama-4|gpt-oss|llama-3\.1|qwen|gemma/i.test(id));
+    const preferred =
+      ids.find((id) => /llama-3\.3-70b/i.test(id)) ||
+      ids.find((id) => /llama-3\.1-8b/i.test(id)) ||
+      ids.find((id) => /llama-4/i.test(id)) ||
+      ids.find((id) => /qwen|gemma|llama/i.test(id)) ||
+      ids.find((id) => /gpt-oss/i.test(id));
     return preferred || ids[0] || null;
   } catch {
     return null;
@@ -190,7 +199,7 @@ async function askAiDecision(context) {
       const completion = await groq.chat.completions.create({
         model: modelId,
         temperature: 0.1,
-        max_tokens: 500,
+        max_tokens: 1024,
         response_format: { type: 'json_object' },
         messages: [
           { role: 'system', content: SYSTEM_PROMPT },
@@ -201,29 +210,31 @@ async function askAiDecision(context) {
         ],
       });
 
-      activeModelName = modelId;
       const content = completion?.choices?.[0]?.message?.content || '';
-      return parseAndValidateDecision(content, context.lowResource.id, context.perTxCapRLUSD);
-    } catch (err) {
-      lastErr = err;
-      const isModelNotFound =
-        err?.status === 404 || /model_not_found|does not exist/i.test(err?.message || '');
-      if (isModelNotFound) {
-        console.warn(`[Agent] Model "${modelId}" not available on this Groq key, trying next...`);
+      if (!content.trim()) {
+        lastErr = new Error(`Empty response from model ${modelId}`);
         continue;
       }
-      break;
+
+      const parsed = parseAndValidateDecision(content, context.lowResource.id, context.perTxCapRLUSD);
+      if (parsed && !parsed.fallback) {
+        activeModelName = modelId;
+        return parsed;
+      }
+      lastErr = new Error(parsed?.reason || 'Invalid JSON from model');
+    } catch (err) {
+      lastErr = err;
+      continue;
     }
   }
 
   try {
     const discoveredModel = await resolveAvailableGroqModel(groq);
     if (discoveredModel) {
-      console.log(`[Agent] Auto-selected available Groq model from API: ${discoveredModel}`);
       const completion = await groq.chat.completions.create({
         model: discoveredModel,
         temperature: 0.1,
-        max_tokens: 300,
+        max_tokens: 1024,
         messages: [
           { role: 'system', content: SYSTEM_PROMPT },
           {
@@ -232,20 +243,51 @@ async function askAiDecision(context) {
           },
         ],
       });
-      activeModelName = discoveredModel;
       const content = completion?.choices?.[0]?.message?.content || '';
-      return parseAndValidateDecision(content, context.lowResource.id, context.perTxCapRLUSD);
+      if (content.trim()) {
+        const parsed = parseAndValidateDecision(content, context.lowResource.id, context.perTxCapRLUSD);
+        if (parsed && !parsed.fallback) {
+          activeModelName = discoveredModel;
+          return parsed;
+        }
+      }
     }
   } catch (err) {
     lastErr = err;
   }
 
-  console.error('[Agent] Groq API error, falling back to "wait":', lastErr?.message);
+  const lowRes = context?.lowResource || { id: 'electricity', rlusdNeededToRefill: 5, unitCostRLUSD: 5 };
+  const allRes = Array.isArray(context?.allResources) ? context.allResources : [];
+  const elecRes = allRes.find((r) => r.id === 'electricity');
+  const dataRes = allRes.find((r) => r.id === 'data');
+  const bothLow = Boolean(elecRes?.isLow && dataRes?.isLow);
+
+  const perTxCap = Number(context?.perTxCapRLUSD ?? 10);
+  const remBudget = Number(context?.remainingDailyBudgetRLUSD ?? 15);
+
+  const targetRes = bothLow && elecRes ? elecRes : lowRes;
+  const needed = Number(targetRes.rlusdNeededToRefill || targetRes.unitCostRLUSD || 5);
+  const amount = Math.round(Math.min(needed, perTxCap > 0 ? perTxCap : needed) * 100) / 100;
+
+  if (remBudget <= 0 || amount > remBudget || amount > perTxCap) {
+    console.warn(`[Agent] Groq unreachable (${lastErr?.message || 'offline'}); using deterministic CFO escalation for ${targetRes.id}.`);
+    return {
+      decision: 'escalate',
+      resource: targetRes.id,
+      amount: needed,
+      reason: `${targetRes.label || targetRes.id} is critically low (${targetRes.levelPercent ?? 0}%), and the ${needed} RLUSD refill exceeds the remaining daily budget (${remBudget} RLUSD) or per-tx cap (${perTxCap} RLUSD). Escalating to Owner.`,
+      fallback: true,
+    };
+  }
+
+  console.warn(`[Agent] Groq unreachable (${lastErr?.message || 'offline'}); using deterministic CFO buy proposal for ${targetRes.id} (${amount} RLUSD).`);
   return {
-    decision: 'wait',
-    resource: context?.lowResource?.id || 'electricity',
-    amount: 0,
-    reason: `Fallback to wait because Groq AI request failed: ${lastErr?.message || 'unknown error'}.`,
+    decision: 'buy',
+    resource: targetRes.id,
+    amount,
+    reason: bothLow
+      ? `Both electricity and data are critically low; prioritizing ${targetRes.id} (${amount} RLUSD) first because power is required to run the cafe and LTE router.`
+      : `${targetRes.label || targetRes.id} dropped to ${targetRes.levelPercent ?? 0}% (below ${targetRes.thresholdPercent ?? 10}% alert threshold). Proposing ${amount} RLUSD top-up within policy limits.`,
     fallback: true,
   };
 }
@@ -442,14 +484,351 @@ async function handleLow(lowEventOrResourceId) {
     };
   }
 
+  const proofLotEvidence = {
+    requestedBy: 'Autonomous Monitor (GridBot AI)',
+    role: 'agent',
+    staffPrompt: null,
+    selectedResource: targetPlugin.id,
+    amountRLUSD: proposal.amount || 0,
+    vendorAddress: payee,
+    vendorVerified: true,
+    policyRuleChecked: `per_tx_cap (${perTxCap} RLUSD) & daily_cap (${dailyCap} RLUSD)`,
+    decisionStatus: paymentResult.status,
+    txHash: paymentResult.txHash || null,
+    receiptVoucher: vendResult?.token || vendResult?.bundle || null,
+    timestamp: new Date().toISOString(),
+  };
+
   const fullResult = {
     mode: rogueMode ? 'rogue' : 'ai',
     timestamp: new Date().toISOString(),
     triggerResource: lowPlugin.id,
+    requestedBy: 'Autonomous Monitor',
     context,
     proposal,
     payment: paymentResult,
     vend: vendResult,
+    proofLotEvidence,
+  };
+
+  agentEvents.emit('decision', fullResult);
+  return fullResult;
+}
+
+// ============================================================================
+// Part B: Staff Plain-Language Purchase Request Workflow & SKU Catalog
+// ============================================================================
+
+const STAFF_SKU_CATALOG = [
+  {
+    sku: 'ELEC_STD',
+    name: 'Prepaid Electricity 60 kWh',
+    resource: 'electricity',
+    amount: 5,
+    description: 'Standard shift top-up (60 kWh STS token)',
+  },
+  {
+    sku: 'ELEC_LRG',
+    name: 'Prepaid Electricity 120 kWh',
+    resource: 'electricity',
+    amount: 10,
+    description: 'Full-day heavy load top-up (120 kWh STS token)',
+  },
+  {
+    sku: 'ELEC_BULK',
+    name: 'Prepaid Electricity Bulk 144 kWh',
+    resource: 'electricity',
+    amount: 12,
+    description: 'Bulk multi-meter top-up (144 kWh STS token — requires Owner approval over cap)',
+  },
+  {
+    sku: 'DATA_FAILOVER',
+    name: 'Emergency LTE Failover 5GB',
+    resource: 'data',
+    amount: 3,
+    description: 'Emergency router LTE failover bundle (5GB)',
+  },
+  {
+    sku: 'DATA_WEEKLY',
+    name: 'Cafe LTE Bundle 15GB',
+    resource: 'data',
+    amount: 9,
+    description: 'Weekly high-capacity cafe LTE data bundle (15GB)',
+  },
+];
+
+const STAFF_SYSTEM_PROMPT = `You are GridBot's autonomous AI CFO evaluating a plain-language operational purchase request submitted by a shift staff member at a South African internet cafe.
+
+ELIGIBLE OPERATIONAL SKU CATALOG:
+- ELEC_STD: Prepaid Electricity 60 kWh (5 RLUSD, resource: "electricity")
+- ELEC_LRG: Prepaid Electricity 120 kWh (10 RLUSD, resource: "electricity")
+- ELEC_BULK: Prepaid Electricity Bulk 144 kWh (12 RLUSD, resource: "electricity")
+- DATA_FAILOVER: Emergency LTE Failover 5GB (3 RLUSD, resource: "data")
+- DATA_WEEKLY: Cafe LTE Bundle 15GB (9 RLUSD, resource: "data")
+
+STRICT RULES:
+1. Only approve legitimate cafe operational utility needs (prepaid electricity / Eskom / meter tokens / power, or router LTE internet / data bundles / wifi).
+2. If the staff member asks for anything non-operational (e.g. food, lunch, airtime for personal phone, cash transfer, salary advance, gambling, or unrelated items), return decision = "reject" and amount = 0.
+3. Match valid operational requests to the best-fitting SKU from the catalog above (if the staff asks for 12 RLUSD or bulk top-up, choose ELEC_BULK; if 10 RLUSD or 120 kWh, choose ELEC_LRG; if 9 RLUSD or 15GB weekly, choose DATA_WEEKLY; otherwise default to ELEC_STD for electricity or DATA_FAILOVER for data).
+4. If the selected SKU amount exceeds perTxCapRLUSD or remainingDailyBudgetRLUSD, still select that SKU and set decision = "escalate" so the Policy Service queues it for Owner approval.
+5. Output STRICT JSON only:
+{
+  "decision": "buy" | "escalate" | "reject",
+  "sku": "ELEC_STD" | "ELEC_LRG" | "ELEC_BULK" | "DATA_FAILOVER" | "DATA_WEEKLY" | null,
+  "resource": "electricity" | "data",
+  "amount": number,
+  "reason": "one or two plain sentences explaining the operational match or rejection"
+}`;
+
+/**
+ * Deterministic fallback matcher if Groq API is offline or errors.
+ */
+function deterministicStaffFallback(requestText, perTxCap, remainingDailyBudget) {
+  const text = String(requestText || '').toLowerCase();
+
+  const nonOperationalPattern =
+    /\b(lunch|food|pizza|burger|uber|taxi|personal|my phone|cash|withdraw|beer|drink|salary|loan|bet|crypto)\b/i;
+  if (nonOperationalPattern.test(text)) {
+    return {
+      decision: 'reject',
+      sku: null,
+      resource: 'electricity',
+      amount: 0,
+      reason: 'Rejected: Request is for a non-operational personal expense outside the approved utility SKU catalog.',
+    };
+  }
+
+  const isData = /\b(data|lte|internet|wifi|wi-fi|router|gb|bundle|network|fibre|fiber|connection)\b/i.test(text);
+  const isElec = /\b(elec|power|eskom|meter|kwh|lights|token|prepaid|generator|current|grid|bulk|top-up|topup)\b/i.test(text);
+
+  if (!isData && !isElec) {
+    return {
+      decision: 'reject',
+      sku: null,
+      resource: 'electricity',
+      amount: 0,
+      reason: 'Rejected: Request does not match an eligible cafe utility resource (prepaid electricity or router LTE data).',
+    };
+  }
+
+  const wantsBulk12 = /\b(12\s*rlusd|12rlusd|bulk|144)\b/i.test(text);
+  const wantsLarge = /\b(large|big|full|weekly|heavy|busy|weekend|120|15gb|15 gb|10 rlusd|9 rlusd|double|extra)\b/i.test(
+    text
+  );
+
+  let selectedSku;
+  if (isData && !isElec && !wantsBulk12) {
+    selectedSku = STAFF_SKU_CATALOG.find((s) => s.sku === (wantsLarge ? 'DATA_WEEKLY' : 'DATA_FAILOVER'));
+  } else if (wantsBulk12) {
+    selectedSku = STAFF_SKU_CATALOG.find((s) => s.sku === 'ELEC_BULK');
+  } else {
+    selectedSku = STAFF_SKU_CATALOG.find((s) => s.sku === (wantsLarge ? 'ELEC_LRG' : 'ELEC_STD'));
+  }
+
+  const overCap =
+    selectedSku.amount > perTxCap || selectedSku.amount > remainingDailyBudget;
+
+  return {
+    decision: overCap ? 'escalate' : 'buy',
+    sku: selectedSku.sku,
+    resource: selectedSku.resource,
+    amount: selectedSku.amount,
+    reason: `Matched staff request to ${selectedSku.sku} (${selectedSku.name}, ${selectedSku.amount} RLUSD).`,
+  };
+}
+
+async function askAiStaffDecision(staffContext) {
+  const { requestText, perTxCapRLUSD, remainingDailyBudgetRLUSD } = staffContext;
+  try {
+    const groq = getGroqClient();
+    const userPrompt = JSON.stringify(staffContext, null, 2);
+    const modelsToTry = [
+      activeModelName,
+      ...MODEL_CANDIDATES.filter((m) => m !== activeModelName),
+    ];
+
+    for (const modelId of modelsToTry) {
+      try {
+        const completion = await groq.chat.completions.create({
+          model: modelId,
+          temperature: 0.1,
+          max_tokens: 1024,
+          response_format: { type: 'json_object' },
+          messages: [
+            { role: 'system', content: STAFF_SYSTEM_PROMPT },
+            {
+              role: 'user',
+              content: `Evaluate this staff purchase request:\n${userPrompt}\n\nRespond with STRICT JSON only.`,
+            },
+          ],
+        });
+
+        const raw = completion?.choices?.[0]?.message?.content || '';
+        if (!raw.trim()) continue;
+        activeModelName = modelId;
+        let cleaned = raw
+          .trim()
+          .replace(/<think>[\s\S]*?<\/think>/gi, '')
+          .replace(/^```(?:json)?\s*/i, '')
+          .replace(/\s*```$/i, '')
+          .trim();
+
+        const firstBrace = cleaned.indexOf('{');
+        const lastBrace = cleaned.lastIndexOf('}');
+        if (firstBrace !== -1 && lastBrace > firstBrace) {
+          cleaned = cleaned.slice(firstBrace, lastBrace + 1);
+        }
+
+        const parsed = JSON.parse(cleaned);
+        if (parsed.decision === 'reject' || parsed.decision === 'wait') {
+          return {
+            decision: 'reject',
+            sku: null,
+            resource: parsed.resource === 'data' ? 'data' : 'electricity',
+            amount: 0,
+            reason: parsed.reason || 'Rejected as non-operational request.',
+          };
+        }
+
+        const matchedSku =
+          STAFF_SKU_CATALOG.find((s) => s.sku === parsed.sku) ||
+          STAFF_SKU_CATALOG.find(
+            (s) => s.resource === parsed.resource && s.amount === Number(parsed.amount)
+          ) ||
+          (parsed.resource === 'data' ? STAFF_SKU_CATALOG[2] : STAFF_SKU_CATALOG[0]);
+
+        return {
+          decision: parsed.decision === 'escalate' ? 'escalate' : 'buy',
+          sku: matchedSku.sku,
+          skuName: matchedSku.name,
+          resource: matchedSku.resource,
+          amount: matchedSku.amount,
+          reason: parsed.reason || `Selected ${matchedSku.sku} (${matchedSku.name}).`,
+        };
+      } catch (err) {
+        const is404 =
+          err?.status === 404 || /model_not_found|does not exist/i.test(err?.message || '');
+        if (is404) continue;
+        break;
+      }
+    }
+  } catch (_) {}
+
+  return deterministicStaffFallback(requestText, perTxCapRLUSD, remainingDailyBudgetRLUSD);
+}
+
+/**
+ * Evaluates a shift staff member's natural-language purchase request, maps it to an eligible SKU,
+ * submits the payment proposal to the independent Policy Service, and generates a ProofLot evidence record.
+ */
+async function handleStaffRequest({ staffUser, requestText }) {
+  const safeUser = staffUser || {
+    username: 'thabo',
+    displayName: 'Thabo (Shift Cashier)',
+    role: 'staff',
+  };
+  const cleanPrompt = String(requestText || '').trim();
+  if (!cleanPrompt) {
+    throw new Error('requestText is required');
+  }
+
+  const state = await getState();
+  const policy = state.policy;
+  const spent = Number(state.spentToday || 0);
+  const dailyCap = Number(policy.daily_cap);
+  const perTxCap = Number(policy.per_tx_cap);
+  const remainingDailyBudget =
+    state.budgetRemaining !== undefined
+      ? Number(state.budgetRemaining)
+      : Math.max(0, Math.round((dailyCap - spent) * 1e6) / 1e6);
+
+  const allResources = listResources().map((r) => ({
+    id: r.id,
+    label: r.label,
+    levelPercent: r.getLevel(),
+    thresholdPercent: r.threshold,
+    percentPerRLUSD: r.percentPerRLUSD,
+  }));
+
+  const staffContext = {
+    staffMember: {
+      displayName: safeUser.displayName,
+      role: safeUser.role,
+    },
+    requestText: cleanPrompt,
+    skuCatalog: STAFF_SKU_CATALOG,
+    allResources,
+    remainingDailyBudgetRLUSD: remainingDailyBudget,
+    spentTodayRLUSD: spent,
+    dailyCapRLUSD: dailyCap,
+    perTxCapRLUSD: perTxCap,
+    timeOfDay: getTimeOfDaySAST(),
+  };
+
+  const aiProposal = await askAiStaffDecision(staffContext);
+  const prefix = `[Staff Request by ${safeUser.displayName}: "${cleanPrompt.slice(0, 60)}"] `;
+  const fullReason = `${prefix}${aiProposal.reason}`;
+
+  const proposal = {
+    ...aiProposal,
+    reason: fullReason,
+  };
+
+  const payee = policy.allowed_payees?.[0] || loadUtilityAddress();
+  let paymentResult = null;
+  let vendResult = null;
+
+  if (proposal.decision === 'buy' || proposal.decision === 'escalate') {
+    const targetPlugin = getResource(proposal.resource);
+    const memoRequester = `${safeUser.role || 'staff'}:${safeUser.username || 'thabo'}`;
+    paymentResult = await requestPayment({
+      resource: targetPlugin.id,
+      amount: proposal.amount,
+      payee,
+      reason: fullReason,
+      requestedBy: memoRequester,
+    });
+
+    if (
+      paymentResult &&
+      (paymentResult.status === 'auto_approved' || paymentResult.status === 'owner_approved')
+    ) {
+      vendResult = targetPlugin.vend(proposal.amount);
+    }
+  } else {
+    paymentResult = {
+      status: 'blocked',
+      reason: fullReason,
+    };
+  }
+
+  const proofLotEvidence = {
+    requestedBy: safeUser.displayName,
+    role: safeUser.role,
+    staffPrompt: cleanPrompt,
+    selectedSku: proposal.sku || null,
+    selectedResource: proposal.resource,
+    amountRLUSD: proposal.amount || 0,
+    vendorAddress: payee,
+    vendorVerified: true,
+    policyRuleChecked: `per_tx_cap (${policy.per_tx_cap} RLUSD) & daily_cap (${policy.daily_cap} RLUSD)`,
+    decisionStatus: paymentResult.status,
+    txHash: paymentResult.txHash || null,
+    receiptVoucher: vendResult?.token || vendResult?.bundle || null,
+    timestamp: new Date().toISOString(),
+  };
+
+  const fullResult = {
+    mode: 'staff_request',
+    timestamp: new Date().toISOString(),
+    requestedBy: safeUser.displayName,
+    staffUser: safeUser,
+    triggerResource: proposal.resource,
+    context: staffContext,
+    proposal,
+    payment: paymentResult,
+    vend: vendResult,
+    proofLotEvidence,
   };
 
   agentEvents.emit('decision', fullResult);
@@ -458,6 +837,8 @@ async function handleLow(lowEventOrResourceId) {
 
 module.exports = {
   handleLow,
+  handleStaffRequest,
+  STAFF_SKU_CATALOG,
   askAiDecision,
   parseAndValidateDecision,
   calcRlusdNeededToRefill,
