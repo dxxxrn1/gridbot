@@ -20,6 +20,16 @@ const SUPABASE_URL = (process.env.SUPABASE_URL || '').trim();
 const SUPABASE_SERVICE_KEY = (process.env.SUPABASE_SERVICE_KEY || '').trim();
 const LOCAL_STORE_PATH = path.join(__dirname, 'local-db-fallback.json');
 
+const ENV_OWNER_PASSCODE = (process.env.OWNER_PASSCODE || '').trim();
+const ENV_STAFF_PASSCODE = (process.env.STAFF_PASSCODE || '').trim();
+
+if (!ENV_OWNER_PASSCODE || ENV_OWNER_PASSCODE.length < 6) {
+  throw new Error('[Policy DB] Startup refused: OWNER_PASSCODE must be set in policy-service/.env and at least 6 characters long.');
+}
+if (!ENV_STAFF_PASSCODE || ENV_STAFF_PASSCODE.length < 6) {
+  throw new Error('[Policy DB] Startup refused: STAFF_PASSCODE must be set in policy-service/.env and at least 6 characters long.');
+}
+
 const supabase =
   SUPABASE_URL && SUPABASE_SERVICE_KEY
     ? createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY, {
@@ -27,15 +37,20 @@ const supabase =
       })
     : null;
 
-let lastSupabaseWarnAt = 0;
+let usingLocalFallback = !supabase;
+let warnedSupabaseFallbackOnce = false;
 function warnSupabaseFallback(context, err) {
-  const now = Date.now();
-  if (now - lastSupabaseWarnAt > 60000) {
-    lastSupabaseWarnAt = now;
+  usingLocalFallback = true;
+  if (!warnedSupabaseFallbackOnce) {
+    warnedSupabaseFallbackOnce = true;
     console.warn(
       `[Policy DB] Supabase unreachable during ${context} (${err?.message || err}); using local fallback store.`
     );
   }
+}
+
+function getStorageMode() {
+  return usingLocalFallback || !supabase ? 'local fallback' : 'supabase';
 }
 
 /**
@@ -55,14 +70,12 @@ function loadPublicWallets() {
 }
 
 function getDefaultStaff() {
-  const ownerPass = (process.env.OWNER_PASSCODE || 'owner123').trim();
-  const staffPass = (process.env.STAFF_PASSCODE || 'staff123').trim();
   return [
     {
       id: 1,
       username: 'thabo',
       displayName: 'Thabo (Shift Cashier)',
-      passcode: staffPass,
+      passcode: ENV_STAFF_PASSCODE,
       role: 'staff',
       active: true,
       shift: 'Day Shift (08:00 - 16:00)',
@@ -72,7 +85,7 @@ function getDefaultStaff() {
       id: 2,
       username: 'sipho',
       displayName: 'Sipho (Night Shift)',
-      passcode: 'sipho123',
+      passcode: ENV_STAFF_PASSCODE,
       role: 'staff',
       active: true,
       shift: 'Night Shift (16:00 - 00:00)',
@@ -82,7 +95,7 @@ function getDefaultStaff() {
       id: 3,
       username: 'owner',
       displayName: 'Cafe Owner (Admin)',
-      passcode: ownerPass,
+      passcode: ENV_OWNER_PASSCODE,
       role: 'owner',
       active: true,
       shift: 'Executive Administrator',
@@ -205,6 +218,7 @@ async function getPolicy() {
     if (error) {
       throw new Error(error.message);
     }
+    usingLocalFallback = false;
 
     if (!data) {
       const defaultPolicy = getDefaultPolicy();
@@ -786,6 +800,7 @@ async function verifyStaffUser(username, passcode) {
 
 module.exports = {
   supabase,
+  getStorageMode,
   loadPublicWallets,
   getPolicy,
   updatePolicy,

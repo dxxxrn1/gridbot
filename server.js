@@ -18,6 +18,7 @@ const WebSocket = require('ws');
 const {
   getState,
   getTx,
+  requestPayment,
   getXrplProof,
   submitAgentSoloSignDemo,
   proxyOwnerApprove,
@@ -55,6 +56,8 @@ const {
 } = require('./auth');
 const {
   initTelegram,
+  sendTelegramMessage,
+  getOwnerMenuInlineKeyboard,
   notifyLowWarning,
   notifyPendingOwner,
   notifyAutoApproved,
@@ -355,7 +358,8 @@ app.get('/api/staff', requireAuth, async (req, res) => {
 
 app.post('/api/staff', requireOwner, async (req, res) => {
   try {
-    const { status, ok, data } = await createStaff(req.body, req.ownerPasscode);
+    const passcode = req.headers['x-owner-passcode'] || '';
+    const { status, ok, data } = await createStaff(req.body, passcode);
     res.status(status || (ok ? 200 : 400)).json(data || { ok, error: 'Staff creation failed' });
   } catch (err) {
     res.status(500).json({ ok: false, error: err.message });
@@ -364,7 +368,8 @@ app.post('/api/staff', requireOwner, async (req, res) => {
 
 app.delete('/api/staff/:id', requireOwner, async (req, res) => {
   try {
-    const { status, ok, data } = await deleteStaff(req.params.id, req.ownerPasscode);
+    const passcode = req.headers['x-owner-passcode'] || '';
+    const { status, ok, data } = await deleteStaff(req.params.id, passcode);
     res.status(status || (ok ? 200 : 400)).json(data || { ok, error: 'Staff deletion failed' });
   } catch (err) {
     res.status(500).json({ ok: false, error: err.message });
@@ -432,7 +437,7 @@ app.get('/api/state', async (req, res) => {
 app.get('/api/xrpl-proof', async (req, res) => {
   try {
     const proof = await getXrplProof();
-    res.json({ ok: true, ...proof });
+    res.json({ ok: proof.ok !== false, ...proof });
   } catch (err) {
     console.error('[GET /api/xrpl-proof] Error:', err.message);
     res.status(500).json({ ok: false, error: err.message });
@@ -512,7 +517,7 @@ app.post('/api/demo/reset', async (req, res) => {
  */
 app.post('/api/policy', requireOwner, async (req, res) => {
   try {
-    const passcode = req.ownerPasscode || req.headers['x-owner-passcode'] || '';
+    const passcode = req.headers['x-owner-passcode'] || '';
     const { status, ok, data } = await proxyOwnerPolicy(req.body, passcode);
 
     if (!ok) {
@@ -544,7 +549,7 @@ app.post('/api/approve/:id', requireOwner, async (req, res) => {
   try {
     const rawId = req.params.id;
     const txId = /^\d+$/.test(rawId) ? Number(rawId) : rawId;
-    const passcode = req.ownerPasscode || req.headers['x-owner-passcode'] || '';
+    const passcode = req.headers['x-owner-passcode'] || '';
 
     const txBefore = await getTx(txId);
     const { status, ok, data: approveResult } = await proxyOwnerApprove(txId, passcode);
@@ -600,7 +605,7 @@ app.post('/api/reject/:id', requireOwner, async (req, res) => {
   try {
     const rawId = req.params.id;
     const txId = /^\d+$/.test(rawId) ? Number(rawId) : rawId;
-    const passcode = req.ownerPasscode || req.headers['x-owner-passcode'] || '';
+    const passcode = req.headers['x-owner-passcode'] || '';
 
     const { status, ok, data } = await proxyOwnerReject(txId, passcode);
     if (!ok) {
@@ -735,14 +740,69 @@ async function startServer() {
   initTelegram({
     onStateChanged: async (evt) => {
       if (evt.type === 'proactive_topup' && evt.resource) {
-        const promptText =
-          evt.resource === 'data'
-            ? 'Proactive 25% low-balance top-up: need 3 RLUSD emergency LTE data'
-            : 'Proactive 25% low-balance top-up: need 5 RLUSD prepaid electricity token';
-        await handleStaffRequest({
-          staffUser: { username: 'owner_telegram', displayName: 'Owner (Telegram 25% Alert)', role: 'owner' },
-          requestText: promptText,
-        });
+        const isData = evt.resource === 'data';
+        const amount = isData ? 3 : 5;
+        const reason = isData
+          ? 'Owner Telegram proactive top-up: 3 RLUSD emergency LTE data'
+          : 'Owner Telegram proactive top-up: 5 RLUSD prepaid electricity token';
+
+        try {
+          const state = await getState();
+          const pubWallets = loadPublicWallets();
+          const payee = state?.policy?.allowed_payees?.[0] || pubWallets?.utility?.address;
+          const paymentResult = await requestPayment({
+            resource: evt.resource,
+            amount,
+            payee,
+            reason,
+            requestedBy: 'owner:telegram_topup',
+          });
+
+          let vend = null;
+          if (
+            paymentResult?.status === 'auto_approved' ||
+            paymentResult?.status === 'owner_approved'
+          ) {
+            const targetPlugin = getResource(evt.resource);
+            vend = targetPlugin.vend(amount);
+          }
+
+          broadcast('levels', { levels: getSnapshot() });
+          const latestState = await broadcastBudgetAndTxUpdate('telegram_proactive_topup');
+
+          if (paymentResult?.status === 'auto_approved' || paymentResult?.status === 'owner_approved') {
+            await notifyAutoApproved({
+              resource: evt.resource,
+              amount,
+              reason,
+              txHash: paymentResult.txHash,
+              vend,
+              requestedBy: 'Owner (Telegram Top-Up)',
+            });
+          } else if (paymentResult?.status === 'pending_owner' && paymentResult?.id !== undefined) {
+            await notifyPendingOwner({
+              id: paymentResult.id,
+              resource: evt.resource,
+              amount,
+              reason,
+              blockedReason: paymentResult.reason,
+              remainingBudget: latestState?.budgetRemaining,
+              requestedBy: 'Owner (Telegram Top-Up)',
+            });
+          } else {
+            const blockReason = paymentResult?.reason || 'Top-up blocked by policy service.';
+            await sendTelegramMessage(
+              `❌ *Proactive Top-Up Blocked:* ${String(blockReason).replace(/[_*`[\]]/g, '')}`,
+              { reply_markup: getOwnerMenuInlineKeyboard() }
+            );
+          }
+        } catch (err) {
+          console.error('[Server -> Telegram proactive_topup] Error:', err.message);
+          await sendTelegramMessage(
+            `❌ *Proactive Top-Up Error:* ${String(err.message).replace(/[_*`[\]]/g, '')}`,
+            { reply_markup: getOwnerMenuInlineKeyboard() }
+          );
+        }
         return;
       }
 

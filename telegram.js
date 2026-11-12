@@ -28,6 +28,16 @@ let pollTimer = null;
 let pollInFlight = false;
 let lastUpdateId = 0;
 let onStateChangedCallback = null;
+const pendingPinActions = new Map();
+
+const ENV_OWNER_PASSCODE = (process.env.OWNER_PASSCODE || '').trim();
+const ENV_STAFF_PASSCODE = (process.env.STAFF_PASSCODE || '').trim();
+if (!ENV_OWNER_PASSCODE || ENV_OWNER_PASSCODE.length < 6) {
+  throw new Error('[Telegram] Startup refused: OWNER_PASSCODE must be set in .env and at least 6 characters long.');
+}
+if (!ENV_STAFF_PASSCODE || ENV_STAFF_PASSCODE.length < 6) {
+  throw new Error('[Telegram] Startup refused: STAFF_PASSCODE must be set in .env and at least 6 characters long.');
+}
 
 function getConfig() {
   const token = (process.env.TELEGRAM_BOT_TOKEN || '').trim();
@@ -36,11 +46,19 @@ function getConfig() {
     process.env.OWNER_CHAT_ID ||
     ''
   ).trim();
-  const ownerPasscode = (process.env.OWNER_PASSCODE || 'owner123').trim();
+  const allowedChatIds = new Set(
+    String(process.env.TELEGRAM_ALLOWED_CHAT_IDS || chatId)
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean)
+  );
+  if (chatId) allowedChatIds.add(chatId);
+  const telegramApprovePin = (process.env.TELEGRAM_APPROVE_PIN || '').trim();
   return {
     token,
     chatId,
-    ownerPasscode,
+    allowedChatIds,
+    telegramApprovePin,
     enabled: Boolean(token && chatId),
   };
 }
@@ -364,9 +382,24 @@ async function notifyPendingOwner({
 /**
  * Shared handler for owner approve action (triggered by inline button or `/approve <id>`).
  */
-async function handleOwnerApproveAction(rawId, { callbackQueryId, messageId } = {}) {
+async function handleOwnerApproveAction(rawId, { callbackQueryId, messageId, incomingChatId, pin } = {}) {
   const txId = /^\d+$/.test(String(rawId)) ? Number(rawId) : rawId;
-  const { chatId, ownerPasscode } = getConfig();
+  const { chatId, allowedChatIds, telegramApprovePin } = getConfig();
+  const targetChatId = incomingChatId || chatId;
+
+  if (!allowedChatIds.has(String(targetChatId))) {
+    await sendTelegramMessage('⛔ Unauthorized chat ID for Telegram approval.');
+    return;
+  }
+
+  if (!telegramApprovePin || String(pin || '').trim() !== telegramApprovePin) {
+    await sendTelegramMessage(
+      telegramApprovePin
+        ? `🔐 Invalid or missing approval PIN for #${txId}. Send \`/approve ${txId} <PIN>\` or click Approve and enter your PIN.`
+        : '⚠️ Telegram approvals are disabled: `TELEGRAM_APPROVE_PIN` is not configured in `.env`.'
+    );
+    return;
+  }
 
   if (callbackQueryId) {
     await callTelegramApi('answerCallbackQuery', {
@@ -386,10 +419,10 @@ async function handleOwnerApproveAction(rawId, { callbackQueryId, messageId } = 
     return;
   }
 
-  const { ok, data: approveResult } = await proxyOwnerApprove(
-    txId,
-    ownerPasscode || process.env.OWNER_PASSCODE || 'owner123'
-  );
+  const { ok, data: approveResult } = await proxyOwnerApprove(txId, null, {
+    pin: telegramApprovePin,
+    chatId: targetChatId,
+  });
 
   if (ok && approveResult?.status === 'owner_approved') {
     let vend = null;
@@ -449,14 +482,29 @@ async function handleOwnerApproveAction(rawId, { callbackQueryId, messageId } = 
 /**
  * Shared handler for owner reject action (triggered by inline button or `/reject <id>`).
  */
-async function handleOwnerRejectAction(rawId, { callbackQueryId, messageId } = {}) {
+async function handleOwnerRejectAction(rawId, { callbackQueryId, messageId, incomingChatId, pin } = {}) {
   const txId = /^\d+$/.test(String(rawId)) ? Number(rawId) : rawId;
-  const { chatId, ownerPasscode } = getConfig();
+  const { chatId, allowedChatIds, telegramApprovePin } = getConfig();
+  const targetChatId = incomingChatId || chatId;
 
-  const { ok, data: rejectResult } = await proxyOwnerReject(
-    txId,
-    ownerPasscode || process.env.OWNER_PASSCODE || 'owner123'
-  );
+  if (!allowedChatIds.has(String(targetChatId))) {
+    await sendTelegramMessage('⛔ Unauthorized chat ID for Telegram rejection.');
+    return;
+  }
+
+  if (!telegramApprovePin || String(pin || '').trim() !== telegramApprovePin) {
+    await sendTelegramMessage(
+      telegramApprovePin
+        ? `🔐 Invalid or missing approval PIN for #${txId}. Send \`/reject ${txId} <PIN>\` or click Reject and enter your PIN.`
+        : '⚠️ Telegram approvals are disabled: `TELEGRAM_APPROVE_PIN` is not configured in `.env`.'
+    );
+    return;
+  }
+
+  const { ok, data: rejectResult } = await proxyOwnerReject(txId, null, {
+    pin: telegramApprovePin,
+    chatId: targetChatId,
+  });
 
   if (callbackQueryId) {
     await callTelegramApi('answerCallbackQuery', {
@@ -497,13 +545,13 @@ async function handleOwnerRejectAction(rawId, { callbackQueryId, messageId } = {
  * Processes a single update from Telegram `getUpdates`.
  */
 async function processUpdate(update) {
-  const { chatId } = getConfig();
+  const { allowedChatIds, telegramApprovePin } = getConfig();
 
   // 1. Handle inline keyboard button clicks (callback_query)
   if (update.callback_query) {
     const cb = update.callback_query;
     const incomingChatId = String(cb?.message?.chat?.id || '');
-    if (incomingChatId !== String(chatId)) {
+    if (!allowedChatIds.has(incomingChatId)) {
       await callTelegramApi('answerCallbackQuery', {
         callback_query_id: cb.id,
         text: 'Unauthorized chat ID.',
@@ -516,10 +564,30 @@ async function processUpdate(update) {
     const [action, rawId] = data.split(':');
     const messageId = cb?.message?.message_id;
 
-    if (action === 'approve' && rawId) {
-      await handleOwnerApproveAction(rawId, { callbackQueryId: cb.id, messageId });
-    } else if (action === 'reject' && rawId) {
-      await handleOwnerRejectAction(rawId, { callbackQueryId: cb.id, messageId });
+    if ((action === 'approve' || action === 'reject') && rawId) {
+      if (!telegramApprovePin) {
+        await callTelegramApi('answerCallbackQuery', {
+          callback_query_id: cb.id,
+          text: 'TELEGRAM_APPROVE_PIN is not set in .env',
+          show_alert: true,
+        });
+        await sendTelegramMessage('⚠️ Telegram approvals are disabled: `TELEGRAM_APPROVE_PIN` is not configured in `.env`.');
+        return;
+      }
+
+      await callTelegramApi('answerCallbackQuery', {
+        callback_query_id: cb.id,
+        text: `Reply with your Telegram PIN to ${action} #${rawId}`,
+      });
+      pendingPinActions.set(incomingChatId, {
+        action,
+        txId: rawId,
+        messageId,
+        expiresAt: Date.now() + 120000,
+      });
+      await sendTelegramMessage(
+        `🔐 *PIN Required:* Reply with your \`TELEGRAM_APPROVE_PIN\` to *${action.toUpperCase()}* transaction *#${rawId}* (or send \`/${action} ${rawId} <PIN>\`).`
+      );
     } else if (action === 'menu') {
       await callTelegramApi('answerCallbackQuery', {
         callback_query_id: cb.id,
@@ -545,12 +613,35 @@ async function processUpdate(update) {
     return;
   }
 
-  // 2. Handle text commands (/start, /menu, /status, /pending, /approve <id>, /reject <id>)
+  // 2. Handle text commands (/start, /menu, /status, /pending, /approve <id> <PIN>, /reject <id> <PIN>)
   if (update.message && update.message.text) {
     const incomingChatId = String(update.message?.chat?.id || '');
-    if (incomingChatId !== String(chatId)) return;
+    if (!allowedChatIds.has(incomingChatId)) return;
 
     const text = update.message.text.trim();
+
+    const pendingPin = pendingPinActions.get(incomingChatId);
+    if (pendingPin && !text.startsWith('/')) {
+      pendingPinActions.delete(incomingChatId);
+      if (Date.now() > pendingPin.expiresAt) {
+        await sendTelegramMessage('⏱️ Approval PIN prompt expired. Click Approve or Reject again.');
+        return;
+      }
+      if (pendingPin.action === 'approve') {
+        await handleOwnerApproveAction(pendingPin.txId, {
+          messageId: pendingPin.messageId,
+          incomingChatId,
+          pin: text,
+        });
+      } else {
+        await handleOwnerRejectAction(pendingPin.txId, {
+          messageId: pendingPin.messageId,
+          incomingChatId,
+          pin: text,
+        });
+      }
+      return;
+    }
 
     if (text === '/status' || text === '/start' || text === '/menu' || text === '/help') {
       await sendOwnerControlMenu();
@@ -582,15 +673,21 @@ async function processUpdate(update) {
       return;
     }
 
-    const approveMatch = text.match(/^\/approve\s+#?(\d+)$/i);
+    const approveMatch = text.match(/^\/approve\s+#?(\d+)(?:\s+(\S+))?$/i);
     if (approveMatch) {
-      await handleOwnerApproveAction(approveMatch[1]);
+      await handleOwnerApproveAction(approveMatch[1], {
+        incomingChatId,
+        pin: approveMatch[2] || '',
+      });
       return;
     }
 
-    const rejectMatch = text.match(/^\/reject\s+#?(\d+)$/i);
+    const rejectMatch = text.match(/^\/reject\s+#?(\d+)(?:\s+(\S+))?$/i);
     if (rejectMatch) {
-      await handleOwnerRejectAction(rejectMatch[1]);
+      await handleOwnerRejectAction(rejectMatch[1], {
+        incomingChatId,
+        pin: rejectMatch[2] || '',
+      });
       return;
     }
 

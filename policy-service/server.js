@@ -15,6 +15,7 @@ require('dotenv').config({ path: path.join(__dirname, '.env') });
 const express = require('express');
 
 const {
+  getStorageMode,
   getPolicy,
   updatePolicy,
   spentToday,
@@ -35,12 +36,28 @@ const {
 const PORT = Number(process.env.PORT) || 4000;
 const AGENT_API_TOKEN = (process.env.AGENT_API_TOKEN || '').trim();
 const OWNER_PASSCODE = (process.env.OWNER_PASSCODE || '').trim();
+const STAFF_PASSCODE = (process.env.STAFF_PASSCODE || '').trim();
+const TELEGRAM_APPROVE_PIN = (process.env.TELEGRAM_APPROVE_PIN || '').trim();
+const TELEGRAM_ALLOWED_CHAT_IDS = new Set(
+  String(
+    process.env.TELEGRAM_ALLOWED_CHAT_IDS ||
+      process.env.TELEGRAM_CHAT_ID ||
+      process.env.OWNER_CHAT_ID ||
+      ''
+  )
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean)
+);
 
 if (!AGENT_API_TOKEN) {
   console.warn('[Policy Service] WARNING: AGENT_API_TOKEN is empty in policy-service/.env');
 }
-if (!OWNER_PASSCODE) {
-  console.warn('[Policy Service] WARNING: OWNER_PASSCODE is empty in policy-service/.env');
+if (!OWNER_PASSCODE || OWNER_PASSCODE.length < 6) {
+  throw new Error('[Policy Service] Startup refused: OWNER_PASSCODE must be set in policy-service/.env and at least 6 characters long.');
+}
+if (!STAFF_PASSCODE || STAFF_PASSCODE.length < 6) {
+  throw new Error('[Policy Service] Startup refused: STAFF_PASSCODE must be set in policy-service/.env and at least 6 characters long.');
 }
 
 const app = express();
@@ -66,6 +83,32 @@ function requireOwnerPasscode(req, res, next) {
     return res.status(401).json({ error: 'Unauthorized: invalid or missing x-owner-passcode' });
   }
   next();
+}
+
+/**
+ * Middleware for Telegram / Owner approvals: accepts either `x-owner-passcode`
+ * OR (`x-telegram-pin` == TELEGRAM_APPROVE_PIN AND `x-telegram-chat-id` in allowlist).
+ */
+function requireOwnerOrTelegramPin(req, res, next) {
+  const passcode = (req.headers['x-owner-passcode'] || '').trim();
+  if (OWNER_PASSCODE && passcode === OWNER_PASSCODE) {
+    return next();
+  }
+
+  const tgPin = (req.headers['x-telegram-pin'] || '').trim();
+  const tgChatId = String(req.headers['x-telegram-chat-id'] || '').trim();
+  const chatAllowed =
+    TELEGRAM_ALLOWED_CHAT_IDS.size === 0
+      ? Boolean(tgChatId)
+      : TELEGRAM_ALLOWED_CHAT_IDS.has(tgChatId);
+
+  if (TELEGRAM_APPROVE_PIN && tgPin === TELEGRAM_APPROVE_PIN && chatAllowed) {
+    return next();
+  }
+
+  return res.status(401).json({
+    error: 'Unauthorized: invalid x-owner-passcode or Telegram approval PIN/chat ID',
+  });
 }
 
 // ============================================================================
@@ -112,6 +155,7 @@ app.get('/state', requireAgentToken, async (req, res) => {
       spentToday: spent,
       budgetRemaining,
       transactions,
+      storage: getStorageMode(),
     });
   } catch (err) {
     console.error('[Policy Service GET /state] Error:', err.message);
@@ -176,7 +220,7 @@ app.post('/auth/verify', requireAgentToken, async (req, res) => {
  * Builds & autofills a new Payment from treasury to stored payee and amount,
  * signs ONLY with the owner key (weight 2), submits, updates row to owner_approved.
  */
-app.post('/owner/approve/:id', requireOwnerPasscode, async (req, res) => {
+app.post('/owner/approve/:id', requireOwnerOrTelegramPin, async (req, res) => {
   try {
     const rawId = req.params.id;
     const txId = /^\d+$/.test(rawId) ? Number(rawId) : rawId;
@@ -196,7 +240,7 @@ app.post('/owner/approve/:id', requireOwnerPasscode, async (req, res) => {
  * POST /owner/reject/:id
  * Marks status = 'blocked', blocked_reason = 'rejected by owner'.
  */
-app.post('/owner/reject/:id', requireOwnerPasscode, async (req, res) => {
+app.post('/owner/reject/:id', requireOwnerOrTelegramPin, async (req, res) => {
   try {
     const rawId = req.params.id;
     const txId = /^\d+$/.test(rawId) ? Number(rawId) : rawId;

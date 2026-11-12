@@ -15,6 +15,9 @@ split-wallets.js
 wallets.agent.json
 wallets.public.json
 
+# Local DB Fallback
+policy-service/local-db-fallback.json
+
 # OS / Editor files
 .DS_Store
 Thumbs.db

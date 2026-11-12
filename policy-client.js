@@ -306,25 +306,37 @@ async function spentToday() {
 /**
  * Thin proxy helpers for owner actions (forwarding x-owner-passcode from the browser/owner).
  */
-async function proxyOwnerApprove(id, ownerPasscode) {
+async function proxyOwnerApprove(id, ownerPasscode, telegramAuth = null) {
+  const headers = {
+    'Content-Type': 'application/json',
+  };
+  if (telegramAuth && telegramAuth.pin) {
+    headers['x-telegram-pin'] = telegramAuth.pin;
+    headers['x-telegram-chat-id'] = String(telegramAuth.chatId || '');
+  } else if (ownerPasscode) {
+    headers['x-owner-passcode'] = ownerPasscode;
+  }
   const res = await fetch(`${POLICY_SERVICE_URL}/owner/approve/${encodeURIComponent(id)}`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-owner-passcode': ownerPasscode || '',
-    },
+    headers,
   });
   const data = await res.json().catch(() => ({}));
   return { status: res.status, ok: res.ok, data };
 }
 
-async function proxyOwnerReject(id, ownerPasscode) {
+async function proxyOwnerReject(id, ownerPasscode, telegramAuth = null) {
+  const headers = {
+    'Content-Type': 'application/json',
+  };
+  if (telegramAuth && telegramAuth.pin) {
+    headers['x-telegram-pin'] = telegramAuth.pin;
+    headers['x-telegram-chat-id'] = String(telegramAuth.chatId || '');
+  } else if (ownerPasscode) {
+    headers['x-owner-passcode'] = ownerPasscode;
+  }
   const res = await fetch(`${POLICY_SERVICE_URL}/owner/reject/${encodeURIComponent(id)}`, {
     method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-owner-passcode': ownerPasscode || '',
-    },
+    headers,
   });
   const data = await res.json().catch(() => ({}));
   return { status: res.status, ok: res.ok, data };
@@ -502,26 +514,27 @@ async function getXrplProof() {
       rlusdBalance,
       signerQuorum,
       signerEntries,
+      checkedAt: Date.now(),
     };
-    return cachedXrplProof;
+    return {
+      ok: true,
+      ...cachedXrplProof,
+      cached: false,
+      ageSeconds: 0,
+    };
   } catch (err) {
     if (cachedXrplProof) {
-      return cachedXrplProof;
+      const ageSeconds = Math.max(0, Math.round((Date.now() - cachedXrplProof.checkedAt) / 1000));
+      return {
+        ok: true,
+        ...cachedXrplProof,
+        cached: true,
+        ageSeconds,
+      };
     }
     return {
-      treasuryAddress,
-      issuerAddress,
-      explorerAccountUrl: `https://testnet.xrpl.org/accounts/${treasuryAddress}`,
-      masterKeyDisabled: true,
-      flags: 0x00100000,
-      xrpBalance: 10,
-      rlusdBalance: 956,
-      signerQuorum: 2,
-      signerEntries: [
-        { account: pub?.agent?.address, weight: 1, role: 'agent' },
-        { account: pub?.policy?.address, weight: 1, role: 'policy' },
-        { account: pub?.owner?.address, weight: 2, role: 'owner' },
-      ],
+      ok: false,
+      error: 'Ledger unreachable',
     };
   }
 }
@@ -533,57 +546,61 @@ async function getXrplProof() {
  * rejects the transaction with `tefBAD_QUORUM` before it can enter a ledger.
  */
 async function submitAgentSoloSignDemo() {
-  const pub = loadPublicWallets();
-  const agentWallet = loadAgentWallet();
-
-  const treasuryAddress = pub?.treasury?.address;
-  const issuerAddress = pub?.issuer?.address;
-  const destAddress = pub?.utility?.address;
-
-  const paymentTx = {
-    TransactionType: 'Payment',
-    Account: treasuryAddress,
-    Destination: destAddress,
-    Amount: {
-      currency: RLUSD_CURRENCY_HEX,
-      issuer: issuerAddress,
-      value: '1',
-    },
-    Memos: buildAuditMemos({
-      resource: 'electricity',
-      reason: 'Demo: agent attempting to pay 1 RLUSD alone without policy signer',
-      requestedBy: 'agent',
-    }),
-  };
-
   try {
+    const pub = loadPublicWallets();
+    const agentWallet = loadAgentWallet();
+
+    const treasuryAddress = pub?.treasury?.address;
+    const issuerAddress = pub?.issuer?.address;
+    const destAddress = pub?.utility?.address;
+
+    const paymentTx = {
+      TransactionType: 'Payment',
+      Account: treasuryAddress,
+      Destination: destAddress,
+      Amount: {
+        currency: RLUSD_CURRENCY_HEX,
+        issuer: issuerAddress,
+        value: '1',
+      },
+      Memos: buildAuditMemos({
+        resource: 'electricity',
+        reason: 'Demo: agent attempting to pay 1 RLUSD alone without policy signer',
+        requestedBy: 'agent',
+      }),
+    };
+
     const client = await getXrplClient();
     const prepared = await client.autofill(paymentTx, 1);
     const soloSigned = agentWallet.sign(prepared, true);
     const combinedBlob = xrpl.multisign([soloSigned.tx_blob]);
 
-    // Use client.submit (non-waiting) so we immediately get the engine_result (tefBAD_QUORUM)
+    // Use client.submit (non-waiting) so we immediately get the real engine_result
     const submitRes = await client.submit(combinedBlob);
     const engineResult =
       submitRes?.result?.engine_result ||
       submitRes?.result?.meta?.TransactionResult ||
-      'UNKNOWN';
-    const engineResultMessage =
-      submitRes?.result?.engine_result_message ||
-      'Multi-signed transaction did not meet quorum.';
+      null;
+    const engineResultMessage = submitRes?.result?.engine_result_message || '';
+
+    if (!engineResult) {
+      return {
+        ok: false,
+        error: 'Ledger did not return an engine_result',
+      };
+    }
 
     return {
       ok: true,
       code: engineResult,
       engineResult,
       message: engineResultMessage,
+      ledgerRejected: engineResult !== 'tesSUCCESS',
     };
   } catch (err) {
     return {
-      ok: true,
-      code: 'tefBAD_QUORUM',
-      engineResult: 'tefBAD_QUORUM',
-      message: 'Multi-signed transaction did not meet quorum (agent weight 1 < quorum 2).',
+      ok: false,
+      error: err.message,
     };
   }
 }

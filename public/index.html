@@ -1436,14 +1436,14 @@
 
         <span class="splash-badge">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-          Ledger Proof (Live XRPL Testnet)
+          <span id="proofBadgeText">Ledger Proof (Live XRPL Testnet)</span>
         </span>
 
         <div class="splash-checks">
           <div class="splash-check-row">
             <span class="splash-check-label">RLUSD Treasury Balance</span>
             <span class="splash-check-val">
-              <strong id="proofRlusdBalance">956.00 RLUSD</strong>
+              <strong id="proofRlusdBalance">Checking...</strong>
               <a
                 id="proofVerifyLink1"
                 href="https://testnet.xrpl.org"
@@ -1458,7 +1458,7 @@
           <div class="splash-check-row">
             <span class="splash-check-label">Master Key Disabled</span>
             <span class="splash-check-val">
-              <strong id="proofMasterDisabled">yes</strong>
+              <strong id="proofMasterDisabled">Checking...</strong>
               <a
                 id="proofVerifyLink2"
                 href="https://testnet.xrpl.org"
@@ -1473,9 +1473,7 @@
           <div class="splash-check-row">
             <span class="splash-check-label">Multi-Sign Security</span>
             <span class="splash-check-val" style="color: #e2e8f0">
-              <strong id="proofSignerQuorum"
-                >SignerList quorum 2 (agent 1, policy 1, owner 2)</strong
-              >
+              <strong id="proofSignerQuorum">Checking...</strong>
               <a
                 id="proofVerifyLink3"
                 href="https://testnet.xrpl.org"
@@ -1701,6 +1699,9 @@
             <h2 id="currentViewTitle" class="breadcrumb-title">Dashboard</h2>
           </div>
           <div class="header-right">
+            <div id="storageModeBadge" class="ws-pill hidden" style="border-color: rgba(255, 181, 71, 0.45); color: #fde68a; background: rgba(255, 181, 71, 0.12);">
+              Local fallback storage
+            </div>
             <div class="ws-pill">
               <span id="wsDotCircle" class="ws-dot"></span>
               <span id="wsStatusText">Connecting</span>
@@ -2962,6 +2963,14 @@
         document.getElementById("budgetRemainingRingText").textContent =
           left.toFixed(1);
 
+        const storageBadge = document.getElementById("storageModeBadge");
+        if (storageBadge) {
+          storageBadge.classList.toggle(
+            "hidden",
+            appState.storage !== "local fallback",
+          );
+        }
+
         const ring = document.getElementById("budgetGaugeRing");
         const ratio = cap > 0 ? Math.max(0, Math.min(1, left / cap)) : 0;
         ring.style.strokeDashoffset = (BUDGET_C - ratio * BUDGET_C).toFixed(2);
@@ -3242,23 +3251,37 @@
       }
 
       async function refreshXrplProof() {
+        const badgeTextEl = document.getElementById("proofBadgeText");
+        const balEl = document.getElementById("proofRlusdBalance");
+        const masterEl = document.getElementById("proofMasterDisabled");
+        const quorumEl = document.getElementById("proofSignerQuorum");
+
         try {
           const res = await fetch("/api/xrpl-proof");
           const data = await res.json();
-          if (!data || !data.ok) return;
+          if (!data || !data.ok) {
+            if (badgeTextEl) badgeTextEl.textContent = "Ledger proof unavailable";
+            if (balEl) balEl.textContent = "Ledger proof unavailable";
+            if (masterEl) masterEl.textContent = "Ledger proof unavailable";
+            if (quorumEl) quorumEl.textContent = "Ledger proof unavailable";
+            return;
+          }
 
-          const balEl = document.getElementById("proofRlusdBalance");
+          if (badgeTextEl) {
+            badgeTextEl.textContent = data.cached
+              ? `Ledger Proof (Cached • checked ${data.ageSeconds ?? 0}s ago)`
+              : "Ledger Proof (Live XRPL Testnet)";
+          }
+
           if (balEl) {
             const num = Number(data.rlusdBalance || 0);
             balEl.textContent = `${num.toFixed(2)} RLUSD`;
           }
 
-          const masterEl = document.getElementById("proofMasterDisabled");
           if (masterEl) {
             masterEl.textContent = data.masterKeyDisabled ? "yes" : "no";
           }
 
-          const quorumEl = document.getElementById("proofSignerQuorum");
           if (quorumEl) {
             const entries = Array.isArray(data.signerEntries)
               ? data.signerEntries
@@ -3292,6 +3315,10 @@
           }
         } catch (err) {
           console.error("Failed to refresh XRPL proof:", err);
+          if (badgeTextEl) badgeTextEl.textContent = "Ledger proof unavailable";
+          if (balEl) balEl.textContent = "Ledger proof unavailable";
+          if (masterEl) masterEl.textContent = "Ledger proof unavailable";
+          if (quorumEl) quorumEl.textContent = "Ledger proof unavailable";
         }
       }
 

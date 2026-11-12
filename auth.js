@@ -2,44 +2,24 @@
 // Role-based session authentication for GridBot Main App (Owner & Staff roles).
 
 const crypto = require('crypto');
-const fs = require('fs');
-const path = require('path');
 require('dotenv').config();
 
-/**
- * Resolves the OWNER_PASSCODE used by policy-service so forwarding `req.ownerPasscode`
- * always authenticates against policy-service even if only set in policy-service/.env.
- */
-function resolvePolicyServiceOwnerPasscode() {
-  if (process.env.OWNER_PASSCODE && process.env.OWNER_PASSCODE.trim()) {
-    return process.env.OWNER_PASSCODE.trim();
-  }
-  try {
-    const policyEnvPath = path.join(__dirname, 'policy-service', '.env');
-    if (fs.existsSync(policyEnvPath)) {
-      const raw = fs.readFileSync(policyEnvPath, 'utf8');
-      const match = raw.match(/^\s*OWNER_PASSCODE\s*=\s*(.+)\s*$/m);
-      if (match && match[1]) {
-        return match[1].trim();
-      }
-    }
-  } catch (_) {}
-  return 'owner123';
+const OWNER_PASSCODE = String(process.env.OWNER_PASSCODE || '').trim();
+const STAFF_PASSCODE = String(process.env.STAFF_PASSCODE || '').trim();
+
+if (!OWNER_PASSCODE || OWNER_PASSCODE.length < 6) {
+  throw new Error('[Auth] Startup refused: OWNER_PASSCODE must be set in .env and at least 6 characters long.');
+}
+if (!STAFF_PASSCODE || STAFF_PASSCODE.length < 6) {
+  throw new Error('[Auth] Startup refused: STAFF_PASSCODE must be set in .env and at least 6 characters long.');
 }
 
 function getOwnerPasscodes() {
-  const primary = resolvePolicyServiceOwnerPasscode();
-  const valid = new Set([primary, 'owner123']);
-  if (process.env.OWNER_PASSCODE && process.env.OWNER_PASSCODE.trim()) {
-    valid.add(process.env.OWNER_PASSCODE.trim());
-  }
-  return { primary, valid };
+  return { primary: OWNER_PASSCODE, valid: new Set([OWNER_PASSCODE]) };
 }
 
 function getStaffPasscodes() {
-  const primary = (process.env.STAFF_PASSCODE || 'staff123').trim();
-  const valid = new Set([primary, 'staff123']);
-  return { primary, valid };
+  return { primary: STAFF_PASSCODE, valid: new Set([STAFF_PASSCODE]) };
 }
 
 // Active session store: token -> { token, username, displayName, role, loginAt }
@@ -200,15 +180,12 @@ function requireAuth(req, res, next) {
     });
   }
   req.user = user;
-  if (user.role === 'owner') {
-    req.ownerPasscode = resolvePolicyServiceOwnerPasscode();
-  }
   next();
 }
 
 /**
- * Express middleware: requires `role === 'owner'` (or valid `x-owner-passcode`),
- * and attaches `req.ownerPasscode` so `server.js` can forward it to `policy-service`.
+ * Express middleware: requires `role === 'owner'` (or valid `x-owner-passcode`).
+ * Does NOT inject or store the owner passcode server-side; the browser must send `x-owner-passcode` per request.
  */
 function requireOwner(req, res, next) {
   const user = getUserFromReq(req);
@@ -217,7 +194,6 @@ function requireOwner(req, res, next) {
 
   if (user && user.role === 'owner') {
     req.user = user;
-    req.ownerPasscode = ownerAuth.primary;
     return next();
   }
 
@@ -228,7 +204,6 @@ function requireOwner(req, res, next) {
       role: 'owner',
       viaPasscode: true,
     };
-    req.ownerPasscode = ownerAuth.primary;
     return next();
   }
 
@@ -244,5 +219,4 @@ module.exports = {
   getUserFromReq,
   requireAuth,
   requireOwner,
-  resolvePolicyServiceOwnerPasscode,
 };
