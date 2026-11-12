@@ -91,7 +91,7 @@ const data = {
   id: 'data',
   label: 'Router LTE Data Cap (Mock)',
   priority: 2,
-  threshold: 10, // 10% low-balance threshold
+  threshold: 5, // 5% low-balance (auto-pay) threshold
   unitCostRLUSD: 3,
   percentPerRLUSD: 33.3, // 1 RLUSD adds 33.3% (~3 RLUSD refills ~100%)
   isMock: true,

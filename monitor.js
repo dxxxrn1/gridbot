@@ -9,13 +9,13 @@ const { listResources, getResource } = require('./resources');
 
 const TICK_MS = 2000;
 const LOW_RETRY_MS = 15000; // Re-emit 'low' at most once every 15s while still <= threshold
-const WARN_LEVEL_PERCENT = 25; // Proactive early warning threshold (25%)
+const WARN_LEVEL_PERCENT = 20; // Proactive early warning threshold (20%)
 const emitter = new EventEmitter();
 
 let timer = null;
 // Map of resourceId -> timestamp (ms) of the last emitted 'low' event
 const lastLowFiredAt = new Map();
-// Set of resourceIds that have already fired the 25% early warning in the current drain cycle
+// Set of resourceIds that have already fired the 20% early warning in the current drain cycle
 const warnFiredSet = new Set();
 
 /**
@@ -32,9 +32,9 @@ function resetLatch(resourceId) {
 }
 
 /**
- * Checks all resources' current levels against the 25% early-warning threshold and critical thresholds.
- * - If level > 25%: clears the 25% warning latch for that resource.
- * - If threshold < level <= 25%: emits 'warning' once per drain cycle so Owner/Staff get a Telegram heads-up.
+ * Checks all resources' current levels against the 20% early-warning threshold and critical thresholds.
+ * - If level > 20%: clears the 20% warning latch for that resource.
+ * - If threshold < level <= 20%: emits 'warning' once per drain cycle so Owner/Staff get a Telegram heads-up.
  * - If level > threshold: clears the critical 'low' latch for that resource.
  * - If level <= threshold: emits 'low' immediately if not yet fired, or retries if >= 15s
  *   have elapsed since the last 'low' emission for that resource.

@@ -4,23 +4,23 @@
 // an interactive Owner Control Panel menu in Telegram, and 2.5s background getUpdates polling
 // for inline button callbacks (approve:<id>, reject:<id>, topup:<res>, menu:<action>) and commands.
 
-const dns = require('dns');
-if (typeof dns.setDefaultResultOrder === 'function') {
-  dns.setDefaultResultOrder('ipv4first');
+const dns = require("dns");
+if (typeof dns.setDefaultResultOrder === "function") {
+  dns.setDefaultResultOrder("ipv4first");
 }
-require('dotenv').config();
+require("dotenv").config();
 
 const {
   getState,
   getTx,
   proxyOwnerApprove,
   proxyOwnerReject,
-} = require('./policy-client');
-const { getResource, listResources } = require('./resources');
+} = require("./policy-client");
+const { getResource, listResources } = require("./resources");
 
 const XRPL_EXPLORER_BASE = (
-  process.env.XRPL_EXPLORER_BASE || 'https://testnet.xrpl.org/transactions'
-).replace(/\/$/, '');
+  process.env.XRPL_EXPLORER_BASE || "https://testnet.xrpl.org/transactions"
+).replace(/\/$/, "");
 
 const POLL_INTERVAL_MS = 2500;
 
@@ -30,30 +30,34 @@ let lastUpdateId = 0;
 let onStateChangedCallback = null;
 const pendingPinActions = new Map();
 
-const ENV_OWNER_PASSCODE = (process.env.OWNER_PASSCODE || '').trim();
-const ENV_STAFF_PASSCODE = (process.env.STAFF_PASSCODE || '').trim();
+const ENV_OWNER_PASSCODE = (process.env.OWNER_PASSCODE || "").trim();
+const ENV_STAFF_PASSCODE = (process.env.STAFF_PASSCODE || "").trim();
 if (!ENV_OWNER_PASSCODE || ENV_OWNER_PASSCODE.length < 6) {
-  throw new Error('[Telegram] Startup refused: OWNER_PASSCODE must be set in .env and at least 6 characters long.');
+  throw new Error(
+    "[Telegram] Startup refused: OWNER_PASSCODE must be set in .env and at least 6 characters long.",
+  );
 }
 if (!ENV_STAFF_PASSCODE || ENV_STAFF_PASSCODE.length < 6) {
-  throw new Error('[Telegram] Startup refused: STAFF_PASSCODE must be set in .env and at least 6 characters long.');
+  throw new Error(
+    "[Telegram] Startup refused: STAFF_PASSCODE must be set in .env and at least 6 characters long.",
+  );
 }
 
 function getConfig() {
-  const token = (process.env.TELEGRAM_BOT_TOKEN || '').trim();
+  const token = (process.env.TELEGRAM_BOT_TOKEN || "").trim();
   const chatId = (
     process.env.TELEGRAM_CHAT_ID ||
     process.env.OWNER_CHAT_ID ||
-    ''
+    ""
   ).trim();
   const allowedChatIds = new Set(
     String(process.env.TELEGRAM_ALLOWED_CHAT_IDS || chatId)
-      .split(',')
+      .split(",")
       .map((s) => s.trim())
-      .filter(Boolean)
+      .filter(Boolean),
   );
   if (chatId) allowedChatIds.add(chatId);
-  const telegramApprovePin = (process.env.TELEGRAM_APPROVE_PIN || '').trim();
+  const telegramApprovePin = (process.env.TELEGRAM_APPROVE_PIN || "").trim();
   return {
     token,
     chatId,
@@ -72,8 +76,8 @@ function explorerUrl(txHash) {
  * Escapes characters that break Telegram legacy Markdown ('_', '*', '`', '[').
  */
 function cleanMd(val) {
-  if (val === null || val === undefined) return '';
-  return String(val).replace(/[_*`[\]]/g, (ch) => (ch === '_' ? '-' : ''));
+  if (val === null || val === undefined) return "";
+  return String(val).replace(/[_*`[\]]/g, (ch) => (ch === "_" ? "-" : ""));
 }
 
 /**
@@ -83,12 +87,15 @@ function getOwnerMenuInlineKeyboard() {
   return {
     inline_keyboard: [
       [
-        { text: '📊 Status & Meters', callback_data: 'menu:status' },
-        { text: '⏳ Pending Approvals', callback_data: 'menu:pending' },
+        { text: "📊 Status & Meters", callback_data: "menu:status" },
+        { text: "⏳ Pending Approvals", callback_data: "menu:pending" },
       ],
       [
-        { text: '⚡ Top Up Electricity (5 RLUSD)', callback_data: 'topup:electricity' },
-        { text: '📶 Top Up LTE Data (3 RLUSD)', callback_data: 'topup:data' },
+        {
+          text: "⚡ Top Up Electricity (5 RLUSD)",
+          callback_data: "topup:electricity",
+        },
+        { text: "📶 Top Up LTE Data (3 RLUSD)", callback_data: "topup:data" },
       ],
     ],
   };
@@ -98,36 +105,43 @@ function getOwnerMenuInlineKeyboard() {
  * Calls the Telegram Bot HTTP API (`https://api.telegram.org/bot<TOKEN>/<method>`) via native fetch.
  * Never throws; returns `{ ok: false }` on any network or API error.
  */
+let lastGetUpdatesErrAt = 0;
 async function callTelegramApi(method, body = {}) {
   const { token, enabled } = getConfig();
   if (!enabled) return { ok: false, disabled: true };
 
   try {
     const res = await fetch(`https://api.telegram.org/bot${token}/${method}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
     });
     const data = await res.json().catch(() => ({ ok: false }));
-    if (!data.ok && method !== 'getUpdates') {
-      const desc = String(data.description || '');
-      if (
-        !desc.includes('query is too old') &&
-        !desc.includes('message is not modified') &&
-        !desc.includes('parse entities')
+    if (!data.ok) {
+      const desc = String(data.description || "");
+      if (method === "getUpdates") {
+        const now = Date.now();
+        if (now - lastGetUpdatesErrAt > 30000) {
+          lastGetUpdatesErrAt = now;
+          console.warn(`[Telegram API] getUpdates error:`, desc || data);
+        }
+      } else if (
+        !desc.includes("query is too old") &&
+        !desc.includes("message is not modified") &&
+        !desc.includes("parse entities")
       ) {
         console.warn(`[Telegram API] ${method} returned error:`, desc || data);
       }
     }
     return data;
   } catch (err) {
-    const msg = String(err?.message || err || '');
+    const msg = String(err?.message || err || "");
     if (
-      !msg.includes('fetch failed') &&
-      !msg.includes('ECONNRESET') &&
-      !msg.includes('ETIMEDOUT') &&
-      !msg.includes('ENOTFOUND') &&
-      !msg.includes('UND_ERR')
+      !msg.includes("fetch failed") &&
+      !msg.includes("ECONNRESET") &&
+      !msg.includes("ETIMEDOUT") &&
+      !msg.includes("ENOTFOUND") &&
+      !msg.includes("UND_ERR")
     ) {
       console.warn(`[Telegram API] ${method} warning:`, msg);
     }
@@ -143,18 +157,18 @@ async function sendTelegramMessage(text, extra = {}) {
   const { chatId, enabled } = getConfig();
   if (!enabled) return { ok: false, disabled: true };
 
-  const res = await callTelegramApi('sendMessage', {
+  const res = await callTelegramApi("sendMessage", {
     chat_id: chatId,
     text,
-    parse_mode: 'Markdown',
+    parse_mode: "Markdown",
     disable_web_page_preview: true,
     ...extra,
   });
 
-  if (!res.ok && String(res.description || '').includes('parse entities')) {
-    return callTelegramApi('sendMessage', {
+  if (!res.ok && String(res.description || "").includes("parse entities")) {
+    return callTelegramApi("sendMessage", {
       chat_id: chatId,
-      text: String(text).replace(/[*`]/g, ''),
+      text: String(text).replace(/[*`]/g, ""),
       disable_web_page_preview: true,
       ...extra,
     });
@@ -166,7 +180,9 @@ async function sendTelegramMessage(text, extra = {}) {
 /**
  * Sends the interactive Owner Control Panel to Telegram with live meter levels & budget.
  */
-async function sendOwnerControlMenu(titlePrefix = '🎛️ *GridBot Owner Control Panel*') {
+async function sendOwnerControlMenu(
+  titlePrefix = "🎛️ *GridBot Owner Control Panel*",
+) {
   const { enabled } = getConfig();
   if (!enabled) return;
 
@@ -175,36 +191,43 @@ async function sendOwnerControlMenu(titlePrefix = '🎛️ *GridBot Owner Contro
     const policy = state?.policy || {};
     const spent = Number(state?.spentToday ?? 0);
     const remaining = Number(state?.budgetRemaining ?? 15);
-    const pendingList = (state?.transactions || []).filter((t) => t.status === 'pending_owner');
+    const pendingList = (state?.transactions || []).filter(
+      (t) => t.status === "pending_owner",
+    );
 
     const resources = listResources();
     const meterLines = resources.map((r) => {
       const lvl = Math.round(r.getLevel());
-      const icon = r.id === 'electricity' ? '⚡' : '📶';
-      const tag = lvl <= r.threshold ? '🚨 CRITICAL' : lvl <= 25 ? '⚠️ LOW (<=25%)' : '✅ Healthy';
+      const icon = r.id === "electricity" ? "⚡" : "📶";
+      const tag =
+        lvl <= r.threshold
+          ? "🚨 CRITICAL"
+          : lvl <= 20
+            ? "⚠️ LOW (<=20%)"
+            : "✅ Healthy";
       return `• ${icon} *${cleanMd(r.label)}:* ${lvl}% (${tag})`;
     });
 
     const lines = [
       titlePrefix,
-      '',
+      "",
       `*Live Prepaid Meters:*`,
       ...meterLines,
-      '',
+      "",
       `*Daily Treasury Policy:*`,
       `• *Spent Today:* ${spent} RLUSD`,
       `• *Remaining Budget:* ${remaining} RLUSD (Daily Cap: ${policy.daily_cap ?? 15} RLUSD)`,
       `• *Per-Payment Cap:* ${policy.per_tx_cap ?? 10} RLUSD`,
       `• *Pending Owner Approvals:* ${pendingList.length}`,
-      '',
+      "",
       `👇 *Select an Owner action below:*`,
     ];
 
-    await sendTelegramMessage(lines.join('\n'), {
+    await sendTelegramMessage(lines.join("\n"), {
       reply_markup: getOwnerMenuInlineKeyboard(),
     });
   } catch (err) {
-    console.warn('[Telegram sendOwnerControlMenu] Warning:', err.message);
+    console.warn("[Telegram sendOwnerControlMenu] Warning:", err.message);
   }
 }
 
@@ -217,12 +240,14 @@ async function sendPendingApprovalsList() {
 
   try {
     const state = await getState();
-    const pendingList = (state?.transactions || []).filter((t) => t.status === 'pending_owner');
+    const pendingList = (state?.transactions || []).filter(
+      (t) => t.status === "pending_owner",
+    );
 
     if (pendingList.length === 0) {
       await sendTelegramMessage(
         `✅ *No Pending Approvals*\nAll utility requests are currently settled or within policy caps.`,
-        { reply_markup: getOwnerMenuInlineKeyboard() }
+        { reply_markup: getOwnerMenuInlineKeyboard() },
       );
       return;
     }
@@ -235,11 +260,11 @@ async function sendPendingApprovalsList() {
         reason: tx.reason,
         blockedReason: tx.blocked_reason,
         remainingBudget: state?.budgetRemaining,
-        requestedBy: 'Queued Request',
+        requestedBy: "Queued Request",
       });
     }
   } catch (err) {
-    console.warn('[Telegram sendPendingApprovalsList] Warning:', err.message);
+    console.warn("[Telegram sendPendingApprovalsList] Warning:", err.message);
   }
 }
 
@@ -261,9 +286,9 @@ async function notifyAutoApproved({
     const link = explorerUrl(txHash);
     const lines = [
       `✅ *GridBot Auto-Approved Purchase*`,
-      `• *Requested By:* ${cleanMd(requestedBy || 'Autonomous Monitor')}`,
+      `• *Requested By:* ${cleanMd(requestedBy || "Autonomous Monitor")}`,
       `• *Resource & Amount:* ${amount} RLUSD for ${cleanMd(resource)}`,
-      `• *Reason:* ${cleanMd(reason || 'Low balance auto-refill')}`,
+      `• *Reason:* ${cleanMd(reason || "Low balance auto-refill")}`,
     ];
 
     if (vend?.token) {
@@ -276,34 +301,39 @@ async function notifyAutoApproved({
       lines.push(`• *XRPL Testnet:* [View Transaction](${link})`);
     }
 
-    await sendTelegramMessage(lines.join('\n'), {
+    await sendTelegramMessage(lines.join("\n"), {
       reply_markup: {
         inline_keyboard: [
-          [{ text: '🎛️ Open Owner Control Menu', callback_data: 'menu:status' }],
+          [
+            {
+              text: "🎛️ Open Owner Control Menu",
+              callback_data: "menu:status",
+            },
+          ],
         ],
       },
     });
   } catch (err) {
-    console.warn('[Telegram notifyAutoApproved] Warning:', err.message);
+    console.warn("[Telegram notifyAutoApproved] Warning:", err.message);
   }
 }
 
 /**
- * Early 25% low-balance warning notification with a 1-tap "Top Up Now" button.
+ * Early 20% low-balance warning notification with a 1-tap "Top Up Now" button.
  */
 async function notifyLowWarning({
   id,
   label,
   level,
-  warnThreshold = 25,
-  criticalThreshold = 10,
+  warnThreshold = 20,
+  criticalThreshold = 5,
   unitCostRLUSD = 5,
 } = {}) {
   const { enabled } = getConfig();
   if (!enabled) return;
 
   try {
-    const icon = id === 'electricity' ? '⚡' : '📶';
+    const icon = id === "electricity" ? "⚡" : "📶";
     const lines = [
       `🔔 *GridBot Early Low-Balance Alert (${level}%)*`,
       `• *Resource:* ${icon} ${cleanMd(label || id)}`,
@@ -312,21 +342,21 @@ async function notifyLowWarning({
       `• *Action:* Tap below to top up proactively before reaching critical level, or let GridBot auto-top-up at ${criticalThreshold}%.`,
     ];
 
-    await sendTelegramMessage(lines.join('\n'), {
+    await sendTelegramMessage(lines.join("\n"), {
       reply_markup: {
         inline_keyboard: [
           [
             {
-              text: `${icon} Top Up ${id === 'electricity' ? 'Electricity' : 'LTE Data'} Now (${unitCostRLUSD} RLUSD)`,
+              text: `${icon} Top Up ${id === "electricity" ? "Electricity" : "LTE Data"} Now (${unitCostRLUSD} RLUSD)`,
               callback_data: `topup:${id}`,
             },
           ],
-          [{ text: '🎛️ Owner Control Menu', callback_data: 'menu:status' }],
+          [{ text: "🎛️ Owner Control Menu", callback_data: "menu:status" }],
         ],
       },
     });
   } catch (err) {
-    console.warn('[Telegram notifyLowWarning] Warning:', err.message);
+    console.warn("[Telegram notifyLowWarning] Warning:", err.message);
   }
 }
 
@@ -354,55 +384,61 @@ async function notifyPendingOwner({
 
     const lines = [
       `⚠️ *GridBot Owner Approval Needed (Over Cap)*`,
-      `• *Tx ID:* #${id} | *Requested By:* ${cleanMd(requestedBy || 'Staff / Agent')}`,
+      `• *Tx ID:* #${id} | *Requested By:* ${cleanMd(requestedBy || "Staff / Agent")}`,
       `• *Resource:* ${cleanMd(resource)} | *Amount:* ${amount} RLUSD`,
-      `• *Reason:* ${cleanMd(reason || 'Resource refill request')}`,
-      `• *Rule Triggered:* ${cleanMd(blockedReason || 'Policy cap exceeded')}`,
+      `• *Reason:* ${cleanMd(reason || "Resource refill request")}`,
+      `• *Rule Triggered:* ${cleanMd(blockedReason || "Policy cap exceeded")}`,
       `• *Remaining Daily Budget:* ${rem} RLUSD`,
-      '',
+      "",
       `👇 *Tap Approve to co-sign with Owner key (weight 2) or Reject:*`,
     ];
 
-    await sendTelegramMessage(lines.join('\n'), {
+    await sendTelegramMessage(lines.join("\n"), {
       reply_markup: {
         inline_keyboard: [
           [
-            { text: `✅ Approve #${id} (${amount} RLUSD)`, callback_data: `approve:${id}` },
+            {
+              text: `✅ Approve #${id} (${amount} RLUSD)`,
+              callback_data: `approve:${id}`,
+            },
             { text: `❌ Reject #${id}`, callback_data: `reject:${id}` },
           ],
-          [{ text: '🎛️ Owner Control Menu', callback_data: 'menu:status' }],
+          [{ text: "🎛️ Owner Control Menu", callback_data: "menu:status" }],
         ],
       },
     });
   } catch (err) {
-    console.warn('[Telegram notifyPendingOwner] Warning:', err.message);
+    console.warn("[Telegram notifyPendingOwner] Warning:", err.message);
   }
 }
 
 /**
  * Shared handler for owner approve action (triggered by inline button or `/approve <id>`).
  */
-async function handleOwnerApproveAction(rawId, { callbackQueryId, messageId, incomingChatId, pin } = {}) {
+async function handleOwnerApproveAction(
+  rawId,
+  { callbackQueryId, messageId, incomingChatId, pin } = {},
+) {
   const txId = /^\d+$/.test(String(rawId)) ? Number(rawId) : rawId;
   const { chatId, allowedChatIds, telegramApprovePin } = getConfig();
   const targetChatId = incomingChatId || chatId;
 
   if (!allowedChatIds.has(String(targetChatId))) {
-    await sendTelegramMessage('⛔ Unauthorized chat ID for Telegram approval.');
+    await sendTelegramMessage("⛔ Unauthorized chat ID for Telegram approval.");
     return;
   }
 
-  if (!telegramApprovePin || String(pin || '').trim() !== telegramApprovePin) {
+  if (!telegramApprovePin || String(pin || "").trim() !== telegramApprovePin) {
     await sendTelegramMessage(
       telegramApprovePin
         ? `🔐 Invalid or missing approval PIN for #${txId}. Send \`/approve ${txId} <PIN>\` or click Approve and enter your PIN.`
-        : '⚠️ Telegram approvals are disabled: `TELEGRAM_APPROVE_PIN` is not configured in `.env`.'
+        : "⚠️ Telegram approvals are disabled: `TELEGRAM_APPROVE_PIN` is not configured in `.env`.",
     );
     return;
   }
 
   if (callbackQueryId) {
-    await callTelegramApi('answerCallbackQuery', {
+    await callTelegramApi("answerCallbackQuery", {
       callback_query_id: callbackQueryId,
       text: `Processing approval for #${txId}...`,
     });
@@ -414,8 +450,10 @@ async function handleOwnerApproveAction(rawId, { callbackQueryId, messageId, inc
     return;
   }
 
-  if (tx.status !== 'pending_owner') {
-    await sendTelegramMessage(`ℹ️ Transaction #${txId} is already \`${tx.status}\`.`);
+  if (tx.status !== "pending_owner") {
+    await sendTelegramMessage(
+      `ℹ️ Transaction #${txId} is already \`${tx.status}\`.`,
+    );
     return;
   }
 
@@ -424,17 +462,20 @@ async function handleOwnerApproveAction(rawId, { callbackQueryId, messageId, inc
     chatId: targetChatId,
   });
 
-  if (ok && approveResult?.status === 'owner_approved') {
+  if (ok && approveResult?.status === "owner_approved") {
     let vend = null;
     try {
       const resourcePlugin = getResource(tx.resource);
       vend = resourcePlugin.vend(tx.amount);
     } catch (vendErr) {
-      console.warn('[Telegram] Vend warning after owner approval:', vendErr.message);
+      console.warn(
+        "[Telegram] Vend warning after owner approval:",
+        vendErr.message,
+      );
     }
 
     if (messageId) {
-      await callTelegramApi('editMessageReplyMarkup', {
+      await callTelegramApi("editMessageReplyMarkup", {
         chat_id: chatId,
         message_id: messageId,
         reply_markup: { inline_keyboard: [] },
@@ -458,13 +499,13 @@ async function handleOwnerApproveAction(rawId, { callbackQueryId, messageId, inc
       replyLines.push(`• [View on XRPL Testnet](${link})`);
     }
 
-    await sendTelegramMessage(replyLines.join('\n'), {
+    await sendTelegramMessage(replyLines.join("\n"), {
       reply_markup: getOwnerMenuInlineKeyboard(),
     });
 
-    if (typeof onStateChangedCallback === 'function') {
+    if (typeof onStateChangedCallback === "function") {
       await onStateChangedCallback({
-        type: 'owner_approved',
+        type: "owner_approved",
         txId,
         approveResult,
         vend,
@@ -474,29 +515,36 @@ async function handleOwnerApproveAction(rawId, { callbackQueryId, messageId, inc
     const errReason =
       approveResult?.error ||
       approveResult?.reason ||
-      'Check OWNER_PASSCODE in .env or approve from dashboard';
-    await sendTelegramMessage(`❌ *Approval Failed for #${txId}:* ${cleanMd(errReason)}`);
+      "Check OWNER_PASSCODE in .env or approve from dashboard";
+    await sendTelegramMessage(
+      `❌ *Approval Failed for #${txId}:* ${cleanMd(errReason)}`,
+    );
   }
 }
 
 /**
  * Shared handler for owner reject action (triggered by inline button or `/reject <id>`).
  */
-async function handleOwnerRejectAction(rawId, { callbackQueryId, messageId, incomingChatId, pin } = {}) {
+async function handleOwnerRejectAction(
+  rawId,
+  { callbackQueryId, messageId, incomingChatId, pin } = {},
+) {
   const txId = /^\d+$/.test(String(rawId)) ? Number(rawId) : rawId;
   const { chatId, allowedChatIds, telegramApprovePin } = getConfig();
   const targetChatId = incomingChatId || chatId;
 
   if (!allowedChatIds.has(String(targetChatId))) {
-    await sendTelegramMessage('⛔ Unauthorized chat ID for Telegram rejection.');
+    await sendTelegramMessage(
+      "⛔ Unauthorized chat ID for Telegram rejection.",
+    );
     return;
   }
 
-  if (!telegramApprovePin || String(pin || '').trim() !== telegramApprovePin) {
+  if (!telegramApprovePin || String(pin || "").trim() !== telegramApprovePin) {
     await sendTelegramMessage(
       telegramApprovePin
         ? `🔐 Invalid or missing approval PIN for #${txId}. Send \`/reject ${txId} <PIN>\` or click Reject and enter your PIN.`
-        : '⚠️ Telegram approvals are disabled: `TELEGRAM_APPROVE_PIN` is not configured in `.env`.'
+        : "⚠️ Telegram approvals are disabled: `TELEGRAM_APPROVE_PIN` is not configured in `.env`.",
     );
     return;
   }
@@ -507,28 +555,31 @@ async function handleOwnerRejectAction(rawId, { callbackQueryId, messageId, inco
   });
 
   if (callbackQueryId) {
-    await callTelegramApi('answerCallbackQuery', {
+    await callTelegramApi("answerCallbackQuery", {
       callback_query_id: callbackQueryId,
-      text: ok ? `Rejected #${txId}` : 'Reject failed',
+      text: ok ? `Rejected #${txId}` : "Reject failed",
     });
   }
 
   if (ok) {
     if (messageId) {
-      await callTelegramApi('editMessageReplyMarkup', {
+      await callTelegramApi("editMessageReplyMarkup", {
         chat_id: chatId,
         message_id: messageId,
         reply_markup: { inline_keyboard: [] },
       });
     }
 
-    await sendTelegramMessage(`❌ *Transaction #${txId} was rejected by owner.*`, {
-      reply_markup: getOwnerMenuInlineKeyboard(),
-    });
+    await sendTelegramMessage(
+      `❌ *Transaction #${txId} was rejected by owner.*`,
+      {
+        reply_markup: getOwnerMenuInlineKeyboard(),
+      },
+    );
 
-    if (typeof onStateChangedCallback === 'function') {
+    if (typeof onStateChangedCallback === "function") {
       await onStateChangedCallback({
-        type: 'owner_rejected',
+        type: "owner_rejected",
         txId,
       });
     }
@@ -536,8 +587,10 @@ async function handleOwnerRejectAction(rawId, { callbackQueryId, messageId, inco
     const errReason =
       rejectResult?.error ||
       rejectResult?.reason ||
-      'Check OWNER_PASSCODE in .env or reject from dashboard';
-    await sendTelegramMessage(`⚠️ *Reject Failed for #${txId}:* ${cleanMd(errReason)}`);
+      "Check OWNER_PASSCODE in .env or reject from dashboard";
+    await sendTelegramMessage(
+      `⚠️ *Reject Failed for #${txId}:* ${cleanMd(errReason)}`,
+    );
   }
 }
 
@@ -550,32 +603,37 @@ async function processUpdate(update) {
   // 1. Handle inline keyboard button clicks (callback_query)
   if (update.callback_query) {
     const cb = update.callback_query;
-    const incomingChatId = String(cb?.message?.chat?.id || '');
+    const incomingChatId = String(cb?.message?.chat?.id || "");
     if (!allowedChatIds.has(incomingChatId)) {
-      await callTelegramApi('answerCallbackQuery', {
+      await callTelegramApi("answerCallbackQuery", {
         callback_query_id: cb.id,
-        text: 'Unauthorized chat ID.',
+        text: "Unauthorized chat ID.",
         show_alert: true,
       });
       return;
     }
 
-    const data = String(cb.data || '');
-    const [action, rawId] = data.split(':');
+    const data = String(cb.data || "");
+    console.log(
+      `[Telegram] Callback received: "${data}" from chat ${incomingChatId}`,
+    );
+    const [action, rawId] = data.split(":");
     const messageId = cb?.message?.message_id;
 
-    if ((action === 'approve' || action === 'reject') && rawId) {
+    if ((action === "approve" || action === "reject") && rawId) {
       if (!telegramApprovePin) {
-        await callTelegramApi('answerCallbackQuery', {
+        await callTelegramApi("answerCallbackQuery", {
           callback_query_id: cb.id,
-          text: 'TELEGRAM_APPROVE_PIN is not set in .env',
+          text: "TELEGRAM_APPROVE_PIN is not set in .env",
           show_alert: true,
         });
-        await sendTelegramMessage('⚠️ Telegram approvals are disabled: `TELEGRAM_APPROVE_PIN` is not configured in `.env`.');
+        await sendTelegramMessage(
+          "⚠️ Telegram approvals are disabled: `TELEGRAM_APPROVE_PIN` is not configured in `.env`.",
+        );
         return;
       }
 
-      await callTelegramApi('answerCallbackQuery', {
+      await callTelegramApi("answerCallbackQuery", {
         callback_query_id: cb.id,
         text: `Reply with your Telegram PIN to ${action} #${rawId}`,
       });
@@ -586,28 +644,53 @@ async function processUpdate(update) {
         expiresAt: Date.now() + 120000,
       });
       await sendTelegramMessage(
-        `🔐 *PIN Required:* Reply with your \`TELEGRAM_APPROVE_PIN\` to *${action.toUpperCase()}* transaction *#${rawId}* (or send \`/${action} ${rawId} <PIN>\`).`
+        `🔐 *PIN Required:* Reply with your \`TELEGRAM_APPROVE_PIN\` to *${action.toUpperCase()}* transaction *#${rawId}* (or send \`/${action} ${rawId} <PIN>\`).`,
       );
-    } else if (action === 'menu') {
-      await callTelegramApi('answerCallbackQuery', {
+    } else if (action === "menu") {
+      await callTelegramApi("answerCallbackQuery", {
         callback_query_id: cb.id,
-        text: rawId === 'pending' ? 'Loading pending approvals...' : 'Refreshing status...',
+        text:
+          rawId === "pending"
+            ? "Loading pending approvals..."
+            : "Refreshing status...",
       });
-      if (rawId === 'pending') {
+      if (rawId === "pending") {
         await sendPendingApprovalsList();
       } else {
         await sendOwnerControlMenu();
       }
-    } else if (action === 'topup' && (rawId === 'electricity' || rawId === 'data')) {
-      await callTelegramApi('answerCallbackQuery', {
+    } else if (
+      action === "topup" &&
+      (rawId === "electricity" || rawId === "data")
+    ) {
+      await callTelegramApi("answerCallbackQuery", {
         callback_query_id: cb.id,
         text: `Triggering proactive ${rawId} top-up...`,
       });
-      if (typeof onStateChangedCallback === 'function') {
-        await onStateChangedCallback({
-          type: 'proactive_topup',
-          resource: rawId,
-        });
+      await sendTelegramMessage(
+        `⏳ Processing manual *${rawId === "data" ? "LTE Data" : "Electricity"}* top-up...`,
+      );
+      if (typeof onStateChangedCallback === "function") {
+        try {
+          await Promise.race([
+            onStateChangedCallback({
+              type: "proactive_topup",
+              resource: rawId,
+            }),
+            new Promise((_, reject) =>
+              setTimeout(
+                () => reject(new Error("Top-up timed out after 45s (ledger or policy service slow/unreachable)")),
+                45000,
+              ),
+            ),
+          ]);
+        } catch (err) {
+          console.error("[Telegram] topup error:", err?.message || err);
+          await sendTelegramMessage(
+            `❌ *Top-Up Failed:* ${cleanMd(err?.message || "unknown error")}`,
+            { reply_markup: getOwnerMenuInlineKeyboard() },
+          );
+        }
       }
     }
     return;
@@ -615,19 +698,21 @@ async function processUpdate(update) {
 
   // 2. Handle text commands (/start, /menu, /status, /pending, /approve <id> <PIN>, /reject <id> <PIN>)
   if (update.message && update.message.text) {
-    const incomingChatId = String(update.message?.chat?.id || '');
+    const incomingChatId = String(update.message?.chat?.id || "");
     if (!allowedChatIds.has(incomingChatId)) return;
 
     const text = update.message.text.trim();
 
     const pendingPin = pendingPinActions.get(incomingChatId);
-    if (pendingPin && !text.startsWith('/')) {
+    if (pendingPin && !text.startsWith("/")) {
       pendingPinActions.delete(incomingChatId);
       if (Date.now() > pendingPin.expiresAt) {
-        await sendTelegramMessage('⏱️ Approval PIN prompt expired. Click Approve or Reject again.');
+        await sendTelegramMessage(
+          "⏱️ Approval PIN prompt expired. Click Approve or Reject again.",
+        );
         return;
       }
-      if (pendingPin.action === 'approve') {
+      if (pendingPin.action === "approve") {
         await handleOwnerApproveAction(pendingPin.txId, {
           messageId: pendingPin.messageId,
           incomingChatId,
@@ -643,31 +728,36 @@ async function processUpdate(update) {
       return;
     }
 
-    if (text === '/status' || text === '/start' || text === '/menu' || text === '/help') {
+    if (
+      text === "/status" ||
+      text === "/start" ||
+      text === "/menu" ||
+      text === "/help"
+    ) {
       await sendOwnerControlMenu();
       return;
     }
 
-    if (text === '/pending') {
+    if (text === "/pending") {
       await sendPendingApprovalsList();
       return;
     }
 
-    if (text === '/topup_elec') {
-      if (typeof onStateChangedCallback === 'function') {
+    if (text === "/topup_elec") {
+      if (typeof onStateChangedCallback === "function") {
         await onStateChangedCallback({
-          type: 'proactive_topup',
-          resource: 'electricity',
+          type: "proactive_topup",
+          resource: "electricity",
         });
       }
       return;
     }
 
-    if (text === '/topup_data') {
-      if (typeof onStateChangedCallback === 'function') {
+    if (text === "/topup_data") {
+      if (typeof onStateChangedCallback === "function") {
         await onStateChangedCallback({
-          type: 'proactive_topup',
-          resource: 'data',
+          type: "proactive_topup",
+          resource: "data",
         });
       }
       return;
@@ -677,7 +767,7 @@ async function processUpdate(update) {
     if (approveMatch) {
       await handleOwnerApproveAction(approveMatch[1], {
         incomingChatId,
-        pin: approveMatch[2] || '',
+        pin: approveMatch[2] || "",
       });
       return;
     }
@@ -686,7 +776,7 @@ async function processUpdate(update) {
     if (rejectMatch) {
       await handleOwnerRejectAction(rejectMatch[1], {
         incomingChatId,
-        pin: rejectMatch[2] || '',
+        pin: rejectMatch[2] || "",
       });
       return;
     }
@@ -706,22 +796,28 @@ async function pollUpdatesOnce() {
 
   pollInFlight = true;
   try {
-    const res = await callTelegramApi('getUpdates', {
+    const res = await callTelegramApi("getUpdates", {
       offset: lastUpdateId > 0 ? lastUpdateId + 1 : undefined,
       timeout: 0,
-      allowed_updates: ['message', 'callback_query'],
+      allowed_updates: ["message", "callback_query"],
     });
 
     if (res && res.ok && Array.isArray(res.result)) {
       for (const update of res.result) {
-        if (typeof update.update_id === 'number' && update.update_id > lastUpdateId) {
+        if (
+          typeof update.update_id === "number" &&
+          update.update_id > lastUpdateId
+        ) {
           lastUpdateId = update.update_id;
         }
-        await processUpdate(update);
+        // Do not block the poll loop: a slow XRPL payment must not freeze other buttons.
+        processUpdate(update).catch((err) => {
+          console.error('[Telegram] processUpdate error:', err?.message || err);
+        });
       }
     }
   } catch (err) {
-    // Fail-safe: never crash on polling error
+    console.error("[Telegram] pollUpdatesOnce error:", err?.message || err);
   } finally {
     pollInFlight = false;
   }
@@ -732,28 +828,44 @@ async function pollUpdatesOnce() {
  */
 async function registerBotMenuAndGreet() {
   try {
+    // Ensure no stale webhook is blocking getUpdates polling
+    await callTelegramApi("deleteWebhook", { drop_pending_updates: false });
     // Fast-forward past any stale updates queued while the server was stopped
-    const initial = await callTelegramApi('getUpdates', {
+    const initial = await callTelegramApi("getUpdates", {
       offset: -1,
       timeout: 0,
     });
-    if (initial && initial.ok && Array.isArray(initial.result) && initial.result.length > 0) {
+    if (
+      initial &&
+      initial.ok &&
+      Array.isArray(initial.result) &&
+      initial.result.length > 0
+    ) {
       const latest = initial.result[initial.result.length - 1];
-      if (typeof latest.update_id === 'number') {
+      if (typeof latest.update_id === "number") {
         lastUpdateId = latest.update_id;
       }
     }
 
-    await callTelegramApi('setMyCommands', {
+    await callTelegramApi("setMyCommands", {
       commands: [
-        { command: 'menu', description: 'Open GridBot Owner Control Panel' },
-        { command: 'status', description: 'Check live meters & daily budget' },
-        { command: 'pending', description: 'View & approve/reject pending requests' },
-        { command: 'topup_elec', description: 'Buy 5 RLUSD Prepaid Electricity now' },
-        { command: 'topup_data', description: 'Buy 3 RLUSD Emergency LTE Data now' },
+        { command: "menu", description: "Open GridBot Owner Control Panel" },
+        { command: "status", description: "Check live meters & daily budget" },
+        {
+          command: "pending",
+          description: "View & approve/reject pending requests",
+        },
+        {
+          command: "topup_elec",
+          description: "Buy 5 RLUSD Prepaid Electricity now",
+        },
+        {
+          command: "topup_data",
+          description: "Buy 3 RLUSD Emergency LTE Data now",
+        },
       ],
     });
-    await sendOwnerControlMenu('🟢 *GridBot Online — Owner Control Panel*');
+    await sendOwnerControlMenu("🟢 *GridBot Online — Owner Control Panel*");
   } catch (_) {}
 }
 
@@ -761,14 +873,14 @@ async function registerBotMenuAndGreet() {
  * 6. initTelegram({ onStateChanged })
  */
 function initTelegram({ onStateChanged } = {}) {
-  if (typeof onStateChanged === 'function') {
+  if (typeof onStateChanged === "function") {
     onStateChangedCallback = onStateChanged;
   }
 
   const { enabled, chatId } = getConfig();
   if (!enabled) {
     console.log(
-      '[Telegram] No TELEGRAM_BOT_TOKEN/CHAT_ID configured — Telegram notifications disabled'
+      "[Telegram] No TELEGRAM_BOT_TOKEN/CHAT_ID configured — Telegram notifications disabled",
     );
     return null;
   }

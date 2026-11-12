@@ -182,6 +182,7 @@ async function executeRequestPayment({ resource, amount, payee, reason, requeste
     const agent_blob = agentWallet.sign(tx_json, true).tx_blob;
 
     const res = await fetch(`${POLICY_SERVICE_URL}/sign`, {
+      signal: AbortSignal.timeout(30000),
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

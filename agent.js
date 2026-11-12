@@ -287,7 +287,7 @@ async function askAiDecision(context) {
     amount,
     reason: bothLow
       ? `Both electricity and data are critically low; prioritizing ${targetRes.id} (${amount} RLUSD) first because power is required to run the cafe and LTE router.`
-      : `${targetRes.label || targetRes.id} dropped to ${targetRes.levelPercent ?? 0}% (below ${targetRes.thresholdPercent ?? 10}% alert threshold). Proposing ${amount} RLUSD top-up within policy limits.`,
+      : `${targetRes.label || targetRes.id} dropped to ${targetRes.levelPercent ?? 0}% (below ${targetRes.thresholdPercent ?? 5}% alert threshold). Proposing ${amount} RLUSD top-up within policy limits.`,
     fallback: true,
   };
 }

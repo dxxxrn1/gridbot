@@ -1805,7 +1805,7 @@
                 </div>
 
                 <div class="gauge-card">
-                  <span class="tag">Alert at 10%</span>
+                  <span class="tag">Auto-pay at 5%</span>
                   <div class="gauge-wrap">
                     <svg width="124" height="124" viewBox="0 0 120 120">
                       <circle
@@ -2913,9 +2913,9 @@
           ring.setAttribute("stroke", "#ef4444");
           status.textContent = "CRITICAL LOW";
           status.style.color = "#f87171";
-        } else if (pct <= 25) {
+        } else if (pct <= 20) {
           ring.setAttribute("stroke", "#f59e0b");
-          status.textContent = "LOW (<=25%)";
+          status.textContent = "LOW (<=20%)";
           status.style.color = "#fbbf24";
         } else {
           ring.setAttribute("stroke", "#10b981");
@@ -3427,10 +3427,10 @@
               renderGauges(msg.levels);
             } else if (msg.type === "warn_alert") {
               typewriteBrainText(
-                `Early warning: ${msg.label} reached ${msg.level}% (25% warning level). Sent Telegram alert with 1-tap proactive top-up option before critical ${msg.criticalThreshold}% threshold.`,
+                `Early warning: ${msg.label} reached ${msg.level}% (20% warning level). Sent Telegram alert with 1-tap proactive top-up option before critical ${msg.criticalThreshold}% threshold.`,
               );
               showToast({
-                title: `25% Low Balance Warning: ${msg.label}`,
+                title: `20% Low Balance Warning: ${msg.label}`,
                 subtitle: `Telegram alert sent — top up proactively (${msg.unitCostRLUSD} RLUSD) before ${msg.criticalThreshold}% critical level.`,
               });
             } else if (msg.type === "low_alert") {
