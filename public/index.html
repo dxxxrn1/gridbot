@@ -2307,7 +2307,12 @@
               </div>
             </div>
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px">
+            <div id="policyReadOnlyNotice" class="auth-error hidden" style="background: rgba(0, 117, 255, 0.12); border-color: rgba(0, 117, 255, 0.35); color: #bae6fd; display:flex; align-items:center; gap:8px; margin-bottom: 16px;">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              <span>You are viewing spending limits in read-only mode. Editing policy caps is restricted to the Cafe Owner.</span>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 20px">
               <div class="panel" style="background: var(--card)">
                 <h3 style="font-size: 13px; font-weight: 700; color: #fff; margin-bottom: 12px; display:flex; align-items:center; gap:8px;">
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
@@ -2567,7 +2572,10 @@
         const editCapsBtn = document.getElementById("editCapsBtn");
         const btnToggleAddStaff = document.getElementById("btnToggleAddStaff");
         const staffNotice = document.getElementById("staffReadOnlyNotice");
+        const policyNotice = document.getElementById("policyReadOnlyNotice");
         const btnSavePolicyCaps = document.getElementById("btnSavePolicyCaps");
+        const inputDailyCap = document.getElementById("inputDailyCap");
+        const inputPerTxCap = document.getElementById("inputPerTxCap");
 
         if (!currentUser) {
           document.getElementById("authOverlay").classList.remove("hidden");
@@ -2585,7 +2593,19 @@
           if (editCapsBtn) editCapsBtn.classList.remove("hidden");
           if (btnToggleAddStaff) btnToggleAddStaff.classList.remove("hidden");
           if (staffNotice) staffNotice.classList.add("hidden");
-          if (btnSavePolicyCaps) btnSavePolicyCaps.disabled = false;
+          if (policyNotice) policyNotice.classList.add("hidden");
+          if (btnSavePolicyCaps) {
+            btnSavePolicyCaps.disabled = false;
+            btnSavePolicyCaps.classList.remove("hidden");
+          }
+          if (inputDailyCap) {
+            inputDailyCap.disabled = false;
+            inputDailyCap.readOnly = false;
+          }
+          if (inputPerTxCap) {
+            inputPerTxCap.disabled = false;
+            inputPerTxCap.readOnly = false;
+          }
         } else {
           userCard.className = "user-card staff";
           avatarEl.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`;
@@ -2593,7 +2613,19 @@
           if (editCapsBtn) editCapsBtn.classList.add("hidden");
           if (btnToggleAddStaff) btnToggleAddStaff.classList.add("hidden");
           if (staffNotice) staffNotice.classList.remove("hidden");
-          if (btnSavePolicyCaps) btnSavePolicyCaps.disabled = true;
+          if (policyNotice) policyNotice.classList.remove("hidden");
+          if (btnSavePolicyCaps) {
+            btnSavePolicyCaps.disabled = true;
+            btnSavePolicyCaps.classList.add("hidden");
+          }
+          if (inputDailyCap) {
+            inputDailyCap.disabled = true;
+            inputDailyCap.readOnly = true;
+          }
+          if (inputPerTxCap) {
+            inputPerTxCap.disabled = true;
+            inputPerTxCap.readOnly = true;
+          }
           document.getElementById("addStaffCard").classList.add("hidden");
         }
       }
@@ -3141,6 +3173,14 @@
 
       async function savePolicy(e) {
         e.preventDefault();
+        if (!currentUser || currentUser.role !== "owner") {
+          showToast({
+            title: "Owner Access Required",
+            subtitle: "Staff members cannot edit spending policies.",
+            tone: "red",
+          });
+          return;
+        }
         const daily_cap = Number(
           document.getElementById("inputDailyCap").value,
         );

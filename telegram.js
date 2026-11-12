@@ -368,34 +368,22 @@ async function handleOwnerApproveAction(rawId, { callbackQueryId, messageId } = 
   const txId = /^\d+$/.test(String(rawId)) ? Number(rawId) : rawId;
   const { chatId, ownerPasscode } = getConfig();
 
+  if (callbackQueryId) {
+    await callTelegramApi('answerCallbackQuery', {
+      callback_query_id: callbackQueryId,
+      text: `Processing approval for #${txId}...`,
+    });
+  }
+
   const tx = await getTx(txId);
   if (!tx) {
-    if (callbackQueryId) {
-      await callTelegramApi('answerCallbackQuery', {
-        callback_query_id: callbackQueryId,
-        text: `Transaction #${txId} not found.`,
-      });
-    }
     await sendTelegramMessage(`⚠️ Transaction #${txId} not found.`);
     return;
   }
 
   if (tx.status !== 'pending_owner') {
-    if (callbackQueryId) {
-      await callTelegramApi('answerCallbackQuery', {
-        callback_query_id: callbackQueryId,
-        text: `Already processed (${tx.status}).`,
-      });
-    }
     await sendTelegramMessage(`ℹ️ Transaction #${txId} is already \`${tx.status}\`.`);
     return;
-  }
-
-  if (callbackQueryId) {
-    await callTelegramApi('answerCallbackQuery', {
-      callback_query_id: callbackQueryId,
-      text: `Signing & submitting #${txId} on XRPL Testnet...`,
-    });
   }
 
   const { ok, data: approveResult } = await proxyOwnerApprove(
@@ -710,6 +698,8 @@ function stopTelegram() {
 module.exports = {
   initTelegram,
   stopTelegram,
+  sendTelegramMessage,
+  getOwnerMenuInlineKeyboard,
   sendOwnerControlMenu,
   notifyLowWarning,
   notifyPendingOwner,

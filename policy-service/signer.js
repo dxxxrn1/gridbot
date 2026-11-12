@@ -499,57 +499,84 @@ async function ownerApprove(txId) {
     };
 
     let txHash;
-    try {
-      const client = await getXrplClient();
-      // Autofill with 1 signer (owner key alone has weight 2 = quorum 2)
-      const prepared = await client.autofill(paymentTx, 1);
-      const ownerSigned = ownerWallet.sign(prepared, true);
-      const combinedBlob = xrpl.multisign([ownerSigned.tx_blob]);
-
-      const response = await client.submitAndWait(combinedBlob);
-      const txResult =
-        response?.result?.meta?.TransactionResult ||
-        response?.result?.engine_result ||
-        'UNKNOWN';
-      txHash =
-        response?.result?.hash ||
-        response?.result?.tx_json?.hash;
-
-      if (txResult !== 'tesSUCCESS') {
-        throw new Error(`XRPL owner Payment failed with result: ${txResult}`);
-      }
-    } catch (xrplErr) {
-      const msg = String(xrplErr?.message || xrplErr || '');
-      if (
-        msg.includes('ENOTFOUND') ||
-        msg.includes('ETIMEDOUT') ||
-        msg.includes('ECONNREFUSED') ||
-        msg.includes('ECONNRESET') ||
-        msg.includes('NotConnectedError') ||
-        msg.includes('WebSocket')
-      ) {
-        const offlinePrepared = {
-          ...paymentTx,
-          Fee: '24',
-          Sequence: Math.floor(Date.now() / 1000) % 10000000,
-          LastLedgerSequence: 99999999,
-          SigningPubKey: '',
-        };
-        const ownerSigned = ownerWallet.sign(offlinePrepared, true);
+    let lastXrplErr = null;
+    for (let attempt = 1; attempt <= 2; attempt++) {
+      try {
+        const client = await getXrplClient();
+        // Autofill with 1 signer (owner key alone has weight 2 = quorum 2)
+        const prepared = await client.autofill(paymentTx, 1);
+        const currentLedger = await client.getLedgerIndex().catch(() => null);
+        if (typeof currentLedger === 'number') {
+          prepared.LastLedgerSequence = Math.max(
+            Number(prepared.LastLedgerSequence || 0),
+            currentLedger + 30
+          );
+        }
+        const ownerSigned = ownerWallet.sign(prepared, true);
         const combinedBlob = xrpl.multisign([ownerSigned.tx_blob]);
-        txHash = crypto
-          .createHash('sha512')
-          .update(Buffer.from(combinedBlob, 'hex'))
-          .digest('hex')
-          .slice(0, 64)
-          .toUpperCase();
-        console.warn(
-          `[Policy Signer] XRPL Testnet unreachable (${msg}); recorded offline owner-signed hash ${txHash.slice(0, 12)}...`
-        );
-      } else {
-        throw xrplErr;
+
+        const response = await client.submitAndWait(combinedBlob);
+        const txResult =
+          response?.result?.meta?.TransactionResult ||
+          response?.result?.engine_result ||
+          'UNKNOWN';
+        txHash =
+          response?.result?.hash ||
+          response?.result?.tx_json?.hash;
+
+        if (txResult !== 'tesSUCCESS') {
+          throw new Error(`XRPL owner Payment failed with result: ${txResult}`);
+        }
+        lastXrplErr = null;
+        break;
+      } catch (xrplErr) {
+        lastXrplErr = xrplErr;
+        const msg = String(xrplErr?.message || xrplErr || '');
+        const isRetryable =
+          msg.includes('tefPAST_SEQ') ||
+          msg.includes('LastLedgerSequence') ||
+          msg.includes('NotConnectedError') ||
+          msg.includes('WebSocket') ||
+          msg.includes('timeout');
+        if (attempt < 2 && isRetryable) {
+          console.warn(`[Policy Signer] ownerApprove(${txId}) attempt ${attempt} hit "${msg}", retrying with fresh sequence...`);
+          await new Promise((r) => setTimeout(r, 800));
+          continue;
+        }
+        if (
+          msg.includes('ENOTFOUND') ||
+          msg.includes('ETIMEDOUT') ||
+          msg.includes('ECONNREFUSED') ||
+          msg.includes('ECONNRESET') ||
+          msg.includes('NotConnectedError') ||
+          msg.includes('WebSocket')
+        ) {
+          const offlinePrepared = {
+            ...paymentTx,
+            Fee: '24',
+            Sequence: Math.floor(Date.now() / 1000) % 10000000,
+            LastLedgerSequence: 99999999,
+            SigningPubKey: '',
+          };
+          const ownerSigned = ownerWallet.sign(offlinePrepared, true);
+          const combinedBlob = xrpl.multisign([ownerSigned.tx_blob]);
+          txHash = crypto
+            .createHash('sha512')
+            .update(Buffer.from(combinedBlob, 'hex'))
+            .digest('hex')
+            .slice(0, 64)
+            .toUpperCase();
+          console.warn(
+            `[Policy Signer] XRPL Testnet unreachable (${msg}); recorded offline owner-signed hash ${txHash.slice(0, 12)}...`
+          );
+          lastXrplErr = null;
+          break;
+        } else {
+          throw xrplErr;
+        }
       }
     }
+    if (lastXrplErr) throw lastXrplErr;
 
     const updated = await updateTx(txRow.id, {
       status: 'owner_approved',
