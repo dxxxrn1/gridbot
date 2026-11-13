@@ -191,6 +191,7 @@ async function executeRequestPayment({ resource, amount, payee, reason, requeste
       body: JSON.stringify({
         resource,
         reason,
+        requestedBy,
         tx_json,
         agent_blob,
       }),
@@ -351,6 +352,17 @@ async function proxyOwnerPolicy(body, ownerPasscode) {
       'x-owner-passcode': ownerPasscode || '',
     },
     body: JSON.stringify(body || {}),
+  });
+  const data = await res.json().catch(() => ({}));
+  return { status: res.status, ok: res.ok, data };
+}
+
+async function proxyStartNewDemoDay(ownerPasscode) {
+  const res = await fetch(`${POLICY_SERVICE_URL}/owner/demo-day/start`, {
+    method: 'POST',
+    headers: {
+      'x-owner-passcode': ownerPasscode || '',
+    },
   });
   const data = await res.json().catch(() => ({}));
   return { status: res.status, ok: res.ok, data };
@@ -618,6 +630,7 @@ module.exports = {
   proxyOwnerApprove,
   proxyOwnerReject,
   proxyOwnerPolicy,
+  proxyStartNewDemoDay,
   listStaff,
   createStaff,
   deleteStaff,

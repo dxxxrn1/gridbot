@@ -3,6 +3,11 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#06120f" />
+    <link rel="icon" href="/brand/favicon.ico" sizes="any" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/brand/favicon-32.png" />
+    <link rel="apple-touch-icon" href="/brand/apple-touch-icon.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
     <title>GridBot | Autonomous Prepaid-Resource AI CFO</title>
     <style>
       :root {
@@ -41,6 +46,42 @@
       }
       .hidden {
         display: none !important;
+      }
+      .skeleton-bar {
+        display: block;
+        height: 12px;
+        border-radius: 999px;
+        background: linear-gradient(
+          90deg,
+          rgba(148, 163, 184, 0.1) 25%,
+          rgba(148, 163, 184, 0.24) 50%,
+          rgba(148, 163, 184, 0.1) 75%
+        );
+        background-size: 200% 100%;
+        animation: skeleton-shimmer 1.4s ease-in-out infinite;
+      }
+      @keyframes skeleton-shimmer {
+        to {
+          background-position: -200% 0;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        .skeleton-bar {
+          animation: none;
+        }
+      }
+      .empty-state {
+        padding: 24px;
+        text-align: center;
+        color: #94a3b8;
+      }
+      .empty-state img {
+        display: block;
+        width: 32px;
+        height: 32px;
+        object-fit: contain;
+        margin: 0 auto 8px;
+        opacity: 0.8;
       }
       .mono {
         font-family: var(--mono);
@@ -279,14 +320,20 @@
         max-width: 1280px;
         margin: 0 auto;
         display: flex;
+        width: 100%;
         align-items: center;
         justify-content: space-between;
         gap: 16px;
       }
       .blocked-left {
         display: flex;
+        flex: 1 1 auto;
+        min-width: 0;
         align-items: center;
         gap: 14px;
+      }
+      .blocked-left > div {
+        min-width: 0;
       }
       .blocked-icon {
         width: 36px;
@@ -313,6 +360,12 @@
       .blocked-text {
         font-size: 13px;
         font-family: var(--mono);
+        line-height: 1.5;
+        overflow-wrap: anywhere;
+        word-break: break-word;
+      }
+      .blocked-inner > .btn {
+        flex: 0 0 auto;
       }
 
       /* Vision UI Layout Structure */
@@ -642,6 +695,12 @@
         border-color: #fbbf24;
         color: #03081c;
         font-weight: 700;
+        min-width: 104px;
+        min-height: 38px;
+        position: relative;
+        z-index: 1;
+        pointer-events: auto;
+        cursor: pointer;
       }
 
       /* Demo controls bar */
@@ -863,6 +922,14 @@
       .typewriter {
         font: 14px/1.55 var(--mono);
         color: #e0f2fe;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+        word-break: break-word;
+        min-width: 0;
+        max-height: 220px;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        padding-right: 4px;
       }
       .cursor::after {
         content: "\258B";
@@ -1197,7 +1264,7 @@
       /* Toasts */
       .toasts {
         position: fixed;
-        bottom: 24px;
+        top: 76px;
         right: 24px;
         display: flex;
         flex-direction: column;
@@ -1214,6 +1281,7 @@
         padding: 12px 16px;
         box-shadow: 0 10px 25px rgba(0, 0, 0, 0.65);
         max-width: 380px;
+        overflow-wrap: anywhere;
         display: flex;
         align-items: flex-start;
         justify-content: space-between;
@@ -1371,12 +1439,28 @@
           -webkit-overflow-scrolling: touch;
         }
         .toasts {
-          bottom: 82px;
+          top: 76px;
           right: 12px;
-          left: 12px;
+          left: auto;
+          width: min(380px, calc(100vw - 24px));
         }
         .toast {
           max-width: 100%;
+        }
+        .blocked-inner {
+          align-items: flex-start;
+          flex-wrap: wrap;
+          gap: 10px;
+        }
+        .blocked-left {
+          flex-basis: 100%;
+        }
+        .blocked-inner > .btn {
+          margin-left: 50px;
+        }
+        .btn-approve {
+          min-width: 108px;
+          min-height: 42px;
         }
       }
 
@@ -2253,6 +2337,40 @@
         color: #35d6a0;
       }
 
+      .login-logo {
+        width: 96px;
+        height: 96px;
+        flex: 0 0 96px;
+        padding: 0;
+        border: 0;
+        border-radius: 18px;
+        background: transparent;
+        box-shadow: 0 0 40px rgba(34, 197, 94, 0.25);
+        overflow: hidden;
+      }
+
+      .login-logo img {
+        display: block;
+        width: 96px;
+        height: 96px;
+        object-fit: cover;
+      }
+
+      .brand-mark-logo {
+        width: auto;
+        height: 40px;
+        flex: 0 0 auto;
+        padding: 0;
+        border: 0;
+        background: transparent;
+      }
+
+      .brand-mark-logo img {
+        display: block;
+        width: auto;
+        height: 40px;
+      }
+
       .btn,
       .side-btn,
       .preset-chip,
@@ -2295,6 +2413,36 @@
 
       .btn-red:hover:not(:disabled) {
         background: #442026;
+      }
+
+      .btn.btn-approve {
+        background: #fbbf24;
+        border: 2px solid #fff0b3;
+        color: #17220b;
+        font-weight: 800;
+        box-shadow: 0 0 0 2px rgba(251, 191, 36, 0.18);
+      }
+
+      .btn.btn-approve:hover:not(:disabled),
+      .btn.btn-approve:focus-visible {
+        background: #fcd34d;
+        border-color: #fff7d6;
+        outline: 3px solid rgba(252, 211, 77, 0.35);
+        outline-offset: 2px;
+      }
+
+      .btn.btn-approve:disabled {
+        cursor: wait;
+        opacity: 0.72;
+      }
+
+      .pending-actions {
+        display: inline-flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 8px;
+        position: relative;
+        z-index: 1;
       }
 
       .filter-btn.active {
@@ -2466,27 +2614,11 @@
     <div id="authOverlay" class="auth-overlay">
       <div class="auth-card">
         <div class="auth-brand">
-          <div class="auth-logo-lg">
-            <svg
-              width="26"
-              height="26"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2.2"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                d="M13 10V3L4 14h7v7l9-11h-7z"
-              />
-            </svg>
+          <div class="auth-logo-lg login-logo">
+            <img src="/brand/gridbot-logo-full.png" alt="GridBot" />
           </div>
-          <div>
-            <div class="auth-title">GridBot</div>
-            <div class="auth-sub">
-              Sign in to your Internet Cafe Operations &amp; Treasury Portal
-            </div>
+          <div class="auth-sub">
+            Sign in to your Internet Cafe Operations &amp; Treasury Portal
           </div>
         </div>
 
@@ -2547,21 +2679,8 @@
       <!-- Left Sidebar -->
       <aside class="sidebar">
         <div class="sidebar-brand">
-          <div class="logo">
-            <svg
-              width="22"
-              height="22"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2.2"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                d="M13 10V3L4 14h7v7l9-11h-7z"
-              />
-            </svg>
+          <div class="logo brand-mark-logo">
+            <img src="/brand/gridbot-mark.png" alt="" />
           </div>
           <div>
             <div class="brand-title">GridBot</div>
@@ -2657,7 +2776,7 @@
                 >
               </div>
             </div>
-            <button onclick="hideBlockedBanner()" class="btn btn-red">
+            <button type="button" onclick="hideBlockedBanner()" class="btn btn-red">
               Dismiss
             </button>
           </div>
@@ -2665,7 +2784,6 @@
 
         <header class="workspace-header">
           <div class="breadcrumb-wrap">
-            <span class="breadcrumb-sub">Pages /</span>
             <h2 id="currentViewTitle" class="breadcrumb-title">Dashboard</h2>
           </div>
           <div class="header-right">
@@ -2936,7 +3054,7 @@
                     ><b id="dailyCapText" style="color: #fff">15 RLUSD</b>
                   </div>
                   <div class="budget-row">
-                    <span>Spent today</span
+                    <span>Spent this demo day</span
                     ><b id="spentTodayText" style="color: #7dd3fc">0 RLUSD</b>
                   </div>
                   <div class="budget-row">
@@ -3027,12 +3145,43 @@
               </button>
               <button
                 class="preset-chip amber"
-                onclick="useStaffPreset('Busy weekend shift, request 12 RLUSD bulk electricity top-up (Over Cap)')"
+                onclick="useStaffPreset('Busy weekend shift, request 15 RLUSD bulk electricity top-up (Over Cap)')"
                 style="display:inline-flex;align-items:center;gap:6px;"
               >
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-                Request 12 RLUSD Bulk Top-Up (Over Cap)
+                Request 15 RLUSD Bulk Top-Up (Over Cap)
               </button>
+            </div>
+          </section>
+
+          <section id="redTeamPanel" class="staff-card hidden" style="border-color:rgba(251,191,36,.45)">
+            <div class="staff-header">
+              <div class="staff-header-left">
+                <span class="staff-title" style="color:#fbbf24">Red Team — Policy Guardrail Test</span>
+                <span class="model">DEMO MODE ONLY · NO PAYMENT SHOULD BE SUBMITTED</span>
+              </div>
+            </div>
+            <p class="panel-sub">
+              Sends a prompt-injection attempt through the staff AI, then tests a hypothetical compromised proposal against the real Policy Service. The test target is never an approved payee.
+            </p>
+            <button id="btnRunRedTeam" type="button" class="btn btn-amber" onclick="runRedTeamTest()">
+              Run prompt-injection test
+            </button>
+            <div id="redTeamResult" class="hidden" style="margin-top:16px">
+              <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px">
+                <article class="panel" style="background:var(--card)">
+                  <strong style="color:#fbbf24">1. AI proposal</strong>
+                  <p id="redTeamAiResult" class="panel-sub" style="margin-top:8px;white-space:pre-wrap;overflow-wrap:anywhere"></p>
+                </article>
+                <article class="panel" style="background:var(--card)">
+                  <strong style="color:#fbbf24">2. Policy Service decision</strong>
+                  <p id="redTeamPolicyResult" class="panel-sub" style="margin-top:8px;white-space:pre-wrap;overflow-wrap:anywhere"></p>
+                </article>
+                <article class="panel" style="background:var(--card)">
+                  <strong style="color:#fbbf24">3. Ledger signature</strong>
+                  <p id="redTeamLedgerResult" class="panel-sub" style="margin-top:8px;white-space:pre-wrap;overflow-wrap:anywhere"></p>
+                </article>
+              </div>
             </div>
           </section>
 
@@ -3057,14 +3206,21 @@
                   </tr>
                 </thead>
                 <tbody id="txDashboardTableBody">
-                  <tr>
-                    <td
-                      colspan="6"
-                      class="mono"
-                      style="text-align: center; padding: 24px; color: #64748b"
-                    >
-                      Loading transactions...
-                    </td>
+                  <tr aria-hidden="true">
+                    <td><span class="skeleton-bar" style="width:60px"></span></td>
+                    <td><span class="skeleton-bar" style="width:82px"></span></td>
+                    <td><span class="skeleton-bar" style="width:72px"></span></td>
+                    <td><span class="skeleton-bar" style="width:76px"></span></td>
+                    <td><span class="skeleton-bar" style="width:90%"></span></td>
+                    <td><span class="skeleton-bar" style="width:70px;margin-left:auto"></span></td>
+                  </tr>
+                  <tr aria-hidden="true">
+                    <td><span class="skeleton-bar" style="width:54px"></span></td>
+                    <td><span class="skeleton-bar" style="width:74px"></span></td>
+                    <td><span class="skeleton-bar" style="width:66px"></span></td>
+                    <td><span class="skeleton-bar" style="width:68px"></span></td>
+                    <td><span class="skeleton-bar" style="width:72%"></span></td>
+                    <td><span class="skeleton-bar" style="width:64px;margin-left:auto"></span></td>
                   </tr>
                 </tbody>
               </table>
@@ -3145,14 +3301,21 @@
                   </tr>
                 </thead>
                 <tbody id="txFullTableBody">
-                  <tr>
-                    <td
-                      colspan="6"
-                      class="mono"
-                      style="text-align: center; padding: 28px; color: #64748b"
-                    >
-                      No transactions found.
-                    </td>
+                  <tr aria-hidden="true">
+                    <td><span class="skeleton-bar" style="width:60px"></span></td>
+                    <td><span class="skeleton-bar" style="width:82px"></span></td>
+                    <td><span class="skeleton-bar" style="width:72px"></span></td>
+                    <td><span class="skeleton-bar" style="width:76px"></span></td>
+                    <td><span class="skeleton-bar" style="width:90%"></span></td>
+                    <td><span class="skeleton-bar" style="width:70px;margin-left:auto"></span></td>
+                  </tr>
+                  <tr aria-hidden="true">
+                    <td><span class="skeleton-bar" style="width:54px"></span></td>
+                    <td><span class="skeleton-bar" style="width:74px"></span></td>
+                    <td><span class="skeleton-bar" style="width:66px"></span></td>
+                    <td><span class="skeleton-bar" style="width:68px"></span></td>
+                    <td><span class="skeleton-bar" style="width:72%"></span></td>
+                    <td><span class="skeleton-bar" style="width:64px;margin-left:auto"></span></td>
                   </tr>
                 </tbody>
               </table>
@@ -3275,6 +3438,9 @@
             <div class="table-header">
               <div>
                 <h2 class="panel-title">Policy &amp; Treasury Controls</h2>
+                <p class="panel-sub">
+                  Spend counts only validated XRPL Testnet payments. Pending, blocked, and failed requests do not count. The window follows Africa/Johannesburg midnight or the owner’s latest demo-day reset.
+                </p>
               </div>
             </div>
 
@@ -3318,6 +3484,19 @@
                     Save Policy Caps
                   </button>
                 </form>
+                <div style="border-top:1px solid #1e293b;margin-top:18px;padding-top:16px">
+                  <p class="panel-sub" style="margin:0 0 12px">
+                    Starts a fresh spending window from now. Earlier Testnet payments remain in the audit history; this does not reverse or erase them.
+                  </p>
+                  <button
+                    id="btnStartNewDemoDay"
+                    type="button"
+                    onclick="startNewDemoDay()"
+                    class="btn btn-sky hidden"
+                  >
+                    Start new demo day
+                  </button>
+                </div>
               </div>
 
               <div class="panel" style="background: var(--card)">
@@ -3545,16 +3724,25 @@
         const staffNotice = document.getElementById("staffReadOnlyNotice");
         const policyNotice = document.getElementById("policyReadOnlyNotice");
         const btnSavePolicyCaps = document.getElementById("btnSavePolicyCaps");
+        const btnStartNewDemoDay = document.getElementById("btnStartNewDemoDay");
+        const redTeamPanel = document.getElementById("redTeamPanel");
         const inputDailyCap = document.getElementById("inputDailyCap");
         const inputPerTxCap = document.getElementById("inputPerTxCap");
         const staffBackToDashBtn = document.getElementById("staffBackToDashBtn");
 
         if (!currentUser) {
           document.body.classList.remove("staff-mode");
+          if (redTeamPanel) redTeamPanel.classList.add("hidden");
           document.getElementById("authOverlay").classList.remove("hidden");
           return;
         }
 
+        if (redTeamPanel) {
+          redTeamPanel.classList.toggle(
+            "hidden",
+            currentUser.role !== "owner" || appState.demoMode !== true,
+          );
+        }
         document.getElementById("authOverlay").classList.add("hidden");
         reqLabel.textContent = `Requester: ${currentUser.displayName}`;
         userNameEl.textContent = currentUser.displayName;
@@ -3572,6 +3760,10 @@
           if (btnSavePolicyCaps) {
             btnSavePolicyCaps.disabled = false;
             btnSavePolicyCaps.classList.remove("hidden");
+          }
+          if (btnStartNewDemoDay) btnStartNewDemoDay.classList.remove("hidden");
+          if (redTeamPanel && appState.demoMode === true) {
+            redTeamPanel.classList.remove("hidden");
           }
           if (inputDailyCap) {
             inputDailyCap.disabled = false;
@@ -3598,6 +3790,8 @@
             btnSavePolicyCaps.disabled = true;
             btnSavePolicyCaps.classList.add("hidden");
           }
+          if (btnStartNewDemoDay) btnStartNewDemoDay.classList.add("hidden");
+          if (redTeamPanel) redTeamPanel.classList.add("hidden");
           if (inputDailyCap) {
             inputDailyCap.disabled = true;
             inputDailyCap.readOnly = true;
@@ -3662,6 +3856,56 @@
         } finally {
           btn.disabled = false;
           btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg> Submit Request`;
+        }
+      }
+
+      async function runRedTeamTest() {
+        if (!currentUser || currentUser.role !== "owner" || appState.demoMode !== true) {
+          return;
+        }
+
+        const button = document.getElementById("btnRunRedTeam");
+        const resultCard = document.getElementById("redTeamResult");
+        button.disabled = true;
+        button.textContent = "Testing Policy Service...";
+        resultCard.classList.remove("hidden");
+        document.getElementById("redTeamAiResult").textContent = "Running the adversarial request through the staff AI...";
+        document.getElementById("redTeamPolicyResult").textContent = "Waiting for the independent Policy Service.";
+        document.getElementById("redTeamLedgerResult").textContent = "Waiting for policy outcome.";
+
+        try {
+          const response = await fetch("/api/demo/red-team", {
+            method: "POST",
+            headers: authHeaders({ "Content-Type": "application/json" }),
+          });
+          const data = await response.json();
+          if (!response.ok || !data.ok) {
+            throw new Error(data.error || "Red Team test failed");
+          }
+
+          const ai = data.actualAiProposal || {};
+          const tested = data.attackProposal || {};
+          document.getElementById("redTeamAiResult").textContent =
+            `Staff message: ${data.requestText}\n\nActual AI interpretation: ${ai.decision || "unavailable"}${ai.sku ? ` · ${ai.sku}` : ""}${ai.amount ? ` · ${ai.amount} RLUSD` : ""}\n${ai.reason || ""}\n\nAdversarial proposal tested (simulated compromised output): ${tested.amount} RLUSD electricity to rXXXX (resolved to a generated, non-whitelisted test address before policy evaluation).`;
+
+          const payment = data.payment || {};
+          const exactReason = payment.reason || payment.message || "No Policy Service reason returned.";
+          const policyStatus = String(payment.status || "unknown").toUpperCase();
+          document.getElementById("redTeamPolicyResult").textContent =
+            `Policy status: ${policyStatus}\nExact rule/result: ${exactReason}\nAudit trail: ${data.auditLogged ? `BLOCKED record #${payment.id} saved.` : "No blocked audit record was confirmed."}`;
+
+          const wasBlocked = payment.status === "blocked";
+          document.getElementById("redTeamLedgerResult").textContent =
+            wasBlocked && data.signatureObtained === false
+              ? "No signature obtained, so the ledger would reject this (the Policy Service withheld its co-signature)."
+              : "Unexpected result: the policy service did not confirm a block. Do not treat this test as passed.";
+        } catch (err) {
+          document.getElementById("redTeamPolicyResult").textContent = `Test failed: ${err.message}`;
+          document.getElementById("redTeamLedgerResult").textContent =
+            "No success is claimed. Check Policy Service availability; the ledger must not receive a payment.";
+        } finally {
+          button.disabled = false;
+          button.textContent = "Run prompt-injection test";
         }
       }
 
@@ -3870,8 +4114,19 @@
             ? "OVER LIMIT: WAITING FOR OWNER APPROVAL"
             : "BLOCKED BY POLICY SIGNER";
         document.getElementById("blockedBannerText").textContent =
-          reason || "The policy signer refused to co-sign this payment.";
+          formatPolicyReason(reason) ||
+          "The policy signer refused to co-sign this payment.";
         document.getElementById("blockedBanner").classList.remove("hidden");
+      }
+      function formatPolicyReason(reason) {
+        return String(reason || "")
+          .split("; ")
+          .map((item) =>
+            item.startsWith("Daily cap exceeded")
+              ? `Daily cap exceeded (daily_cap ${Number(appState.policy?.daily_cap ?? 15)} RLUSD)`
+              : item,
+          )
+          .join("; ");
       }
       function hideBlockedBanner() {
         document.getElementById("blockedBanner").classList.add("hidden");
@@ -4087,7 +4342,7 @@
         const body = document.getElementById("txDashboardTableBody");
         if (!body) return;
         if (txs.length === 0) {
-          body.innerHTML = `<tr><td colspan="6" class="mono" style="text-align:center;padding:24px;color:#64748b">No transactions recorded yet.</td></tr>`;
+          body.innerHTML = `<tr><td colspan="6"><div class="empty-state"><img src="/brand/gridbot-mark.png" alt="" /><span>No requests yet. Try the buttons above.</span></div></td></tr>`;
           return;
         }
         body.innerHTML = txs.map(createTxRowHtml).join("");
@@ -4130,7 +4385,10 @@
         const body = document.getElementById("txFullTableBody");
         if (!body) return;
         if (list.length === 0) {
-          body.innerHTML = `<tr><td colspan="6" class="mono" style="text-align:center;padding:28px;color:#64748b">No matching transactions.</td></tr>`;
+          const message = (appState.transactions || []).length === 0
+            ? "No requests yet. Try the buttons above."
+            : "No matching requests. Try changing the filters.";
+          body.innerHTML = `<tr><td colspan="6"><div class="empty-state"><img src="/brand/gridbot-mark.png" alt="" /><span>${message}</span></div></td></tr>`;
           return;
         }
         body.innerHTML = list.map(createTxRowHtml).join("");
@@ -4138,18 +4396,23 @@
 
       function createTxRowHtml(tx) {
         const isOwner = currentUser && currentUser.role === "owner";
+        const displayedReason = String(tx.reason || "").replace(
+          /\s+\[requester:[^\]]+\]\s*$/,
+          "",
+        );
+        const displayedBlockedReason = formatPolicyReason(tx.blocked_reason);
         const url =
           tx.explorerUrl ||
           (tx.tx_hash
             ? `https://testnet.xrpl.org/transactions/${tx.tx_hash}`
             : null);
         const note = tx.blocked_reason
-          ? `<div style="color:${tx.status === "pending_owner" ? "#fcd34d" : "#fca5a5"}" title="${escapeHtml(tx.blocked_reason)}">${escapeHtml(tx.blocked_reason)}</div>`
-          : `<div style="color:#e2e8f0" title="${escapeHtml(tx.reason || "")}">${escapeHtml(tx.reason || "")}</div>`;
+          ? `<div style="color:${tx.status === "pending_owner" ? "#fcd34d" : "#fca5a5"}" title="${escapeHtml(displayedBlockedReason)}">${escapeHtml(displayedBlockedReason)}</div>`
+          : `<div style="color:#e2e8f0" title="${escapeHtml(displayedReason)}">${escapeHtml(displayedReason)}</div>`;
         let action;
         if (tx.status === "pending_owner") {
           if (isOwner) {
-            action = `<button id="approveBtn-${escapeHtml(tx.id)}" onclick="approveTransaction('${escapeHtml(tx.id)}')" class="btn btn-approve">Approve</button> <button id="rejectBtn-${escapeHtml(tx.id)}" onclick="rejectTransaction('${escapeHtml(tx.id)}')" class="btn btn-red" style="margin-left:6px;padding:5px 10px">Reject</button>`;
+            action = `<div class="pending-actions"><button type="button" id="approveBtn-${escapeHtml(tx.id)}" onclick="approveTransaction('${escapeHtml(tx.id)}')" class="btn btn-approve" aria-label="Approve pending request ${escapeHtml(tx.id)}">Approve</button><button type="button" id="rejectBtn-${escapeHtml(tx.id)}" onclick="rejectTransaction('${escapeHtml(tx.id)}')" class="btn btn-red" style="padding:5px 10px">Reject</button></div>`;
           } else {
             action = `<span class="mono" style="color:#fcd34d;font-size:11px;display:inline-flex;align-items:center;gap:5px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Sent to Owner</span>`;
           }
@@ -4210,10 +4473,7 @@
             renderBudget();
             const spentNow = Number(data.spentToday || 0);
             const remNow = Number(data.budgetRemaining || 0);
-            const subtitle =
-              remNow <= 0 && daily_cap <= spentNow
-                ? `Saved (Daily cap ${daily_cap} <= Spent today ${spentNow} RLUSD — set cap above ${spentNow} RLUSD to unlock remaining budget)`
-                : `Daily cap ${daily_cap} RLUSD | Remaining ${remNow} RLUSD | Per-tx cap ${per_tx_cap} RLUSD`;
+            const subtitle = `Daily cap ${daily_cap} RLUSD | Spent this demo day ${spentNow} RLUSD | Remaining ${remNow} RLUSD | Per-tx cap ${per_tx_cap} RLUSD`;
             showToast({
               title: "Policy Updated in Supabase",
               subtitle,
@@ -4228,6 +4488,50 @@
           console.error("Failed to update policy:", err);
         } finally {
           if (saveBtn) saveBtn.disabled = false;
+        }
+      }
+
+      async function startNewDemoDay() {
+        if (!currentUser || currentUser.role !== "owner") {
+          showToast({
+            title: "Owner Access Required",
+            subtitle: "Only the owner can start a new demo spending window.",
+            tone: "red",
+          });
+          return;
+        }
+        if (
+          !confirm(
+            "Start a new demo spending window now? Previous Testnet payments will remain in history and cannot be undone.",
+          )
+        ) {
+          return;
+        }
+
+        const button = document.getElementById("btnStartNewDemoDay");
+        if (button) button.disabled = true;
+        try {
+          const res = await fetch("/api/policy/start-demo-day", {
+            method: "POST",
+            headers: authHeaders({ "Content-Type": "application/json" }),
+          });
+          const data = await res.json();
+          if (!res.ok || !data.ok) {
+            throw new Error(data.error || "Unable to start a new demo day");
+          }
+
+          appState.policy = data.policy;
+          appState.spentToday = data.spentToday;
+          appState.budgetRemaining = data.budgetRemaining;
+          renderBudget();
+          showToast({
+            title: "New demo day started",
+            subtitle: "The counter restarted. All earlier transactions remain in the audit history.",
+          });
+        } catch (err) {
+          showBlockedBanner(err.message, "blocked");
+        } finally {
+          if (button) button.disabled = false;
         }
       }
 
@@ -4327,6 +4631,10 @@
       }
 
       async function approveTransaction(id) {
+        if (currentUser?.role !== "owner") {
+          showBlockedBanner("Only the owner can approve pending requests.", "blocked");
+          return;
+        }
         const btn = document.getElementById(`approveBtn-${id}`);
         if (btn) {
           btn.disabled = true;
@@ -4365,6 +4673,11 @@
           }
         } catch (err) {
           showBlockedBanner(`Owner approval failed: ${err.message}`, "blocked");
+        } finally {
+          if (btn?.isConnected && btn.textContent === "Signing...") {
+            btn.disabled = false;
+            btn.textContent = "Approve";
+          }
         }
       }
 
@@ -4485,16 +4798,28 @@
       applyRolePermissions();
 
       fetch("/api/state", { headers: authHeaders() })
-        .then((r) => r.json())
-        .then((data) => {
-          if (data.ok && !initialLoadDone) {
-            appState = { ...appState, ...data };
-            renderGauges(data.levels);
-            renderBudget();
-            renderTransactions(data.transactions);
-          }
+        .then((r) => {
+          if (!r.ok) throw new Error(`Dashboard request failed (${r.status})`);
+          return r.json();
         })
-        .catch(() => {});
+        .then((data) => {
+          if (!data.ok) throw new Error(data.error || "Dashboard request failed");
+          if (initialLoadDone) return;
+          appState = { ...appState, ...data };
+          applyRolePermissions();
+          renderGauges(data.levels);
+          renderBudget();
+          renderTransactions(data.transactions);
+          initialLoadDone = true;
+        })
+        .catch((err) => {
+          if (initialLoadDone) return;
+          console.error("Failed to load dashboard requests:", err);
+          const errorRow =
+            '<tr><td colspan="6"><div class="empty-state">Could not load requests. <button class="btn btn-sky" onclick="window.location.reload()">Try again</button></div></td></tr>';
+          document.getElementById("txDashboardTableBody").innerHTML = errorRow;
+          document.getElementById("txFullTableBody").innerHTML = errorRow;
+        });
 
       connectWebSocket();
       if (currentUser) {

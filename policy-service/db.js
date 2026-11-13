@@ -112,6 +112,7 @@ function getDefaultPolicy() {
     daily_cap: 15,
     per_tx_cap: 10,
     allowed_payees: utilityAddress ? [utilityAddress] : [],
+    demo_day_started_at: null,
   };
 }
 
@@ -130,6 +131,7 @@ function loadLocalStore() {
           daily_cap: Number(policy.daily_cap ?? 15),
           per_tx_cap: Number(policy.per_tx_cap ?? 10),
           allowed_payees: parseAllowedPayees(policy.allowed_payees),
+          demo_day_started_at: policy.demo_day_started_at || null,
         },
         transactions: Array.isArray(raw.transactions) ? raw.transactions : [],
         nextId: Number(raw.nextId) || 1,
@@ -192,6 +194,53 @@ function parseAllowedPayees(val) {
   return [];
 }
 
+function getRequesterFromReason(reason) {
+  const text = String(reason || '');
+  const match = text.match(
+    /^\[Staff Request by .*? \(((?:staff|owner):[^)]+)\):/,
+  );
+  if (match) return match[1];
+  return text.match(/\[requester:([^\]]+)\]\s*$/)?.[1] || '';
+}
+
+async function expirePendingTransactions() {
+  const cutoffISO = new Date(Date.now() - 30 * 60 * 1000).toISOString();
+  const expiryReason = 'Owner approval request expired after 30 minutes';
+
+  if (supabase) {
+    const { data, error } = await supabase
+      .from('transactions')
+      .select('id')
+      .eq('status', 'pending_owner')
+      .lt('ts', cutoffISO);
+    if (error) throw new Error('Unable to verify pending request expiry');
+
+    for (const tx of data || []) {
+      const { error: updateError } = await supabase
+        .from('transactions')
+        .update({ status: 'expired', blocked_reason: expiryReason })
+        .eq('id', tx.id)
+        .eq('status', 'pending_owner');
+      if (updateError) throw new Error('Unable to expire an old owner request');
+    }
+    return;
+  }
+
+  let changed = false;
+  for (const tx of localStore.transactions) {
+    if (
+      tx.status === 'pending_owner' &&
+      Number.isFinite(Date.parse(tx.ts)) &&
+      tx.ts < cutoffISO
+    ) {
+      tx.status = 'expired';
+      tx.blocked_reason = expiryReason;
+      changed = true;
+    }
+  }
+  if (changed) saveLocalStore(localStore);
+}
+
 /**
  * Fetches policy row (id = 1). Seeds default policy if missing.
  * Falls back to local store if Supabase is unreachable.
@@ -237,6 +286,7 @@ async function getPolicy() {
         daily_cap: Number(inserted.daily_cap),
         per_tx_cap: Number(inserted.per_tx_cap),
         allowed_payees: parseAllowedPayees(inserted.allowed_payees),
+        demo_day_started_at: inserted.demo_day_started_at || null,
       };
       localStore.policy = result;
       saveLocalStore(localStore);
@@ -260,6 +310,7 @@ async function getPolicy() {
           daily_cap: Number(synced.daily_cap),
           per_tx_cap: Number(synced.per_tx_cap),
           allowed_payees: parseAllowedPayees(synced.allowed_payees),
+          demo_day_started_at: synced.demo_day_started_at || null,
         };
         localStore.policy = result;
         saveLocalStore(localStore);
@@ -272,6 +323,7 @@ async function getPolicy() {
       daily_cap: Number(data.daily_cap),
       per_tx_cap: Number(data.per_tx_cap),
       allowed_payees: currentAllowlist,
+      demo_day_started_at: data.demo_day_started_at || null,
     };
     localStore.policy = result;
     saveLocalStore(localStore);
@@ -295,6 +347,9 @@ async function updatePolicy(fields) {
   if (fields.daily_cap !== undefined) updatePayload.daily_cap = Number(fields.daily_cap);
   if (fields.per_tx_cap !== undefined) updatePayload.per_tx_cap = Number(fields.per_tx_cap);
   if (fields.allowed_payees !== undefined) updatePayload.allowed_payees = fields.allowed_payees;
+  if (fields.demo_day_started_at !== undefined) {
+    updatePayload.demo_day_started_at = fields.demo_day_started_at;
+  }
 
   localStore.policy = {
     ...localStore.policy,
@@ -334,19 +389,62 @@ async function updatePolicy(fields) {
   }
 }
 
+async function startNewDemoDay() {
+  await getPolicy();
+  const startedAt = new Date().toISOString();
+
+  if (supabase) {
+    const { data, error } = await supabase
+      .from('policy')
+      .update({ demo_day_started_at: startedAt })
+      .eq('id', 1)
+      .select()
+      .single();
+
+    if (error || !data) {
+      throw new Error(
+        'Unable to start a new demo day. Apply policy-service/migrations/002_demo_day_reset.sql first.'
+      );
+    }
+
+    usingLocalFallback = false;
+    localStore.policy = {
+      ...localStore.policy,
+      ...data,
+      daily_cap: Number(data.daily_cap),
+      per_tx_cap: Number(data.per_tx_cap),
+      allowed_payees: parseAllowedPayees(data.allowed_payees),
+      demo_day_started_at: data.demo_day_started_at || startedAt,
+    };
+    saveLocalStore(localStore);
+    return localStore.policy;
+  }
+
+  localStore.policy.demo_day_started_at = startedAt;
+  saveLocalStore(localStore);
+  return localStore.policy;
+}
+
 /**
- * Sums `amount` for rows with status 'auto_approved' or 'owner_approved'
- * since midnight Africa/Johannesburg time.
+ * Sums successfully submitted payments for the Johannesburg day, starting
+ * at the later of midnight or the owner's demo-day reset.
  */
 async function spentToday() {
-  const startOfDayISO = getStartOfDayJohannesburgISO();
+  const policy = await getPolicy();
+  const johannesburgMidnight = getStartOfDayJohannesburgISO();
+  const demoDayStart = policy.demo_day_started_at;
+  const startOfDayISO =
+    demoDayStart && demoDayStart > johannesburgMidnight
+      ? demoDayStart
+      : johannesburgMidnight;
 
   if (supabase) {
     try {
       const { data, error } = await supabase
         .from('transactions')
-        .select('amount, ts, status')
+        .select('amount, ts, status, tx_hash')
         .in('status', ['auto_approved', 'owner_approved'])
+        .not('tx_hash', 'is', null)
         .gte('ts', startOfDayISO);
 
       if (error) throw new Error(error.message);
@@ -362,6 +460,7 @@ async function spentToday() {
     .filter(
       (row) =>
         (row.status === 'auto_approved' || row.status === 'owner_approved') &&
+        Boolean(row.tx_hash) &&
         row.ts >= startOfDayISO
     )
     .reduce((sum, row) => sum + Number(row.amount || 0), 0);
@@ -369,36 +468,33 @@ async function spentToday() {
 }
 
 /**
- * Checks if an identical pending_owner row (same resource + amount) exists from the last 60 seconds.
+ * Finds a still-pending matching request from the same user within the expiry window.
  */
-async function findRecentPendingDuplicate(resource, amount, withinSeconds = 60) {
+async function findRecentPendingDuplicate(
+  resource,
+  amount,
+  withinSeconds = 30 * 60,
+  requestedBy = '',
+) {
+  await expirePendingTransactions();
   const cutoffISO = new Date(Date.now() - withinSeconds * 1000).toISOString();
 
   if (supabase) {
-    try {
-      const { data, error } = await supabase
-        .from('transactions')
-        .select('*')
-        .eq('status', 'pending_owner')
-        .eq('resource', resource)
-        .eq('amount', Number(amount))
-        .gte('ts', cutoffISO)
-        .order('ts', { ascending: false })
-        .order('id', { ascending: false })
-        .limit(1);
+    const { data, error } = await supabase
+      .from('transactions')
+      .select('*')
+      .eq('status', 'pending_owner')
+      .eq('resource', resource)
+      .eq('amount', Number(amount))
+      .gte('ts', cutoffISO)
+      .order('ts', { ascending: false })
+      .order('id', { ascending: false });
+    if (error) throw new Error('Pending-request duplicate check failed');
 
-      if (error) throw new Error(error.message);
-
-      if (data && data.length > 0) {
-        return {
-          ...data[0],
-          amount: Number(data[0].amount),
-        };
-      }
-      return null;
-    } catch (err) {
-      warnSupabaseFallback('findRecentPendingDuplicate', err);
-    }
+    const found = (data || []).find(
+      (tx) => getRequesterFromReason(tx.reason) === requestedBy,
+    );
+    return found ? { ...found, amount: Number(found.amount) } : null;
   }
 
   const found = localStore.transactions.find(
@@ -406,7 +502,8 @@ async function findRecentPendingDuplicate(resource, amount, withinSeconds = 60) 
       tx.status === 'pending_owner' &&
       tx.resource === resource &&
       Number(tx.amount) === Number(amount) &&
-      tx.ts >= cutoffISO
+      tx.ts >= cutoffISO &&
+      getRequesterFromReason(tx.reason) === requestedBy
   );
   return found ? { ...found, amount: Number(found.amount) } : null;
 }
@@ -552,6 +649,7 @@ async function updateTx(id, fields) {
  * Fetches a single transaction row by id.
  */
 async function getTx(id) {
+  await expirePendingTransactions();
   if (supabase) {
     try {
       const { data, error } = await supabase
@@ -585,6 +683,7 @@ async function getTx(id) {
  * Lists transactions ordered by newest first (ts DESC, id DESC).
  */
 async function listTx(limit = 50) {
+  await expirePendingTransactions();
   if (supabase) {
     try {
       const { data, error } = await supabase
@@ -804,8 +903,10 @@ module.exports = {
   loadPublicWallets,
   getPolicy,
   updatePolicy,
+  startNewDemoDay,
   spentToday,
   findRecentPendingDuplicate,
+  expirePendingTransactions,
   findRecentVelocityBlocked,
   logTx,
   updateTx,

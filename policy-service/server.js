@@ -18,9 +18,11 @@ const {
   getStorageMode,
   getPolicy,
   updatePolicy,
+  startNewDemoDay,
   spentToday,
   getTx,
   listTx,
+  expirePendingTransactions,
   listStaffUsers,
   createStaffUser,
   deleteStaffUser,
@@ -39,6 +41,7 @@ const AGENT_API_TOKEN = (process.env.AGENT_API_TOKEN || '').trim();
 const OWNER_PASSCODE = (process.env.OWNER_PASSCODE || '').trim();
 const STAFF_PASSCODE = (process.env.STAFF_PASSCODE || '').trim();
 const TELEGRAM_APPROVE_PIN = (process.env.TELEGRAM_APPROVE_PIN || '').trim();
+let pendingExpiryTimer = null;
 const TELEGRAM_ALLOWED_CHAT_IDS = new Set(
   String(
     process.env.TELEGRAM_ALLOWED_CHAT_IDS ||
@@ -123,10 +126,11 @@ function requireOwnerOrTelegramPin(req, res, next) {
  */
 app.post('/sign', requireAgentToken, async (req, res) => {
   try {
-    const { resource, reason, tx_json, agent_blob } = req.body || {};
+    const { resource, reason, requestedBy, tx_json, agent_blob } = req.body || {};
     const result = await signAndSubmitAgentRequest({
       resource,
       reason,
+      requestedBy,
       tx_json,
       agent_blob,
     });
@@ -312,6 +316,25 @@ app.post('/owner/policy', requireOwnerPasscode, async (req, res) => {
   }
 });
 
+app.post('/owner/demo-day/start', requireOwnerPasscode, async (req, res) => {
+  try {
+    const policy = await startNewDemoDay();
+    resetVelocityWindow();
+    const spent = await spentToday();
+    const dailyCap = Number(policy.daily_cap);
+
+    res.json({
+      ok: true,
+      policy,
+      spentToday: spent,
+      budgetRemaining: Math.max(0, Math.round((dailyCap - spent) * 1e6) / 1e6),
+    });
+  } catch (err) {
+    console.error('[Policy Service POST /owner/demo-day/start] Error:', err.message);
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
 /**
  * POST /owner/staff
  * Creates a new cashier or staff member in Supabase / local DB.
@@ -343,6 +366,16 @@ app.delete('/owner/staff/:id', requireOwnerPasscode, async (req, res) => {
 });
 
 function startPolicyServer(port = PORT) {
+  if (!pendingExpiryTimer) {
+    const expireOldRequests = () => {
+      expirePendingTransactions().catch((err) => {
+        console.error('[Policy Service] Pending-request expiry failed:', err.message);
+      });
+    };
+    expireOldRequests();
+    pendingExpiryTimer = setInterval(expireOldRequests, 60 * 1000);
+    pendingExpiryTimer.unref();
+  }
   const srv = app.listen(port, () => {
     console.log(`GridBot Policy Service running at http://localhost:${port}`);
   });
@@ -354,6 +387,7 @@ if (require.main === module) {
 }
 
 process.on('SIGINT', async () => {
+  if (pendingExpiryTimer) clearInterval(pendingExpiryTimer);
   await closeXrplClient();
   process.exit(0);
 });

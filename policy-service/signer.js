@@ -7,7 +7,6 @@
 // here in the isolated Policy Service before co-signing any transaction blob.
 
 const path = require("path");
-const crypto = require("crypto");
 const dns = require("dns");
 if (typeof dns.setDefaultResultOrder === "function") {
   dns.setDefaultResultOrder("ipv4first");
@@ -31,6 +30,7 @@ const XRPL_WSS = (
   process.env.XRPL_WSS || "wss://s.altnet.rippletest.net:51233"
 ).trim();
 const RLUSD_CURRENCY_HEX = "524C555344000000000000000000000000000000";
+const RESOURCE_UNIT_COST = Object.freeze({ electricity: 5, data: 3 });
 
 // Velocity limiter: max 6 requests per 60,000 ms (in memory)
 const VELOCITY_LIMIT = 6;
@@ -142,11 +142,19 @@ function resetVelocityWindow() {
 async function signAndSubmitAgentRequest({
   resource,
   reason,
+  requestedBy,
   tx_json,
   agent_blob,
 }) {
   const safeResource = resource || "unknown";
-  const safeReason = reason || "Agent payment request";
+  const rawReason = reason || "Agent payment request";
+  const requesterFromReason = rawReason.match(
+    /^\[Staff Request by .*? \(((?:staff|owner):[^)]+)\):/,
+  )?.[1];
+  const requesterId = String(requestedBy || requesterFromReason || "agent").trim();
+  const safeReason = requesterFromReason || /\[requester:[^\]]+\]\s*$/.test(rawReason)
+    ? rawReason
+    : `${rawReason} [requester:${requesterId}]`;
 
   // Extract amount & payee early for logging if tx_json is malformed
   const rawPayee = tx_json?.Destination || "unknown";
@@ -187,6 +195,17 @@ async function signAndSubmitAgentRequest({
   // Step 1: Validate tx_json fields and payee allowlist
   // -------------------------------------------------------------------------
   const validationErrors = [];
+  const unitCost = RESOURCE_UNIT_COST[safeResource];
+  if (!unitCost) {
+    validationErrors.push(`Invalid resource: ${safeResource}`);
+  } else if (
+    !Number.isInteger(parsedAmount / unitCost) ||
+    parsedAmount < unitCost
+  ) {
+    validationErrors.push(
+      `Invalid amount for ${safeResource}: amount must be a positive whole multiple of ${unitCost} RLUSD`,
+    );
+  }
 
   if (!tx_json || typeof tx_json !== "object") {
     validationErrors.push("Missing or invalid tx_json object");
@@ -258,6 +277,28 @@ async function signAndSubmitAgentRequest({
     }
   }
 
+  try {
+    const existingPending = await findRecentPendingDuplicate(
+      safeResource,
+      safeAmount,
+      30 * 60,
+      requesterId,
+    );
+    if (existingPending) {
+      return {
+        status: "pending_owner",
+        id: existingPending.id,
+        reason: existingPending.blocked_reason || "Matching request is already awaiting owner approval",
+        deduped: true,
+      };
+    }
+  } catch (err) {
+    return {
+      status: "blocked",
+      reason: `Fail-safe: pending-request duplicate check failed (${err.message})`,
+    };
+  }
+
   // -------------------------------------------------------------------------
   // Step 2: Velocity limit (max 6 requests per minute in memory)
   // -------------------------------------------------------------------------
@@ -297,7 +338,7 @@ async function signAndSubmitAgentRequest({
   }
 
   // -------------------------------------------------------------------------
-  // Step 3 & 4: Check per_tx_cap and daily_cap (with 60s pending_owner dedupe)
+  // Step 3 & 4: Check per_tx_cap and daily_cap.
   // -------------------------------------------------------------------------
   const perTxCap = Number(policy.per_tx_cap);
   const dailyCap = Number(policy.daily_cap);
@@ -311,31 +352,13 @@ async function signAndSubmitAgentRequest({
   const projectedDaily = Math.round((currentSpent + safeAmount) * 1e6) / 1e6;
   if (projectedDaily > dailyCap) {
     capReasons.push(
-      `Daily cap exceeded: spentToday ${currentSpent} + ${safeAmount} = ${projectedDaily} RLUSD (daily_cap ${dailyCap} RLUSD)`,
+      `Daily cap exceeded (daily_cap ${dailyCap} RLUSD)`,
     );
   }
 
   if (capReasons.length > 0) {
     const capReason = capReasons.join("; ");
     try {
-      // Dedupe: if an identical pending_owner row (same resource + amount) exists from the last 60s, return it
-      const existingPending = await findRecentPendingDuplicate(
-        safeResource,
-        safeAmount,
-        60,
-      );
-      if (existingPending) {
-        if (existingPending.blocked_reason !== capReason) {
-          await updateTx(existingPending.id, { blocked_reason: capReason }).catch(() => {});
-        }
-        return {
-          status: "pending_owner",
-          id: existingPending.id,
-          reason: capReason,
-          deduped: true,
-        };
-      }
-
       const row = await logTx({
         resource: safeResource,
         amount: safeAmount,
@@ -370,45 +393,22 @@ async function signAndSubmitAgentRequest({
     const policySigned = policyWallet.sign(tx_json, true);
     const combinedBlob = xrpl.multisign([agent_blob, policySigned.tx_blob]);
 
-    let txHash;
-    try {
-      const client = await getXrplClient();
-      const response = await client.submitAndWait(combinedBlob);
+    const client = await getXrplClient();
+    const response = await client.submitAndWait(combinedBlob);
+    const txResult =
+      response?.result?.meta?.TransactionResult ||
+      response?.result?.engine_result ||
+      "UNKNOWN";
+    const txHash = response?.result?.hash || response?.result?.tx_json?.hash;
 
-      const txResult =
-        response?.result?.meta?.TransactionResult ||
-        response?.result?.engine_result ||
-        "UNKNOWN";
-
-      txHash = response?.result?.hash || response?.result?.tx_json?.hash;
-
-      if (txResult !== "tesSUCCESS") {
-        throw new Error(`XRPL Payment failed with result: ${txResult}`);
-      }
-    } catch (xrplErr) {
-      const msg = String(xrplErr?.message || xrplErr || "");
-      if (
-        msg.includes("ENOTFOUND") ||
-        msg.includes("ETIMEDOUT") ||
-        msg.includes("ECONNREFUSED") ||
-        msg.includes("ECONNRESET") ||
-        msg.includes("NotConnectedError") ||
-        msg.includes("WebSocket") ||
-        msg.includes("LastLedgerSequence") ||
-        msg.includes("tefPAST_SEQ")
-      ) {
-        txHash = crypto
-          .createHash("sha512")
-          .update(Buffer.from(combinedBlob, "hex"))
-          .digest("hex")
-          .slice(0, 64)
-          .toUpperCase();
-        console.warn(
-          `[Policy Signer] XRPL sequence/network fallback (${msg}); recorded co-signed 2-of-2 multisig hash ${txHash.slice(0, 12)}...`,
-        );
-      } else {
-        throw xrplErr;
-      }
+    if (response?.result?.validated !== true) {
+      throw new Error("XRPL did not confirm that the payment was validated");
+    }
+    if (txResult !== "tesSUCCESS") {
+      throw new Error(`XRPL Payment failed with result: ${txResult}`);
+    }
+    if (!txHash) {
+      throw new Error("XRPL validated the payment but returned no transaction hash");
     }
 
     const row = await logTx({
@@ -501,6 +501,19 @@ async function ownerApprove(txId) {
       };
     }
 
+    const unitCost = RESOURCE_UNIT_COST[txRow.resource];
+    if (
+      !unitCost ||
+      !Number.isInteger(Number(txRow.amount) / unitCost) ||
+      Number(txRow.amount) < unitCost
+    ) {
+      const blockedReason = `Invalid amount for ${txRow.resource}: amount must be a positive whole multiple of ${unitCost || "the resource unit cost"} RLUSD`;
+      await updateTx(txRow.id, {
+        status: "blocked",
+        blocked_reason: blockedReason,
+      });
+      return { status: "blocked", reason: blockedReason, id: txRow.id };
+    }
     const pubWallets = loadPublicWallets();
     const policy = await getPolicy();
 
@@ -563,8 +576,14 @@ async function ownerApprove(txId) {
           "UNKNOWN";
         txHash = response?.result?.hash || response?.result?.tx_json?.hash;
 
+        if (response?.result?.validated !== true) {
+          throw new Error("XRPL did not confirm that the payment was validated");
+        }
         if (txResult !== "tesSUCCESS") {
           throw new Error(`XRPL owner Payment failed with result: ${txResult}`);
+        }
+        if (!txHash) {
+          throw new Error("XRPL validated the payment but returned no transaction hash");
         }
         lastXrplErr = null;
         break;
@@ -584,37 +603,7 @@ async function ownerApprove(txId) {
           await new Promise((r) => setTimeout(r, 800));
           continue;
         }
-        if (
-          msg.includes("ENOTFOUND") ||
-          msg.includes("ETIMEDOUT") ||
-          msg.includes("ECONNREFUSED") ||
-          msg.includes("ECONNRESET") ||
-          msg.includes("NotConnectedError") ||
-          msg.includes("WebSocket")
-        ) {
-          const offlinePrepared = {
-            ...paymentTx,
-            Fee: "24",
-            Sequence: Math.floor(Date.now() / 1000) % 10000000,
-            LastLedgerSequence: 99999999,
-            SigningPubKey: "",
-          };
-          const ownerSigned = ownerWallet.sign(offlinePrepared, true);
-          const combinedBlob = xrpl.multisign([ownerSigned.tx_blob]);
-          txHash = crypto
-            .createHash("sha512")
-            .update(Buffer.from(combinedBlob, "hex"))
-            .digest("hex")
-            .slice(0, 64)
-            .toUpperCase();
-          console.warn(
-            `[Policy Signer] XRPL Testnet unreachable (${msg}); recorded offline owner-signed hash ${txHash.slice(0, 12)}...`,
-          );
-          lastXrplErr = null;
-          break;
-        } else {
-          throw xrplErr;
-        }
+        throw xrplErr;
       }
     }
     if (lastXrplErr) throw lastXrplErr;
@@ -645,6 +634,14 @@ async function ownerApprove(txId) {
  */
 async function ownerReject(txId) {
   const txRow = await getTx(txId);
+  if (txRow.status !== "pending_owner") {
+    return {
+      status: txRow.status,
+      reason: `Transaction ${txId} is not pending_owner (current status: ${txRow.status})`,
+      id: txRow.id,
+      transaction: txRow,
+    };
+  }
   const updated = await updateTx(txRow.id, {
     status: "blocked",
     blocked_reason: "rejected by owner",

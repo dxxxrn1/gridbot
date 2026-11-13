@@ -47,6 +47,8 @@ Run [policy-service/schema.sql](policy-service/schema.sql) in your Supabase SQL 
 - `public.transactions`
 - `public.staff_users`
 
+For an existing database, also run [policy-service/migrations/002_demo_day_reset.sql](policy-service/migrations/002_demo_day_reset.sql). The owner-only “Start new demo day” control requires this column; it moves the spend-counting window without deleting transaction history.
+
 ### 3. Configure Environment Variables
 
 #### Root `.env`
@@ -54,6 +56,7 @@ Run [policy-service/schema.sql](policy-service/schema.sql) in your Supabase SQL 
 PORT=3000
 POLICY_SERVICE_URL=http://127.0.0.1:4000
 AGENT_API_TOKEN=your-shared-agent-token
+DEMO_MODE=false
 
 # Required (minimum 6 characters each; service refuses to start if missing/shorter)
 OWNER_PASSCODE=your-owner-passcode
@@ -69,6 +72,8 @@ TELEGRAM_APPROVE_PIN=your-telegram-pin
 GROQ_API_KEY=your-groq-key
 XRPL_EXPLORER_BASE=https://testnet.xrpl.org/transactions
 ```
+
+Set `DEMO_MODE=true` in the root `.env` only when you want to expose the owner-only Red Team prompt-injection drill. The drill sends a deliberately invalid proposal to the Policy Service; it should be blocked and logged, and must never submit a payment.
 
 #### `policy-service/.env`
 ```env

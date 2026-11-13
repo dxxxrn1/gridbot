@@ -5,7 +5,8 @@ create table if not exists public.policy (
   id integer primary key default 1,
   daily_cap numeric not null default 15,
   per_tx_cap numeric not null default 10,
-  allowed_payees jsonb not null default '[]'::jsonb
+  allowed_payees jsonb not null default '[]'::jsonb,
+  demo_day_started_at timestamptz
 );
 
 create table if not exists public.transactions (

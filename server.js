@@ -24,6 +24,7 @@ const {
   proxyOwnerApprove,
   proxyOwnerReject,
   proxyOwnerPolicy,
+  proxyStartNewDemoDay,
   listStaff,
   createStaff,
   deleteStaff,
@@ -46,6 +47,7 @@ const {
   STAFF_SKU_CATALOG,
   setRogueMode,
   isRogueMode,
+  handleRedTeamRequest,
   agentEvents,
 } = require("./agent");
 const {
@@ -66,6 +68,7 @@ const {
 } = require("./telegram");
 
 const PORT = Number(process.env.PORT) || 3000;
+const DEMO_MODE = String(process.env.DEMO_MODE || "").trim().toLowerCase() === "true";
 const XRPL_EXPLORER_BASE =
   process.env.XRPL_EXPLORER_BASE || "https://testnet.xrpl.org/transactions";
 
@@ -166,6 +169,7 @@ async function buildFullState() {
     spentToday: spent,
     budgetRemaining,
     rogueMode: isRogueMode(),
+    demoMode: DEMO_MODE,
     treasuryAddress: wallets.treasuryAddress,
     utilityAddress: wallets.utilityAddress,
     wallets,
@@ -435,6 +439,29 @@ app.post("/api/staff/request", requireAuth, async (req, res) => {
   }
 });
 
+app.post("/api/demo/red-team", requireOwner, async (req, res) => {
+  if (!DEMO_MODE) {
+    return res.status(404).json({ ok: false, error: "Not found" });
+  }
+
+  try {
+    const result = await handleRedTeamRequest();
+    await broadcastBudgetAndTxUpdate("red_team_test");
+    res.json({
+      ok: true,
+      requestText: result.requestText,
+      actualAiProposal: result.actualAiProposal,
+      attackProposal: result.attackProposal,
+      payment: result.payment,
+      auditLogged: result.payment?.id !== undefined && result.payment?.id !== null,
+      signatureObtained: result.signatureObtained,
+    });
+  } catch (err) {
+    console.error("[POST /api/demo/red-team] Error:", err.message);
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
 // ============================================================================
 // REST API Endpoints
 // ============================================================================
@@ -571,6 +598,30 @@ app.post("/api/policy", requireOwner, async (req, res) => {
     });
   } catch (err) {
     console.error("[POST /api/policy] Error:", err.message);
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+app.post("/api/policy/start-demo-day", requireOwner, async (req, res) => {
+  try {
+    const passcode = req.headers["x-owner-passcode"] || "";
+    const { status, ok, data } = await proxyStartNewDemoDay(passcode);
+    if (!ok) {
+      return res.status(status).json({
+        ok: false,
+        error: data?.error || "Unable to start a new demo day",
+      });
+    }
+
+    await broadcastBudgetAndTxUpdate("demo_day_started");
+    res.json({
+      ok: true,
+      policy: data.policy,
+      spentToday: data.spentToday,
+      budgetRemaining: data.budgetRemaining,
+    });
+  } catch (err) {
+    console.error("[POST /api/policy/start-demo-day] Error:", err.message);
     res.status(500).json({ ok: false, error: err.message });
   }
 });

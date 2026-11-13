@@ -3,6 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#06120f" />
+  <link rel="icon" href="/brand/favicon.ico" sizes="any" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/brand/favicon-32.png" />
+  <link rel="apple-touch-icon" href="/brand/apple-touch-icon.png" />
+  <link rel="manifest" href="/manifest.webmanifest" />
   <title>GridBot — Autonomous Prepaid-Resource Agent on XRPL</title>
   <!-- Optional Tailwind CDN if online, but 100% styled by pure embedded CSS below so it works completely standalone -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -50,6 +55,38 @@
 
     .hidden {
       display: none !important;
+    }
+
+    .skeleton-bar {
+      display: block;
+      height: 12px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, rgba(148, 163, 184, 0.1) 25%, rgba(148, 163, 184, 0.24) 50%, rgba(148, 163, 184, 0.1) 75%);
+      background-size: 200% 100%;
+      animation: skeleton-shimmer 1.4s ease-in-out infinite;
+    }
+
+    @keyframes skeleton-shimmer {
+      to { background-position: -200% 0; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .skeleton-bar { animation: none; }
+    }
+
+    .empty-state {
+      padding: 24px;
+      text-align: center;
+      color: #94a3b8;
+    }
+
+    .empty-state img {
+      display: block;
+      width: 32px;
+      height: 32px;
+      object-fit: contain;
+      margin: 0 auto 8px;
+      opacity: 0.8;
     }
 
     .mono {
@@ -741,9 +778,7 @@
       <!-- Left: GridBot Logo -->
       <div class="brand-group">
         <div class="logo-box">
-          <svg width="24" height="24" fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
-          </svg>
+          <img src="/brand/gridbot-mark.png" alt="GridBot" width="40" height="40" style="object-fit:contain" />
         </div>
         <div>
           <div class="brand-title-row">
@@ -1045,10 +1080,21 @@
             </tr>
           </thead>
           <tbody id="txTableBody">
-            <tr>
-              <td colspan="6" class="mono" style="text-align:center;padding:28px;color:#64748b;">
-                Loading transaction history...
-              </td>
+            <tr aria-hidden="true">
+              <td><span class="skeleton-bar" style="width:60px"></span></td>
+              <td><span class="skeleton-bar" style="width:82px"></span></td>
+              <td><span class="skeleton-bar" style="width:72px"></span></td>
+              <td><span class="skeleton-bar" style="width:76px"></span></td>
+              <td><span class="skeleton-bar" style="width:90%"></span></td>
+              <td><span class="skeleton-bar" style="width:70px;margin-left:auto"></span></td>
+            </tr>
+            <tr aria-hidden="true">
+              <td><span class="skeleton-bar" style="width:54px"></span></td>
+              <td><span class="skeleton-bar" style="width:74px"></span></td>
+              <td><span class="skeleton-bar" style="width:66px"></span></td>
+              <td><span class="skeleton-bar" style="width:68px"></span></td>
+              <td><span class="skeleton-bar" style="width:72%"></span></td>
+              <td><span class="skeleton-bar" style="width:64px;margin-left:auto"></span></td>
             </tr>
           </tbody>
         </table>
@@ -1160,8 +1206,17 @@
       } else {
         titleEl.textContent = 'POLICY SIGNER BLOCKED TRANSACTION';
       }
-      textEl.textContent = reason || 'Off-chain Policy Signer refused to co-sign transaction.';
+      textEl.textContent = formatPolicyReason(reason) || 'Off-chain Policy Signer refused to co-sign transaction.';
       banner.classList.remove('hidden');
+    }
+
+    function formatPolicyReason(reason) {
+      return String(reason || '')
+        .split('; ')
+        .map((item) => item.startsWith('Daily cap exceeded')
+          ? `Daily cap exceeded (daily_cap ${Number(appState.policy?.daily_cap ?? 15)} RLUSD)`
+          : item)
+        .join('; ');
     }
 
     function hideBlockedBanner() {
@@ -1343,11 +1398,7 @@
       const tbody = document.getElementById('txTableBody');
       if (transactions.length === 0) {
         tbody.innerHTML = `
-          <tr>
-            <td colspan="6" class="mono" style="text-align:center;padding:28px;color:#64748b;">
-              No transactions yet. Click "⚙️ Demo" above to drain Electricity or Data!
-            </td>
-          </tr>`;
+          <tr><td colspan="6"><div class="empty-state"><img src="/brand/gridbot-mark.png" alt="" /><span>No requests yet. Try the buttons above.</span></div></td></tr>`;
         return;
       }
 
@@ -1361,7 +1412,7 @@
             ? `<div style="color:#e2e8f0;">${escapeHtml(tx.reason || '')}</div>
                <div class="mono" style="font-size:11px;margin-top:3px;color:${
                  tx.status === 'pending_owner' ? '#fcd34d' : '#fca5a5'
-               };">↳ ${escapeHtml(tx.blocked_reason)}</div>`
+               };">↳ ${escapeHtml(formatPolicyReason(tx.blocked_reason))}</div>`
             : `<div style="color:#e2e8f0;">${escapeHtml(tx.reason || '')}</div>`;
 
           let actionCell = '';
@@ -1578,17 +1629,26 @@
     }
 
     fetch('/api/state')
-      .then((r) => r.json())
-      .then((data) => {
-        if (data.ok && !initialLoadDone) {
-          appState = { ...appState, ...data };
-          renderHeader();
-          renderGauges(data.levels);
-          renderBudget();
-          renderTransactions(data.transactions);
-        }
+      .then((r) => {
+        if (!r.ok) throw new Error(`Dashboard request failed (${r.status})`);
+        return r.json();
       })
-      .catch(() => {});
+      .then((data) => {
+        if (!data.ok) throw new Error(data.error || 'Dashboard request failed');
+        if (initialLoadDone) return;
+        appState = { ...appState, ...data };
+        renderHeader();
+        renderGauges(data.levels);
+        renderBudget();
+        renderTransactions(data.transactions);
+        initialLoadDone = true;
+      })
+      .catch((err) => {
+        if (initialLoadDone) return;
+        console.error('Failed to load dashboard requests:', err);
+        document.getElementById('txTableBody').innerHTML =
+          '<tr><td colspan="6"><div class="empty-state">Could not load requests. <button class="btn btn-sky" onclick="window.location.reload()">Try again</button></div></td></tr>';
+      });
 
     connectWebSocket();
   </script>
