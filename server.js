@@ -508,7 +508,7 @@ app.post("/api/demo/drain/:resource", (req, res) => {
     const resourceId = req.params.resource;
     getResource(resourceId);
 
-    const newLevel = setLevel(resourceId, 20);
+    const newLevel = setLevel(resourceId, 4);
     const levels = checkNow();
 
     res.json({

@@ -48,6 +48,7 @@ const electricity = {
   priority: 1,
   threshold: 5, // 5% low-balance threshold
   unitCostRLUSD: 5,
+  capacityKwh: 60, // Simulated capacity: a 5 RLUSD refill represents 60 kWh
   percentPerRLUSD: 20, // 1 RLUSD adds 20% (5 RLUSD refills 100%)
   isMock: true,
 
@@ -91,8 +92,9 @@ const data = {
   id: 'data',
   label: 'Router LTE Data Cap (Mock)',
   priority: 2,
-  threshold: 5, // 5% low-balance (auto-pay) threshold
+  threshold: 5, // 5% low-balance threshold
   unitCostRLUSD: 3,
+  capacityGb: 5, // Simulated capacity: a 3 RLUSD refill represents 5 GB
   percentPerRLUSD: 33.3, // 1 RLUSD adds 33.3% (~3 RLUSD refills ~100%)
   isMock: true,
 

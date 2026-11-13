@@ -1829,6 +1829,13 @@
         margin-bottom: 16px;
       }
 
+      .policy-popup-next {
+        margin: -4px 0 16px;
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.5;
+      }
+
       .workflow-title,
       .owner-setup-title {
         color: #f1f7f4;
@@ -2347,6 +2354,23 @@
         color: #35d6a0;
       }
 
+      .splash-logo-mark {
+        width: 56px;
+        height: 56px;
+        flex: 0 0 56px;
+        padding: 6px;
+        border-radius: 16px;
+        background: #18322b;
+        box-shadow: 0 0 28px rgba(34, 197, 94, 0.2);
+      }
+
+      .splash-logo-mark img {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+      }
+
       .login-logo {
         width: 96px;
         height: 96px;
@@ -2660,12 +2684,14 @@
         backdrop-filter: blur(14px) saturate(150%);
         -webkit-backdrop-filter: blur(14px) saturate(150%);
         opacity: 0;
+        visibility: hidden;
         pointer-events: none;
-        transition: opacity 0.16s ease;
+        transition: opacity 0.16s ease, visibility 0.16s ease;
       }
 
       .policy-popup-overlay.active {
         opacity: 1;
+        visibility: visible;
         pointer-events: auto;
       }
 
@@ -2907,7 +2933,6 @@
       body.light-theme .policy-popup-stat-val,
       body.light-theme .glass-loader-title,
       body.light-theme #dailyCapText,
-      body.light-theme #budgetRemainingRingText,
       body.light-theme #view-policy h3,
       body.light-theme #view-staff h3,
       body.light-theme #view-trust-center h2 {
@@ -3399,6 +3424,434 @@
         color: #b91c1c;
         font-weight: 600;
       }
+
+      .dashboard-intro {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 18px;
+        padding: 2px 2px 0;
+      }
+
+      .dashboard-intro h1 {
+        margin-top: 4px;
+        color: #f1f5f9;
+        font-size: clamp(24px, 2.4vw, 32px);
+        line-height: 1.15;
+        letter-spacing: -0.04em;
+      }
+
+      .dashboard-intro p {
+        margin-top: 7px;
+        max-width: 580px;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.55;
+      }
+
+      .dashboard-intro .dashboard-eyebrow {
+        margin: 0;
+        color: #35d6a0;
+        font: 700 10px var(--mono);
+        letter-spacing: 0.14em;
+      }
+
+      .simulated-feed-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        flex: 0 0 auto;
+        padding: 9px 12px;
+        border: 1px solid rgba(53, 214, 160, 0.28);
+        border-radius: 999px;
+        background: rgba(53, 214, 160, 0.1);
+        color: #9af0ce;
+        font: 700 10px var(--mono);
+        letter-spacing: 0.06em;
+      }
+
+      .simulated-feed-badge::before {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: #35d6a0;
+        box-shadow: 0 0 0 4px rgba(53, 214, 160, 0.12);
+        content: "";
+      }
+
+      .resource-panel-header {
+        align-items: flex-start;
+      }
+
+      .resource-panel-header .panel-sub {
+        margin-top: 5px;
+        line-height: 1.5;
+      }
+
+      .gauge-quantity {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        margin-top: 9px;
+        color: var(--muted);
+        font-size: 10px;
+        line-height: 1.45;
+      }
+
+      .gauge-quantity strong {
+        color: var(--text);
+        font: 700 13px var(--mono);
+      }
+
+      .dashboard-budget-panel {
+        grid-area: budget;
+        padding: 0;
+        border: 0;
+        background: transparent;
+        box-shadow: none;
+      }
+
+      .dashboard-brain-panel {
+        grid-area: brain;
+      }
+
+      .dashboard-monitor-panel {
+        grid-area: resources;
+      }
+
+      .dashboard-budget-metrics {
+        display: grid;
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+        gap: 10px;
+        margin: 0 0 14px;
+      }
+
+      .dashboard-budget-metric {
+        display: flex;
+        min-width: 0;
+        min-height: 88px;
+        grid-column: span 2;
+        flex-direction: column;
+        justify-content: space-between;
+        gap: 8px;
+        padding: 13px 12px;
+        border: 1px solid rgba(148, 163, 184, 0.16);
+        border-top: 2px solid rgba(148, 163, 184, 0.4);
+        border-radius: 15px;
+        background: linear-gradient(145deg, rgba(20, 36, 39, 0.96), rgba(11, 23, 27, 0.94));
+        box-shadow: 0 8px 18px rgba(0, 0, 0, 0.12);
+      }
+
+      .dashboard-budget-metric span {
+        color: #b7c9c2;
+        font-size: 11px;
+        font-weight: 600;
+        line-height: 1.4;
+      }
+
+      .dashboard-budget-metric strong {
+        overflow-wrap: anywhere;
+        color: #f2faf6;
+        font: 750 clamp(13px, 1.2vw, 17px) system-ui, -apple-system, "Segoe UI", sans-serif;
+        letter-spacing: -0.045em;
+        line-height: 1.15;
+      }
+
+      .dashboard-budget-metric small {
+        color: #839a91;
+        font-size: 10px;
+        line-height: 1.35;
+      }
+
+      .dashboard-budget-metric.is-primary {
+        border-color: rgba(53, 214, 160, 0.28);
+        border-top-color: #35d6a0;
+        background: linear-gradient(145deg, rgba(20, 67, 55, 0.95), rgba(11, 37, 34, 0.96));
+      }
+
+      .dashboard-budget-metric.is-primary strong {
+        color: #6af0bd;
+        font-size: clamp(16px, 1.45vw, 21px);
+      }
+
+      .dashboard-budget-metric.is-daily {
+        border-top-color: #818cf8;
+      }
+
+      .dashboard-budget-metric.is-daily strong {
+        color: #b9baff;
+      }
+
+      .dashboard-budget-metric.is-spent {
+        border-top-color: #38bdf8;
+      }
+
+      .dashboard-budget-metric.is-spent strong,
+      .dashboard-budget-metric.is-treasury strong {
+        color: #7dd3fc;
+      }
+
+      .dashboard-budget-metric.is-treasury {
+        grid-column: span 3;
+        border-top-color: #22d3ee;
+      }
+
+      .dashboard-budget-metric.is-limit {
+        grid-column: span 3;
+        border-top-color: #fbbf24;
+      }
+
+      .dashboard-budget-metric.is-limit strong {
+        color: #fcd878;
+      }
+
+      .resource-panel-note {
+        margin-top: 12px;
+        padding: 10px 12px;
+        border: 1px solid rgba(53, 214, 160, 0.18);
+        border-radius: 11px;
+        background: rgba(53, 214, 160, 0.06);
+        color: var(--muted);
+        font-size: 10px;
+        line-height: 1.5;
+      }
+
+      #view-dashboard > .grid,
+      #view-dashboard > .grid > .panel,
+      #view-dashboard .gauges,
+      #view-dashboard .gauge-card {
+        min-width: 0;
+      }
+
+      #view-dashboard .gauges {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      @media (min-width: 1200px) {
+        #view-dashboard > .grid {
+          grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
+          grid-template-areas:
+            "budget brain"
+            "resources .";
+          grid-template-rows: auto auto;
+          align-items: stretch;
+          gap: 16px;
+        }
+
+        #view-dashboard > .grid > :first-child {
+          grid-column: auto;
+        }
+
+      }
+
+      @media (max-width: 1199px) {
+        #view-dashboard > .grid {
+          grid-template-columns: minmax(0, 1fr);
+          grid-template-areas:
+            "budget"
+            "brain"
+            "resources";
+        }
+      }
+
+      @media (max-width: 600px) {
+        #view-dashboard .dashboard-budget-metrics {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        #view-dashboard .dashboard-budget-metric,
+        #view-dashboard .dashboard-budget-metric.is-treasury,
+        #view-dashboard .dashboard-budget-metric.is-limit {
+          grid-column: span 1;
+        }
+
+        #view-dashboard .dashboard-budget-metric.is-primary {
+          grid-column: 1 / -1;
+        }
+      }
+
+      body.light-theme #view-dashboard {
+        gap: 20px;
+      }
+
+      body.light-theme .dashboard-intro h1,
+      body.light-theme .resource-panel-header .panel-title {
+        color: #112d25;
+      }
+
+      body.light-theme .dashboard-intro .dashboard-eyebrow {
+        color: #16835d;
+      }
+
+      body.light-theme .simulated-feed-badge {
+        border-color: #b8e7d4;
+        background: #e8f8f0;
+        color: #16704f;
+      }
+
+      body.light-theme .simulated-feed-badge::before {
+        background: #16a36a;
+        box-shadow: 0 0 0 4px rgba(22, 163, 106, 0.11);
+      }
+
+      body.light-theme .resource-panel-note {
+        border-color: #d7eee3;
+        background: #f2faf6;
+        color: #527366;
+      }
+
+      body.light-theme #view-dashboard > .grid > .panel {
+        border: 1px solid #e1ece7;
+        border-radius: 18px;
+        background: #ffffff;
+        box-shadow: 0 8px 26px rgba(24, 66, 49, 0.055);
+      }
+
+      body.light-theme #view-dashboard > .grid > .dashboard-budget-panel {
+        padding: 0;
+        border: 0;
+        background: transparent;
+        box-shadow: none;
+      }
+
+      body.light-theme #view-dashboard .gauge-card,
+      body.light-theme #view-dashboard .stat {
+        border: 1px solid #e5eee9;
+        border-radius: 15px;
+        background: linear-gradient(160deg, #ffffff 0%, #f7fbf9 100%);
+        transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease;
+      }
+
+      body.light-theme #view-dashboard .gauge-card:hover {
+        transform: translateY(-2px);
+        border-color: #b8e7d4;
+        box-shadow: 0 10px 24px rgba(22, 131, 93, 0.09);
+      }
+
+      body.light-theme #view-dashboard .tag {
+        border: 1px solid #cfeade;
+        border-radius: 999px;
+        background: #edf9f2;
+        color: #197451;
+        font-size: 9px;
+      }
+
+      body.light-theme #view-dashboard .gauge-pct {
+        color: #102c24;
+      }
+
+      body.light-theme #view-dashboard .gauge-name {
+        color: #18392e;
+      }
+
+      body.light-theme #view-dashboard .gauge-cost {
+        color: #62776d;
+      }
+
+      body.light-theme #view-dashboard .gauge-cost b,
+      body.light-theme #view-dashboard .gauge-quantity strong {
+        color: #16704f;
+      }
+
+      body.light-theme #view-dashboard .gauge-quantity {
+        color: #71847b;
+      }
+
+      body.light-theme #view-dashboard .gauge-wrap circle:not(.ring) {
+        stroke: #e4eee9;
+      }
+
+      body.light-theme #view-dashboard .terminal {
+        border: 1px solid #e3ece8;
+        background: #f7faf8;
+      }
+
+      body.light-theme #view-dashboard .terminal-top {
+        border-color: #e1eae5;
+        color: #698076;
+      }
+
+      body.light-theme #view-dashboard .typewriter {
+        color: #285447;
+      }
+
+      body.light-theme #view-dashboard .model {
+        border: 1px solid #d5e9df;
+        background: #eff8f3;
+        color: #326b53;
+      }
+
+      body.light-theme #view-dashboard .dashboard-budget-metric {
+        border-color: #e2ece7;
+        border-top-color: #b6c9c0;
+        background: linear-gradient(145deg, #ffffff, #f5f9f7);
+        box-shadow: 0 7px 18px rgba(23, 69, 49, 0.06);
+      }
+
+      body.light-theme #view-dashboard .dashboard-budget-metric span {
+        color: #5e756b;
+      }
+
+      body.light-theme #view-dashboard .dashboard-budget-metric strong {
+        color: #17382c;
+      }
+
+      body.light-theme #view-dashboard .dashboard-budget-metric small {
+        color: #7a8e85;
+      }
+
+      body.light-theme #view-dashboard .dashboard-budget-metric.is-primary {
+        border-color: #c6ead9;
+        border-top-color: #16a36a;
+        background: linear-gradient(145deg, #f4fff9, #eaf8f1);
+      }
+
+      body.light-theme #view-dashboard .dashboard-budget-metric.is-primary strong {
+        color: #128257;
+      }
+
+      body.light-theme #view-dashboard .dashboard-budget-metric.is-daily {
+        border-top-color: #7379e8;
+      }
+
+      body.light-theme #view-dashboard .dashboard-budget-metric.is-daily strong {
+        color: #575fc4;
+      }
+
+      body.light-theme #view-dashboard .dashboard-budget-metric.is-spent,
+      body.light-theme #view-dashboard .dashboard-budget-metric.is-treasury {
+        border-top-color: #0e9fc3;
+      }
+
+      body.light-theme #view-dashboard .dashboard-budget-metric.is-spent strong,
+      body.light-theme #view-dashboard .dashboard-budget-metric.is-treasury strong {
+        color: #087ba8;
+      }
+
+      body.light-theme #view-dashboard .dashboard-budget-metric.is-limit {
+        border-top-color: #d89013;
+      }
+
+      body.light-theme #view-dashboard .dashboard-budget-metric.is-limit strong {
+        color: #a76b0a;
+      }
+
+      @media (max-width: 600px) {
+        .dashboard-intro {
+          align-items: flex-start;
+          flex-direction: column;
+        }
+
+        .simulated-feed-badge {
+          padding: 8px 10px;
+        }
+      }
+
+      @media (max-width: 360px) {
+        #view-dashboard .gauges {
+          grid-template-columns: minmax(0, 1fr);
+        }
+      }
     </style>
   </head>
   <body>
@@ -3417,6 +3870,7 @@
       class="policy-popup-overlay"
       role="dialog"
       aria-modal="true"
+      aria-hidden="true"
       aria-labelledby="policyPopupTitle"
       onclick="if (event.target === this) closePolicyCheckPopup()"
     >
@@ -3425,6 +3879,7 @@
           <span id="policyPopupBadge" class="policy-popup-badge approved">POLICY CHECK</span>
           <button
             type="button"
+            id="policyPopupClose"
             onclick="closePolicyCheckPopup()"
             class="btn"
             style="min-height: 32px; padding: 4px 10px; font-size: 12px"
@@ -3445,6 +3900,7 @@
           </div>
         </div>
         <div id="policyPopupReason" class="policy-popup-reason"></div>
+        <p id="policyPopupNextStep" class="policy-popup-next"></p>
         <div id="policyPopupExtra" class="mono" style="font-size: 11px; color: var(--green); margin-bottom: 14px; display: none;"></div>
         <div class="policy-popup-actions">
           <a
@@ -3468,21 +3924,8 @@
     <div id="splashOverlay" class="splash-overlay hidden">
       <div class="splash-card">
         <div class="auth-brand" style="margin-bottom: 10px">
-          <div class="auth-logo-lg">
-            <svg
-              width="28"
-              height="28"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2.2"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                d="M13 10V3L4 14h7v7l9-11h-7z"
-              />
-            </svg>
+          <div class="auth-logo-lg splash-logo-mark">
+            <img src="/brand/gridbot-mark.png" alt="GridBot logo" width="44" height="44" />
           </div>
           <div>
             <div class="auth-title">GridBot</div>
@@ -3833,18 +4276,18 @@
         <div id="demoControlBar" class="demo-bar hidden">
           <div class="demo-inner">
             <div>
-              <strong>Demo Controls</strong> &nbsp;Simulate live utility meter
-              drain or reset to 100%
+              <strong>Demo Controls</strong> &nbsp;Simulate a low resource level
+              or refill the simulated feed
             </div>
             <div class="demo-btns">
               <button
                 onclick="drainResource('electricity')"
                 class="btn btn-amber"
               >
-                Drain Electricity
+                Simulate 4% Electricity
               </button>
               <button onclick="drainResource('data')" class="btn btn-sky">
-                Drain Data
+                Simulate 4% Data
               </button>
               <button onclick="resetDemo()" class="btn">Reset</button>
             </div>
@@ -3853,15 +4296,30 @@
 
         <!-- VIEW 1: Dashboard -->
         <section id="view-dashboard" class="tab-view active">
-          <!-- 3-Column Round Meters -->
+          <div class="dashboard-intro">
+            <div>
+              <p class="dashboard-eyebrow">GRIDBOT OPERATIONS</p>
+              <h1>Resource dashboard</h1>
+              <p>
+                Keep electricity and connectivity in view. Meter readings and
+                fulfilment are simulated, not connected to a live utility.
+              </p>
+            </div>
+            <span class="simulated-feed-badge">SIMULATED FEED</span>
+          </div>
+          <!-- Budget and simulated resources on the left; agent chat on the right on wide screens. -->
           <div class="grid">
-            <section class="panel">
-              <div class="panel-header">
-                <h2 class="panel-title">Prepaid Resources</h2>
+            <section id="resourceMonitorPanel" class="panel dashboard-monitor-panel">
+              <div class="panel-header resource-panel-header">
+                <div>
+                  <h2 class="panel-title">Prepaid resources</h2>
+                  <p class="panel-sub">Early warning at 20% · Agent check at 5%</p>
+                </div>
+                <span class="simulated-feed-badge">SIMULATED</span>
               </div>
               <div class="gauges">
                 <div class="gauge-card">
-                  <span class="tag">Auto top-up at 5%</span>
+                  <span class="tag" title="The monitor asks the agent to evaluate a request at or below 5%. Policy controls approval.">Agent check at 5%</span>
                   <div class="gauge-wrap">
                     <svg width="124" height="124" viewBox="0 0 120 120">
                       <circle
@@ -3894,18 +4352,22 @@
                     </div>
                   </div>
                   <h3 class="gauge-name">Electricity</h3>
+                  <p class="gauge-quantity" aria-live="polite">
+                    <strong id="elecKwhText">60.0 kWh remaining</strong>
+                    <span>of 60 kWh simulated meter capacity</span>
+                  </p>
                   <p class="gauge-cost">Top-up cost <b>5 RLUSD</b></p>
                   <div
                     id="lastStsTokenBox"
                     class="vend-box"
-                    title="Last vended STS token (mock)"
+                    title="Simulated electricity fulfilment; no real token is issued"
                   >
-                    STS: none yet
+                    Simulated token: none yet
                   </div>
                 </div>
 
                 <div class="gauge-card">
-                  <span class="tag">Auto top-up at 5%</span>
+                  <span class="tag" title="The monitor asks the agent to evaluate a request at or below 5%. Policy controls approval.">Agent check at 5%</span>
                   <div class="gauge-wrap">
                     <svg width="124" height="124" viewBox="0 0 120 120">
                       <circle
@@ -3938,19 +4400,27 @@
                     </div>
                   </div>
                   <h3 class="gauge-name">Router Data</h3>
+                  <p class="gauge-quantity" aria-live="polite">
+                    <strong id="dataGbText">5.0 GB remaining</strong>
+                    <span>of 5 GB simulated bundle capacity</span>
+                  </p>
                   <p class="gauge-cost">Top-up cost <b>3 RLUSD</b></p>
                   <div
                     id="lastDataBundleBox"
                     class="vend-box"
-                    title="Last vended data bundle (mock)"
+                    title="Simulated data fulfilment; no live bundle is activated"
                   >
-                    Bundle: none yet
+                    Simulated bundle: none yet
                   </div>
                 </div>
               </div>
+              <p class="resource-panel-note">
+                Simulated readings only. No real electricity tokens or data
+                bundles are issued.
+              </p>
             </section>
 
-            <section class="panel">
+            <section id="agentBrainPanel" class="panel dashboard-brain-panel">
               <div class="panel-header">
                 <div>
                   <h2 class="panel-title">Agent Brain</h2>
@@ -3990,14 +4460,10 @@
                     agent proposes a top-up.
                   </p>
                 </div>
-                <div class="outcome">
-                  <span>Policy check:</span
-                  ><span id="brainOutcomeStatus">Idle</span>
-                </div>
               </div>
             </section>
 
-            <section class="panel">
+            <section id="dailyBudgetPanel" class="panel dashboard-budget-panel">
               <div class="panel-header">
                 <h2 class="panel-title">Daily Budget</h2>
                 <button
@@ -4009,80 +4475,31 @@
                   Edit limits
                 </button>
               </div>
-              <div class="budget-card">
-                <div
-                  class="gauge-wrap"
-                  style="width: 112px; height: 112px; flex-shrink: 0"
-                >
-                  <svg width="112" height="112" viewBox="0 0 120 120">
-                    <circle
-                      cx="60"
-                      cy="60"
-                      r="48"
-                      stroke="#1e293b"
-                      stroke-width="10"
-                      fill="transparent"
-                    />
-                    <circle
-                      id="budgetGaugeRing"
-                      class="ring"
-                      cx="60"
-                      cy="60"
-                      r="48"
-                      stroke="#38bdf8"
-                      stroke-width="10"
-                      stroke-linecap="round"
-                      fill="transparent"
-                      stroke-dasharray="301.59"
-                      stroke-dashoffset="0"
-                    />
-                  </svg>
-                  <div class="gauge-center">
-                    <span
-                      style="
-                        font-size: 9px;
-                        text-transform: uppercase;
-                        color: #94a3b8;
-                      "
-                      >Left</span
-                    >
-                    <span
-                      id="budgetRemainingRingText"
-                      class="mono"
-                      style="font-size: 18px; font-weight: 700; color: #fff"
-                      >15.0</span
-                    >
-                    <span class="mono" style="font-size: 9px; color: #94a3b8"
-                      >RLUSD</span
-                    >
-                  </div>
+              <div class="dashboard-budget-metrics" aria-live="polite">
+                <div class="dashboard-budget-metric is-primary">
+                  <span>Available for auto-pay</span>
+                  <strong id="budgetRemainingText">15 RLUSD</strong>
+                  <small>Policy and treasury balance applied</small>
                 </div>
-                <div class="budget-rows">
-                  <div class="budget-row">
-                    <span>Daily auto-pay limit</span
-                    ><b id="dailyCapText" style="color: #fff">15 RLUSD</b>
-                  </div>
-                  <div class="budget-row">
-                    <span>Spent today</span
-                    ><b id="spentTodayText" style="color: #7dd3fc">0 RLUSD</b>
-                  </div>
-                  <div class="budget-row">
-                    <span>Treasury balance</span
-                    ><b id="treasuryBalanceText" style="color: #7dd3fc">Checking...</b>
-                  </div>
-                  <div class="budget-row">
-                    <span>Auto-pay left</span
-                    ><b id="budgetRemainingText" style="color: #34d399"
-                      >15 RLUSD</b
-                    >
-                  </div>
-                  <div
-                    class="budget-row"
-                    style="padding-top: 6px; border-top: 1px solid var(--line)"
-                  >
-                    <span>Max per payment</span
-                    ><b id="perTxCapText" style="color: #fcd34d">10 RLUSD</b>
-                  </div>
+                <div class="dashboard-budget-metric is-daily">
+                  <span>Daily limit</span>
+                  <strong id="dailyCapText">15 RLUSD</strong>
+                  <small>Owner-set spending cap</small>
+                </div>
+                <div class="dashboard-budget-metric is-spent">
+                  <span>Spent today</span>
+                  <strong id="spentTodayText">0 RLUSD</strong>
+                  <small>Validated payments today</small>
+                </div>
+                <div class="dashboard-budget-metric is-treasury">
+                  <span>Treasury balance</span>
+                  <strong id="treasuryBalanceText">Checking...</strong>
+                  <small>XRPL Testnet</small>
+                </div>
+                <div class="dashboard-budget-metric is-limit">
+                  <span>Maximum per payment</span>
+                  <strong id="perTxCapText">10 RLUSD</strong>
+                  <small>Policy-enforced limit</small>
                 </div>
               </div>
               <div class="allow-card">
@@ -4643,7 +5060,6 @@
 
     <script>
       const GAUGE_C = 2 * Math.PI * 50;
-      const BUDGET_C = 2 * Math.PI * 48;
       const SESSION_TOKEN_KEY = "gridbot_session_token";
       const SESSION_USER_KEY = "gridbot_session_user";
       const PASSCODE_STORAGE_KEY = "gridbot_owner_passcode";
@@ -4974,6 +5390,8 @@
             showBlockedBanner(data.error || "Staff request failed", "blocked");
             return;
           }
+          if (Array.isArray(data.levels)) renderGauges(data.levels);
+          renderDecision(data);
           input.value = "";
         } catch (err) {
           showBlockedBanner(`Request error: ${err.message}`, "blocked");
@@ -5197,6 +5615,8 @@
       }
 
       // UI Feedback & Terminal
+      let policyPopupReturnFocus = null;
+
       function typewriteBrainText(text) {
         const el = document.getElementById("brainTypewriter");
         if (!el) return;
@@ -5215,6 +5635,7 @@
         reason,
         vend,
         explorerUrl,
+        decisionKey,
       }) {
         const overlay = document.getElementById("policyCheckPopup");
         const badgeEl = document.getElementById("policyPopupBadge");
@@ -5223,9 +5644,23 @@
         const resEl = document.getElementById("policyPopupResource");
         const amtEl = document.getElementById("policyPopupAmount");
         const reasonEl = document.getElementById("policyPopupReason");
+        const nextStepEl = document.getElementById("policyPopupNextStep");
         const extraEl = document.getElementById("policyPopupExtra");
         const linkEl = document.getElementById("policyPopupExplorer");
         if (!overlay) return;
+        if (
+          decisionKey &&
+          overlay.dataset.decisionKey === String(decisionKey)
+        ) {
+          return;
+        }
+        if (!overlay.classList.contains("active")) {
+          policyPopupReturnFocus =
+            document.activeElement instanceof HTMLElement &&
+            document.activeElement !== document.body
+              ? document.activeElement
+              : null;
+        }
 
         const isApproved =
           status === "auto_approved" || status === "owner_approved";
@@ -5264,6 +5699,11 @@
           (isApproved
             ? "Passed all spending limits and vendor allowlist checks."
             : "The policy service refused to co-sign this payment.");
+        nextStepEl.textContent = isPending
+          ? "Your request is waiting for the owner. Please do not submit it again."
+          : isApproved
+            ? "Your request was approved. See transaction history for its evidence."
+            : "No approval was granted. Ask the owner if you still need this purchase.";
 
         const extraText = vend?.token
           ? `STS Electricity Token: ${vend.token}`
@@ -5284,12 +5724,33 @@
           linkEl.classList.add("hidden");
         }
 
+        if (decisionKey) overlay.dataset.decisionKey = String(decisionKey);
+        overlay.setAttribute("aria-hidden", "false");
         overlay.classList.add("active");
+        document.getElementById("policyPopupClose")?.focus();
       }
 
       function closePolicyCheckPopup() {
-        document.getElementById("policyCheckPopup")?.classList.remove("active");
+        const overlay = document.getElementById("policyCheckPopup");
+        if (!overlay?.classList.contains("active")) return;
+        overlay.classList.remove("active");
+        overlay.setAttribute("aria-hidden", "true");
+        if (policyPopupReturnFocus?.isConnected) {
+          policyPopupReturnFocus.focus();
+        }
+        policyPopupReturnFocus = null;
       }
+
+      document.addEventListener("keydown", (event) => {
+        if (
+          event.key === "Escape" &&
+          document
+            .getElementById("policyCheckPopup")
+            ?.classList.contains("active")
+        ) {
+          closePolicyCheckPopup();
+        }
+      });
 
       function toggleHeaderMenu(e) {
         if (e) e.stopPropagation();
@@ -5383,23 +5844,41 @@
       }
 
       // Gauges Rendering
-      function updateSingleGauge(ringId, textId, statusId, level, threshold) {
+      function updateSingleGauge(
+        ringId,
+        textId,
+        statusId,
+        quantityId,
+        level,
+        threshold,
+        capacity,
+        unit,
+      ) {
         const ring = document.getElementById(ringId),
           text = document.getElementById(textId),
-          status = document.getElementById(statusId);
+          status = document.getElementById(statusId),
+          quantity = document.getElementById(quantityId);
         if (!ring || !text || !status) return;
         const pct = Math.max(0, Math.min(100, Number(level) || 0));
+        const maxCapacity =
+          Number.isFinite(Number(capacity)) && Number(capacity) > 0
+            ? Number(capacity)
+            : 0;
         ring.style.strokeDashoffset = (GAUGE_C - (pct / 100) * GAUGE_C).toFixed(
           2,
         );
         text.textContent = `${pct.toFixed(0)}%`;
+        if (quantity && maxCapacity) {
+          const remaining = ((pct / 100) * maxCapacity).toFixed(1);
+          quantity.textContent = `${remaining} ${unit} remaining`;
+        }
         if (pct <= threshold) {
           ring.setAttribute("stroke", "#dc2626");
           status.textContent = "CRITICAL LOW";
           status.style.color = "var(--red)";
         } else if (pct <= 20) {
           ring.setAttribute("stroke", "#d97706");
-          status.textContent = "LOW (<=20%)";
+          status.textContent = "LOW";
           status.style.color = "var(--amber)";
         } else {
           ring.setAttribute("stroke", "#16a34a");
@@ -5417,16 +5896,22 @@
             "elecGaugeRing",
             "elecLevelText",
             "elecStatusLabel",
+            "elecKwhText",
             e.level,
             e.threshold,
+            e.capacityKwh ?? 60,
+            "kWh",
           );
         if (d)
           updateSingleGauge(
             "dataGaugeRing",
             "dataLevelText",
             "dataStatusLabel",
+            "dataGbText",
             d.level,
             d.threshold,
+            d.capacityGb ?? 5,
+            "GB",
           );
       }
 
@@ -5456,8 +5941,6 @@
         document.getElementById("budgetRemainingText").textContent =
           `${left} RLUSD`;
         document.getElementById("perTxCapText").textContent = `${perTx} RLUSD`;
-        document.getElementById("budgetRemainingRingText").textContent =
-          left.toFixed(2);
 
         const storageBadge = document.getElementById("storageModeBadge");
         if (storageBadge) {
@@ -5468,14 +5951,6 @@
         }
 
         syncFreezeUI(appState.policy?.frozen);
-
-        const ring = document.getElementById("budgetGaugeRing");
-        const ratio = cap > 0 ? Math.max(0, Math.min(1, left / cap)) : 0;
-        ring.style.strokeDashoffset = (BUDGET_C - ratio * BUDGET_C).toFixed(2);
-        ring.setAttribute(
-          "stroke",
-          left <= 0 ? "#ef4444" : ratio < 0.25 ? "#f59e0b" : "#38bdf8",
-        );
 
         const list = document.getElementById("allowlistContainer");
         const policyViewList = document.getElementById("allowlistPolicyView");
@@ -5522,10 +5997,16 @@
         );
         typewriteBrainText(proposal.reason || "No reasoning provided.");
 
-        const out = document.getElementById("brainOutcomeStatus");
+        const decisionKey = [
+          d.timestamp || "",
+          d.requestedBy || "",
+          payment.id || "",
+          proposal.resource || "",
+          proposal.amount ?? "",
+          payment.status || "",
+        ].join(":");
+
         if (payment.status === "auto_approved") {
-          out.textContent = "Auto-approved";
-          out.style.color = "var(--green)";
           hideBlockedBanner();
           showPolicyCheckPopup({
             status: "auto_approved",
@@ -5535,10 +6016,9 @@
             reason: proposal.reason || "Within daily & per-payment limits.",
             vend,
             explorerUrl: payment.explorerUrl,
+            decisionKey,
           });
         } else if (payment.status === "owner_approved") {
-          out.textContent = "Owner-approved";
-          out.style.color = "var(--green)";
           hideBlockedBanner();
           showPolicyCheckPopup({
             status: "owner_approved",
@@ -5548,38 +6028,41 @@
             reason: proposal.reason || "Approved with owner override.",
             vend,
             explorerUrl: payment.explorerUrl,
+            decisionKey,
           });
         } else if (payment.status === "pending_owner") {
-          out.textContent = "Over cap: waiting for owner";
-          out.style.color = "var(--amber)";
           showPolicyCheckPopup({
             status: "pending_owner",
             title: "Held for Owner Approval",
             resource: proposal.resource,
             amount: proposal.amount,
             reason: payment.reason || proposal.reason,
-          });
-        } else if (payment.status === "blocked") {
-          out.textContent = "Blocked by policy signer";
-          out.style.color = "var(--red)";
-          showPolicyCheckPopup({
-            status: "blocked",
-            title: "Blocked by Policy Service",
-            resource: proposal.resource,
-            amount: proposal.amount,
-            reason: payment.reason || proposal.reason,
+            decisionKey,
           });
         } else {
-          out.textContent = payment.status || "Waited";
-          out.style.color = "var(--muted)";
+          showPolicyCheckPopup({
+            status: "blocked",
+            title:
+              payment.status === "blocked"
+                ? "Blocked by Policy Service"
+                : "Request Could Not Be Completed",
+            resource: proposal.resource,
+            amount: proposal.amount,
+            reason:
+              payment.reason ||
+              proposal.reason ||
+              payment.status ||
+              "The request could not be completed.",
+            decisionKey,
+          });
         }
 
         if (vend?.token)
           document.getElementById("lastStsTokenBox").textContent =
-            `STS: ${vend.token}`;
+            `Simulated token: ${vend.token}`;
         if (vend?.bundle)
           document.getElementById("lastDataBundleBox").textContent =
-            `Bundle: ${vend.bundle}`;
+            `Simulated bundle: ${vend.bundle}`;
       }
 
       function statusPillHtml(s) {
@@ -5812,11 +6295,25 @@
       }
 
       async function drainResource(r) {
-        showGlassLoader("Simulating Meter Drain...", `Draining ${r} level`);
+        showGlassLoader("Simulating Low Level...", `Setting ${r} to 4%`);
         try {
-          await fetch(`/api/demo/drain/${r}`, { method: "POST" });
+          const response = await fetch(`/api/demo/drain/${r}`, { method: "POST" });
+          const result = await response.json();
+          if (!response.ok || !result.ok) {
+            throw new Error(result.error || "Could not update simulated meter");
+          }
+          renderGauges(result.levels);
+          showToast({
+            title: `${r === "electricity" ? "Electricity" : "Data"} set to 4%`,
+            subtitle: "Simulated feed only. The 5% agent check is now active.",
+          });
         } catch (err) {
           console.error(`Failed to drain ${r}:`, err);
+          showToast({
+            title: "Could not simulate low resource level",
+            subtitle: err.message,
+            variant: "blocked",
+          });
         } finally {
           hideGlassLoader();
         }
@@ -6173,10 +6670,10 @@
               hideBlockedBanner();
               if (msg.vend?.token)
                 document.getElementById("lastStsTokenBox").textContent =
-                  `STS: ${msg.vend.token}`;
+                  `Simulated token: ${msg.vend.token}`;
               if (msg.vend?.bundle)
                 document.getElementById("lastDataBundleBox").textContent =
-                  `Bundle: ${msg.vend.bundle}`;
+                  `Simulated bundle: ${msg.vend.bundle}`;
               if (msg.source === "telegram" && msg.transaction) {
                 showToast({
                   title: `Telegram Owner approved #${msg.transaction.id} (${msg.transaction.amount} RLUSD)`,

@@ -1,59 +1,63 @@
-// test-monitor.js
-// Part 2 verification script:
-// Forces resources near their thresholds, starts monitor.js (2-second ticks),
-// prints 'level' updates, catches 'low' events (proving they only fire once per low episode),
-// then calls vend() to refill and show the latch resetting.
+const assert = require('node:assert/strict');
+const test = require('node:test');
 
 const { electricity, data, setLevel } = require('./resources');
-const { emitter, start, stop } = require('./monitor');
+const monitor = require('./monitor');
 
-console.log('=== GridBot Part 2 Test: Resource Plugins & Monitor ===\n');
+function resetResources() {
+  setLevel('electricity', 100);
+  setLevel('data', 100);
+  monitor.resetLatch();
+}
 
-// Force-set starting levels just above thresholds so we see them cross threshold within a couple of ticks
-setLevel('electricity', 8.0); // threshold is 5%
-setLevel('data', 13.5);       // threshold is 10%
+test('monitor ticks report levels without draining simulated meters', (t) => {
+  resetResources();
+  const snapshots = [];
+  const onLevel = (levels) => snapshots.push(levels);
+  monitor.emitter.on('level', onLevel);
+  t.after(() => {
+    monitor.emitter.off('level', onLevel);
+    resetResources();
+  });
 
-console.log(
-  `Initial forced levels -> Electricity: ${electricity.getLevel()}% (threshold ${electricity.threshold}%), ` +
-  `Data: ${data.getLevel()}% (threshold ${data.threshold}%)\n`
-);
+  monitor.tick();
 
-let tickCount = 0;
-
-emitter.on('level', (snapshot) => {
-  tickCount += 1;
-  const summary = snapshot
-    .map((r) => `${r.id}: ${r.level.toFixed(1)}% (thresh ${r.threshold}%)`)
-    .join(' | ');
-  console.log(`[Tick #${tickCount}] 'level' -> ${summary}`);
+  assert.equal(electricity.getLevel(), 100);
+  assert.equal(data.getLevel(), 100);
+  assert.equal(snapshots.length, 1);
+  assert.equal(snapshots[0].find((item) => item.id === 'electricity').capacityKwh, 60);
+  assert.equal(snapshots[0].find((item) => item.id === 'data').capacityGb, 5);
 });
 
-emitter.on('low', (event) => {
-  console.log(
-    `\n🚨 [ALERT 'low' EVENT] ${event.label} (${event.id}) dropped to ${event.level}% ` +
-    `(threshold: ${event.threshold}%, priority: ${event.priority}, unitCost: ${event.unitCostRLUSD} RLUSD)`
+test('early warning is at 20% and critical agent check is at or below 5%', (t) => {
+  resetResources();
+  const warnings = [];
+  const lowAlerts = [];
+  const onWarning = (event) => warnings.push(event);
+  const onLow = (event) => lowAlerts.push(event);
+  monitor.emitter.on('warning', onWarning);
+  monitor.emitter.on('low', onLow);
+  t.after(() => {
+    monitor.emitter.off('warning', onWarning);
+    monitor.emitter.off('low', onLow);
+    resetResources();
+  });
+
+  setLevel('electricity', 20);
+  setLevel('data', 20);
+  monitor.tick();
+  assert.equal(warnings.length, 2);
+  assert.equal(lowAlerts.length, 0);
+
+  setLevel('electricity', electricity.threshold);
+  setLevel('data', data.threshold - 1);
+  monitor.tick();
+  assert.equal(lowAlerts.length, 2);
+  assert.deepEqual(
+    lowAlerts.map((event) => event.id).sort(),
+    ['data', 'electricity'],
   );
 
-  // Wait 3 seconds (so another tick happens while still low, proving 'low' does NOT fire twice),
-  // then vend() to refill back to 100%.
-  setTimeout(() => {
-    const vendResult = event.resource.vend(event.unitCostRLUSD);
-    if (vendResult.token) {
-      console.log(
-        `⚡ [VEND ELECTRICITY] Refilled to ${ event.resource.getLevel() }%! STS Token: ${vendResult.token}\n`
-      );
-    } else if (vendResult.bundle) {
-      console.log(
-        `📶 [VEND DATA] Refilled to ${ event.resource.getLevel() }%! Bundle: ${vendResult.bundle}\n`
-      );
-    }
-  }, 3000);
+  monitor.tick();
+  assert.equal(lowAlerts.length, 2, 'low alerts remain latched during cooldown');
 });
-
-start(2000);
-
-// Stop automatically after 12 seconds
-setTimeout(() => {
-  stop();
-  console.log('\n=== Monitor test complete (stopped after 12s) ===');
-}, 12000);

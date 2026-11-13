@@ -1,7 +1,7 @@
 // monitor.js
-// Background resource monitor that ticks every 2 seconds, drains simulated
-// resources, and emits 'level' (every tick) and 'low' (when a resource drops
-// at or below its threshold, retrying at most once every 15 seconds if it
+// Background resource monitor that checks simulated resources every 2 seconds
+// and emits 'level' (every tick) and 'low' (when a resource drops
+// at or below its threshold, retrying at most once every 60 seconds if it
 // remains at or below threshold until refilled).
 
 const EventEmitter = require('events');
@@ -15,7 +15,7 @@ const emitter = new EventEmitter();
 let timer = null;
 // Map of resourceId -> timestamp (ms) of the last emitted 'low' event
 const lastLowFiredAt = new Map();
-// Set of resourceIds that have already fired the 20% early warning in the current drain cycle
+// Set of resourceIds that have already fired the 20% early warning in the current low-level episode
 const warnFiredSet = new Set();
 
 /**
@@ -44,9 +44,9 @@ function setCooldown(resourceId, cooldownMs = 120000) {
 /**
  * Checks all resources' current levels against the 20% early-warning threshold and critical thresholds.
  * - If level > 20%: clears the 20% warning latch for that resource.
- * - If threshold < level <= 20%: emits 'warning' once per drain cycle so Owner/Staff get a Telegram heads-up.
+ * - If threshold < level <= 20%: emits 'warning' once per low-level episode.
  * - If level > threshold: clears the critical 'low' latch for that resource.
- * - If level <= threshold: emits 'low' immediately if not yet fired, or retries if >= 15s
+ * - If level <= threshold: emits 'low' immediately if not yet fired, or retries if >= 60s
  *   have elapsed since the last 'low' emission for that resource.
  */
 function evaluateLevels(snapshot) {
@@ -105,21 +105,18 @@ function getSnapshot() {
     threshold: r.threshold,
     priority: r.priority,
     unitCostRLUSD: r.unitCostRLUSD,
+    capacityKwh: r.capacityKwh,
+    capacityGb: r.capacityGb,
     percentPerRLUSD: r.percentPerRLUSD,
     isMock: true,
   }));
 }
 
 /**
- * Single 2-second monitor tick: drains each resource a little, emits 'level',
- * and emits 'low' if any resource crossed (or remained >=15s) below its threshold.
+ * Single monitor tick: publishes current levels without changing them, and
+ * emits 'low' if any resource is at or below its threshold.
  */
 function tick() {
-  const plugins = listResources();
-  for (const r of plugins) {
-    r.drain();
-  }
-
   const snapshot = getSnapshot();
   emitter.emit('level', snapshot);
   evaluateLevels(snapshot);
