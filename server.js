@@ -38,6 +38,7 @@ const {
   getSnapshot,
   checkNow,
   resetLatch,
+  setCooldown,
 } = require("./monitor");
 const {
   handleLow,
@@ -57,6 +58,7 @@ const {
 const {
   initTelegram,
   sendTelegramMessage,
+  deleteTelegramMessage,
   getOwnerMenuInlineKeyboard,
   notifyLowWarning,
   notifyPendingOwner,
@@ -242,7 +244,11 @@ monitorEmitter.on("low", async (lowEvent) => {
   });
 
   try {
-    await handleLow(lowEvent);
+    const result = await handleLow(lowEvent);
+    const payStatus = result?.payment?.status;
+    if (payStatus === "pending_owner" || payStatus === "blocked") {
+      setCooldown(resourceId, 120000);
+    }
   } catch (err) {
     console.error(
       `[Server] Error in agent.handleLow(${resourceId}):`,
@@ -475,7 +481,7 @@ app.post("/api/demo/drain/:resource", (req, res) => {
     const resourceId = req.params.resource;
     getResource(resourceId);
 
-    const newLevel = setLevel(resourceId, 6);
+    const newLevel = setLevel(resourceId, 20);
     const levels = checkNow();
 
     res.json({
@@ -548,6 +554,14 @@ app.post("/api/policy", requireOwner, async (req, res) => {
     }
 
     await broadcastBudgetAndTxUpdate("policy_updated");
+    if (Number(data.budgetRemaining) > 0) {
+      resetLatch();
+      setTimeout(() => {
+        try {
+          checkNow();
+        } catch (_) {}
+      }, 250);
+    }
 
     res.json({
       ok: true,
@@ -590,6 +604,7 @@ app.post("/api/approve/:id", requireOwner, async (req, res) => {
       try {
         const plugin = getResource(txBefore.resource);
         vendResult = plugin.vend(txBefore.amount);
+        resetLatch(txBefore.resource);
         broadcast("levels", { levels: getSnapshot() });
       } catch (vendErr) {
         console.warn(
@@ -790,13 +805,36 @@ async function startServer() {
           const pubWallets = loadPublicWallets();
           const payee =
             state?.policy?.allowed_payees?.[0] || pubWallets?.utility?.address;
-          const paymentResult = await requestPayment({
+          let paymentResult = await requestPayment({
             resource: evt.resource,
             amount,
             payee,
             reason,
             requestedBy: "owner:telegram_topup",
           });
+
+          if (
+            paymentResult?.status === "pending_owner" &&
+            paymentResult?.id !== undefined &&
+            paymentResult?.id !== null &&
+            evt.telegramAuth?.pin
+          ) {
+            const overrideRes = await proxyOwnerApprove(
+              paymentResult.id,
+              null,
+              evt.telegramAuth,
+            );
+            if (
+              overrideRes.ok &&
+              overrideRes.data?.status === "owner_approved"
+            ) {
+              paymentResult = {
+                ...overrideRes.data,
+                id: paymentResult.id,
+                ownerOverride: true,
+              };
+            }
+          }
 
           let vend = null;
           if (
@@ -805,55 +843,121 @@ async function startServer() {
           ) {
             const targetPlugin = getResource(evt.resource);
             vend = targetPlugin.vend(amount);
+            resetLatch(evt.resource);
           }
 
-          broadcast("levels", { levels: getSnapshot() });
+          const latestLevels = getSnapshot();
+          broadcast("levels", { levels: latestLevels });
           const latestState = await broadcastBudgetAndTxUpdate(
             "telegram_proactive_topup",
           );
 
+          const decisionDecision =
+            paymentResult?.status === "auto_approved" ||
+            paymentResult?.status === "owner_approved"
+              ? "buy"
+              : paymentResult?.status === "pending_owner"
+                ? "escalate"
+                : "wait";
+
+          broadcast("decision", {
+            decision: {
+              mode: "telegram_owner",
+              timestamp: new Date().toISOString(),
+              requestedBy: "Owner (Telegram Top-Up)",
+              proposal: {
+                decision: decisionDecision,
+                resource: evt.resource,
+                amount,
+                reason,
+              },
+              payment: paymentResult
+                ? {
+                    ...paymentResult,
+                    explorerUrl: explorerUrl(paymentResult.txHash),
+                  }
+                : null,
+              vend,
+            },
+            levels: latestLevels,
+          });
+
+          if (paymentResult?.status === "owner_approved") {
+            const updatedTx = paymentResult?.id
+              ? decorateTx(await getTx(paymentResult.id))
+              : null;
+            broadcast("owner_approved", {
+              transaction: updatedTx,
+              approveResult: {
+                ...paymentResult,
+                explorerUrl: explorerUrl(paymentResult?.txHash),
+              },
+              vend,
+            });
+          }
+
+          let notifyRes = null;
           if (
             paymentResult?.status === "auto_approved" ||
             paymentResult?.status === "owner_approved"
           ) {
-            await notifyAutoApproved({
+            notifyRes = await notifyAutoApproved({
+              title: paymentResult.ownerOverride
+                ? "✅ *GridBot Owner Telegram Override Settled*"
+                : "✅ *GridBot Owner Telegram Top-Up Settled*",
               resource: evt.resource,
               amount,
               reason,
               txHash: paymentResult.txHash,
               vend,
-              requestedBy: "Owner (Telegram Top-Up)",
+              requestedBy: paymentResult.ownerOverride
+                ? "Owner Override (Weight-2 Multi-Sig)"
+                : "Owner (Telegram Top-Up)",
             });
-          } else if (
-            paymentResult?.status === "pending_owner" &&
-            paymentResult?.id !== undefined
-          ) {
-            await notifyPendingOwner({
-              id: paymentResult.id,
-              resource: evt.resource,
-              amount,
-              reason,
-              blockedReason: paymentResult.reason,
-              remainingBudget: latestState?.budgetRemaining,
-              requestedBy: "Owner (Telegram Top-Up)",
-            });
+          } else if (paymentResult?.status === "pending_owner") {
+            if (paymentResult?.id !== undefined && paymentResult?.id !== null) {
+              notifyRes = await notifyPendingOwner({
+                id: paymentResult.id,
+                resource: evt.resource,
+                amount,
+                reason,
+                blockedReason: paymentResult.reason,
+                remainingBudget: latestState?.budgetRemaining,
+                requestedBy: "Owner (Telegram Top-Up)",
+              });
+            } else {
+              const pendingMsg =
+                paymentResult?.reason ||
+                "Daily budget exhausted; check Pending Approvals.";
+              notifyRes = await sendTelegramMessage(
+                `⏳ *Top-Up Pending Owner Approval:* ${String(pendingMsg).replace(/[_*`[\]]/g, "")}`,
+                { reply_markup: getOwnerMenuInlineKeyboard() },
+              );
+            }
           } else {
             const blockReason =
               paymentResult?.reason || "Top-up blocked by policy service.";
-            await sendTelegramMessage(
+            notifyRes = await sendTelegramMessage(
               `❌ *Proactive Top-Up Blocked:* ${String(blockReason).replace(/[_*`[\]]/g, "")}`,
               { reply_markup: getOwnerMenuInlineKeyboard() },
             );
+          }
+
+          if (notifyRes?.ok && evt.processingMsgId) {
+            await deleteTelegramMessage(evt.chatId, evt.processingMsgId);
           }
         } catch (err) {
           console.error(
             "[Server -> Telegram proactive_topup] Error:",
             err.message,
           );
-          await sendTelegramMessage(
+          const errRes = await sendTelegramMessage(
             `❌ *Proactive Top-Up Error:* ${String(err.message).replace(/[_*`[\]]/g, "")}`,
             { reply_markup: getOwnerMenuInlineKeyboard() },
           );
+          if (errRes?.ok && evt.processingMsgId) {
+            await deleteTelegramMessage(evt.chatId, evt.processingMsgId);
+          }
         }
         return;
       }
@@ -862,7 +966,9 @@ async function startServer() {
       await broadcastBudgetAndTxUpdate(`telegram_${evt.type}`);
       if (evt.type === "owner_approved") {
         const updatedTx = decorateTx(await getTx(evt.txId));
+        resetLatch(updatedTx?.resource || evt.resource);
         broadcast("owner_approved", {
+          source: "telegram",
           transaction: updatedTx,
           approveResult: {
             ...evt.approveResult,

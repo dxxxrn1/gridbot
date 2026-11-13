@@ -91,7 +91,7 @@ function getTimeOfDaySAST() {
  * Safely parses, strips markdown fences, validates fields, and clamps amount.
  * Falls back to "wait" on any malformed output.
  */
-function parseAndValidateDecision(rawText, fallbackResource, maxPerTxCap) {
+function parseAndValidateDecision(rawText, fallbackResource, maxPerTxCap, defaultEscalateAmount = 5) {
   const validDecisions = ['buy', 'wait', 'escalate'];
   const validResources = ['electricity', 'data'];
 
@@ -142,7 +142,9 @@ function parseAndValidateDecision(rawText, fallbackResource, maxPerTxCap) {
       const cap = Number.isFinite(maxPerTxCap) && maxPerTxCap > 0 ? maxPerTxCap : 10;
       amount = Math.max(0.01, Math.min(amount, cap));
     } else if (decision === 'escalate') {
-      amount = Math.max(0.01, Math.min(amount, 100));
+      const fallbackAmt = Number(defaultEscalateAmount) > 0 ? Number(defaultEscalateAmount) : 5;
+      const chosen = amount > 0.01 ? amount : fallbackAmt;
+      amount = Math.round(Math.max(0.01, Math.min(chosen, 100)) * 100) / 100;
     }
 
     return {
@@ -216,7 +218,8 @@ async function askAiDecision(context) {
         continue;
       }
 
-      const parsed = parseAndValidateDecision(content, context.lowResource.id, context.perTxCapRLUSD);
+      const escalateDefault = context?.lowResource?.rlusdNeededToRefill || context?.lowResource?.unitCostRLUSD || 5;
+      const parsed = parseAndValidateDecision(content, context.lowResource.id, context.perTxCapRLUSD, escalateDefault);
       if (parsed && !parsed.fallback) {
         activeModelName = modelId;
         return parsed;
@@ -245,7 +248,8 @@ async function askAiDecision(context) {
       });
       const content = completion?.choices?.[0]?.message?.content || '';
       if (content.trim()) {
-        const parsed = parseAndValidateDecision(content, context.lowResource.id, context.perTxCapRLUSD);
+        const escalateDefault = context?.lowResource?.rlusdNeededToRefill || context?.lowResource?.unitCostRLUSD || 5;
+      const parsed = parseAndValidateDecision(content, context.lowResource.id, context.perTxCapRLUSD, escalateDefault);
         if (parsed && !parsed.fallback) {
           activeModelName = discoveredModel;
           return parsed;

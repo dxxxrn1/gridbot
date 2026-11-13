@@ -325,10 +325,13 @@ async function signAndSubmitAgentRequest({
         60,
       );
       if (existingPending) {
+        if (existingPending.blocked_reason !== capReason) {
+          await updateTx(existingPending.id, { blocked_reason: capReason }).catch(() => {});
+        }
         return {
           status: "pending_owner",
           id: existingPending.id,
-          reason: existingPending.blocked_reason || capReason,
+          reason: capReason,
           deduped: true,
         };
       }

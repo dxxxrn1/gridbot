@@ -22,13 +22,14 @@ const XRPL_EXPLORER_BASE = (
   process.env.XRPL_EXPLORER_BASE || "https://testnet.xrpl.org/transactions"
 ).replace(/\/$/, "");
 
-const POLL_INTERVAL_MS = 2500;
+const POLL_INTERVAL_MS = 1000;
 
 let pollTimer = null;
 let pollInFlight = false;
 let lastUpdateId = 0;
 let onStateChangedCallback = null;
 const pendingPinActions = new Map();
+let topupInFlight = false;
 
 const ENV_OWNER_PASSCODE = (process.env.OWNER_PASSCODE || "").trim();
 const ENV_STAFF_PASSCODE = (process.env.STAFF_PASSCODE || "").trim();
@@ -178,6 +179,19 @@ async function sendTelegramMessage(text, extra = {}) {
 }
 
 /**
+ * Deletes a message (e.g. temporary "Processing..." notice) safely.
+ */
+async function deleteTelegramMessage(chatId, messageId) {
+  if (!messageId) return { ok: false };
+  const targetChatId = chatId || getConfig().chatId;
+  if (!targetChatId) return { ok: false };
+  return callTelegramApi("deleteMessage", {
+    chat_id: targetChatId,
+    message_id: messageId,
+  });
+}
+
+/**
  * Sends the interactive Owner Control Panel to Telegram with live meter levels & budget.
  */
 async function sendOwnerControlMenu(
@@ -278,14 +292,15 @@ async function notifyAutoApproved({
   txHash,
   vend,
   requestedBy,
+  title,
 } = {}) {
   const { enabled } = getConfig();
-  if (!enabled) return;
+  if (!enabled) return { ok: false, disabled: true };
 
   try {
     const link = explorerUrl(txHash);
     const lines = [
-      `✅ *GridBot Auto-Approved Purchase*`,
+      title || `✅ *GridBot Auto-Approved Purchase*`,
       `• *Requested By:* ${cleanMd(requestedBy || "Autonomous Monitor")}`,
       `• *Resource & Amount:* ${amount} RLUSD for ${cleanMd(resource)}`,
       `• *Reason:* ${cleanMd(reason || "Low balance auto-refill")}`,
@@ -301,7 +316,7 @@ async function notifyAutoApproved({
       lines.push(`• *XRPL Testnet:* [View Transaction](${link})`);
     }
 
-    await sendTelegramMessage(lines.join("\n"), {
+    return await sendTelegramMessage(lines.join("\n"), {
       reply_markup: {
         inline_keyboard: [
           [
@@ -315,6 +330,7 @@ async function notifyAutoApproved({
     });
   } catch (err) {
     console.warn("[Telegram notifyAutoApproved] Warning:", err.message);
+    return { ok: false, error: err.message };
   }
 }
 
@@ -393,7 +409,7 @@ async function notifyPendingOwner({
       `👇 *Tap Approve to co-sign with Owner key (weight 2) or Reject:*`,
     ];
 
-    await sendTelegramMessage(lines.join("\n"), {
+    return await sendTelegramMessage(lines.join("\n"), {
       reply_markup: {
         inline_keyboard: [
           [
@@ -409,6 +425,7 @@ async function notifyPendingOwner({
     });
   } catch (err) {
     console.warn("[Telegram notifyPendingOwner] Warning:", err.message);
+    return { ok: false, error: err.message };
   }
 }
 
@@ -451,6 +468,13 @@ async function handleOwnerApproveAction(
   }
 
   if (tx.status !== "pending_owner") {
+    if (messageId) {
+      await callTelegramApi("editMessageReplyMarkup", {
+        chat_id: targetChatId,
+        message_id: messageId,
+        reply_markup: { inline_keyboard: [] },
+      });
+    }
     await sendTelegramMessage(
       `ℹ️ Transaction #${txId} is already \`${tx.status}\`.`,
     );
@@ -476,7 +500,7 @@ async function handleOwnerApproveAction(
 
     if (messageId) {
       await callTelegramApi("editMessageReplyMarkup", {
-        chat_id: chatId,
+        chat_id: targetChatId,
         message_id: messageId,
         reply_markup: { inline_keyboard: [] },
       });
@@ -507,6 +531,8 @@ async function handleOwnerApproveAction(
       await onStateChangedCallback({
         type: "owner_approved",
         txId,
+        resource: tx.resource,
+        amount: tx.amount,
         approveResult,
         vend,
       });
@@ -564,7 +590,7 @@ async function handleOwnerRejectAction(
   if (ok) {
     if (messageId) {
       await callTelegramApi("editMessageReplyMarkup", {
-        chat_id: chatId,
+        chat_id: targetChatId,
         message_id: messageId,
         reply_markup: { inline_keyboard: [] },
       });
@@ -591,6 +617,105 @@ async function handleOwnerRejectAction(
     await sendTelegramMessage(
       `⚠️ *Reject Failed for #${txId}:* ${cleanMd(errReason)}`,
     );
+  }
+}
+
+/**
+ * Triggers a manual/proactive owner top-up from Telegram (inline button or /topup_* command).
+ */
+async function triggerProactiveTopup({
+  resource,
+  incomingChatId,
+  callbackQueryId,
+} = {}) {
+  const { chatId, allowedChatIds, telegramApprovePin } = getConfig();
+  const targetChatId = String(incomingChatId || chatId || "");
+  if (!allowedChatIds.has(targetChatId)) {
+    if (callbackQueryId) {
+      await callTelegramApi("answerCallbackQuery", {
+        callback_query_id: callbackQueryId,
+        text: "Unauthorized chat ID.",
+        show_alert: true,
+      });
+    }
+    return;
+  }
+
+  if (topupInFlight) {
+    if (callbackQueryId) {
+      await callTelegramApi("answerCallbackQuery", {
+        callback_query_id: callbackQueryId,
+        text: "⏳ A top-up is already in progress, please wait...",
+      });
+    } else {
+      await sendTelegramMessage(
+        "⏳ A top-up is already in progress, please wait...",
+      );
+    }
+    return;
+  }
+
+  topupInFlight = true;
+  try {
+    if (callbackQueryId) {
+      await callTelegramApi("answerCallbackQuery", {
+        callback_query_id: callbackQueryId,
+        text: `Triggering proactive ${resource} top-up...`,
+      });
+    }
+
+    const label = resource === "data" ? "LTE Data" : "Electricity";
+    const processingMsg = await sendTelegramMessage(
+      `⏳ Processing manual *${label}* top-up (signing on XRPL, ~10-20s)...`,
+    );
+    const processingMsgId = processingMsg?.result?.message_id || null;
+    const telegramAuth = telegramApprovePin
+      ? { pin: telegramApprovePin, chatId: targetChatId }
+      : null;
+
+    if (typeof onStateChangedCallback === "function") {
+      try {
+        await Promise.race([
+          onStateChangedCallback({
+            type: "proactive_topup",
+            resource,
+            processingMsgId,
+            chatId: targetChatId,
+            telegramAuth,
+          }),
+          new Promise((_, reject) =>
+            setTimeout(
+              () =>
+                reject(
+                  new Error(
+                    "Top-up timed out after 45s (ledger or policy service slow/unreachable)",
+                  ),
+                ),
+              45000,
+            ),
+          ),
+        ]);
+      } catch (err) {
+        console.error("[Telegram] topup error:", err?.message || err);
+        const errRes = await sendTelegramMessage(
+          `❌ *Top-Up Failed:* ${cleanMd(err?.message || "unknown error")}`,
+          { reply_markup: getOwnerMenuInlineKeyboard() },
+        );
+        if (errRes?.ok && processingMsgId) {
+          await deleteTelegramMessage(targetChatId, processingMsgId);
+        }
+      }
+    } else {
+      const warnRes = await sendTelegramMessage(
+        "⚠️ Top-up handler is not initialized yet.",
+        { reply_markup: getOwnerMenuInlineKeyboard() },
+      );
+      if (warnRes?.ok && processingMsgId) {
+        await deleteTelegramMessage(targetChatId, processingMsgId);
+      }
+    }
+  } finally {
+    topupInFlight = false;
   }
 }
 
@@ -633,19 +758,21 @@ async function processUpdate(update) {
         return;
       }
 
-      await callTelegramApi("answerCallbackQuery", {
-        callback_query_id: cb.id,
-        text: `Reply with your Telegram PIN to ${action} #${rawId}`,
-      });
-      pendingPinActions.set(incomingChatId, {
-        action,
-        txId: rawId,
-        messageId,
-        expiresAt: Date.now() + 120000,
-      });
-      await sendTelegramMessage(
-        `🔐 *PIN Required:* Reply with your \`TELEGRAM_APPROVE_PIN\` to *${action.toUpperCase()}* transaction *#${rawId}* (or send \`/${action} ${rawId} <PIN>\`).`,
-      );
+      if (action === "approve") {
+        await handleOwnerApproveAction(rawId, {
+          callbackQueryId: cb.id,
+          messageId,
+          incomingChatId,
+          pin: telegramApprovePin,
+        });
+      } else {
+        await handleOwnerRejectAction(rawId, {
+          callbackQueryId: cb.id,
+          messageId,
+          incomingChatId,
+          pin: telegramApprovePin,
+        });
+      }
     } else if (action === "menu") {
       await callTelegramApi("answerCallbackQuery", {
         callback_query_id: cb.id,
@@ -663,35 +790,11 @@ async function processUpdate(update) {
       action === "topup" &&
       (rawId === "electricity" || rawId === "data")
     ) {
-      await callTelegramApi("answerCallbackQuery", {
-        callback_query_id: cb.id,
-        text: `Triggering proactive ${rawId} top-up...`,
+      await triggerProactiveTopup({
+        resource: rawId,
+        incomingChatId,
+        callbackQueryId: cb.id,
       });
-      await sendTelegramMessage(
-        `⏳ Processing manual *${rawId === "data" ? "LTE Data" : "Electricity"}* top-up...`,
-      );
-      if (typeof onStateChangedCallback === "function") {
-        try {
-          await Promise.race([
-            onStateChangedCallback({
-              type: "proactive_topup",
-              resource: rawId,
-            }),
-            new Promise((_, reject) =>
-              setTimeout(
-                () => reject(new Error("Top-up timed out after 45s (ledger or policy service slow/unreachable)")),
-                45000,
-              ),
-            ),
-          ]);
-        } catch (err) {
-          console.error("[Telegram] topup error:", err?.message || err);
-          await sendTelegramMessage(
-            `❌ *Top-Up Failed:* ${cleanMd(err?.message || "unknown error")}`,
-            { reply_markup: getOwnerMenuInlineKeyboard() },
-          );
-        }
-      }
     }
     return;
   }
@@ -744,22 +847,18 @@ async function processUpdate(update) {
     }
 
     if (text === "/topup_elec") {
-      if (typeof onStateChangedCallback === "function") {
-        await onStateChangedCallback({
-          type: "proactive_topup",
-          resource: "electricity",
-        });
-      }
+      await triggerProactiveTopup({
+        resource: "electricity",
+        incomingChatId,
+      });
       return;
     }
 
     if (text === "/topup_data") {
-      if (typeof onStateChangedCallback === "function") {
-        await onStateChangedCallback({
-          type: "proactive_topup",
-          resource: "data",
-        });
-      }
+      await triggerProactiveTopup({
+        resource: "data",
+        incomingChatId,
+      });
       return;
     }
 
@@ -812,7 +911,7 @@ async function pollUpdatesOnce() {
         }
         // Do not block the poll loop: a slow XRPL payment must not freeze other buttons.
         processUpdate(update).catch((err) => {
-          console.error('[Telegram] processUpdate error:', err?.message || err);
+          console.error("[Telegram] processUpdate error:", err?.message || err);
         });
       }
     }
@@ -891,7 +990,7 @@ function initTelegram({ onStateChanged } = {}) {
         pollTimer = setInterval(pollUpdatesOnce, POLL_INTERVAL_MS);
       }
     });
-    console.log(`[Telegram] Polling active (every 2.5s) for chat ID ${chatId}`);
+    console.log(`[Telegram] Polling active (every 1s) for chat ID ${chatId}`);
   }
 
   return { stop: stopTelegram };
@@ -908,6 +1007,7 @@ module.exports = {
   initTelegram,
   stopTelegram,
   sendTelegramMessage,
+  deleteTelegramMessage,
   getOwnerMenuInlineKeyboard,
   sendOwnerControlMenu,
   notifyLowWarning,

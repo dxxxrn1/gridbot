@@ -8,7 +8,7 @@ const EventEmitter = require('events');
 const { listResources, getResource } = require('./resources');
 
 const TICK_MS = 2000;
-const LOW_RETRY_MS = 15000; // Re-emit 'low' at most once every 15s while still <= threshold
+const LOW_RETRY_MS = 60000; // Re-emit 'low' at most once every 60s while still <= threshold
 const WARN_LEVEL_PERCENT = 20; // Proactive early warning threshold (20%)
 const emitter = new EventEmitter();
 
@@ -29,6 +29,16 @@ function resetLatch(resourceId) {
     lastLowFiredAt.clear();
     warnFiredSet.clear();
   }
+}
+
+/**
+ * Delays the next automatic 'low' retry for a resource (e.g. when waiting on owner approval)
+ * so repeated low ticks do not spam the Policy Service or trip its 6/min velocity limit.
+ */
+function setCooldown(resourceId, cooldownMs = 120000) {
+  if (!resourceId) return;
+  const delay = Math.max(0, Number(cooldownMs) || 0);
+  lastLowFiredAt.set(resourceId, Date.now() - LOW_RETRY_MS + delay);
 }
 
 /**
@@ -156,5 +166,6 @@ module.exports = {
   tick,
   checkNow,
   resetLatch,
+  setCooldown,
   getSnapshot,
 };

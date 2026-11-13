@@ -1761,7 +1761,7 @@
               </div>
               <div class="gauges">
                 <div class="gauge-card">
-                  <span class="tag">Alert at 5%</span>
+                  <span class="tag">Auto-pay at 5%</span>
                   <div class="gauge-wrap">
                     <svg width="124" height="124" viewBox="0 0 120 120">
                       <circle
@@ -3028,8 +3028,22 @@
         if (payment.status === "auto_approved") {
           out.textContent = "Auto-approved";
           out.style.color = "#34d399";
+          hideBlockedBanner();
           showToast({
             title: `Paid ${proposal.amount} RLUSD (${proposal.resource})`,
+            subtitle: vend?.token
+              ? `STS token: ${vend.token}`
+              : vend?.bundle
+                ? `Vended: ${vend.bundle}`
+                : `TX: ${shortHash(payment.txHash)}`,
+            explorerUrl: payment.explorerUrl,
+          });
+        } else if (payment.status === "owner_approved") {
+          out.textContent = "Owner-approved";
+          out.style.color = "#34d399";
+          hideBlockedBanner();
+          showToast({
+            title: `Owner Paid ${proposal.amount} RLUSD (${proposal.resource})`,
             subtitle: vend?.token
               ? `STS token: ${vend.token}`
               : vend?.bundle
@@ -3196,6 +3210,8 @@
         const per_tx_cap = Number(
           document.getElementById("inputPerTxCap").value,
         );
+        const saveBtn = document.getElementById("btnSavePolicyCaps");
+        if (saveBtn) saveBtn.disabled = true;
         try {
           const res = await fetch("/api/policy", {
             method: "POST",
@@ -3211,10 +3227,17 @@
             appState.policy = data.policy;
             appState.spentToday = data.spentToday;
             appState.budgetRemaining = data.budgetRemaining;
+            hideBlockedBanner();
             renderBudget();
+            const spentNow = Number(data.spentToday || 0);
+            const remNow = Number(data.budgetRemaining || 0);
+            const subtitle =
+              remNow <= 0 && daily_cap <= spentNow
+                ? `Saved (Daily cap ${daily_cap} <= Spent today ${spentNow} RLUSD — set cap above ${spentNow} RLUSD to unlock remaining budget)`
+                : `Daily cap ${daily_cap} RLUSD | Remaining ${remNow} RLUSD | Per-tx cap ${per_tx_cap} RLUSD`;
             showToast({
               title: "Policy Updated in Supabase",
-              subtitle: `Daily cap ${daily_cap} | Per-payment cap ${per_tx_cap} RLUSD`,
+              subtitle,
             });
           } else {
             showBlockedBanner(
@@ -3224,6 +3247,8 @@
           }
         } catch (err) {
           console.error("Failed to update policy:", err);
+        } finally {
+          if (saveBtn) saveBtn.disabled = false;
         }
       }
 
@@ -3453,12 +3478,24 @@
               renderBudget();
               renderTransactions(msg.transactions);
             } else if (msg.type === "owner_approved") {
+              hideBlockedBanner();
               if (msg.vend?.token)
                 document.getElementById("lastStsTokenBox").textContent =
                   `STS: ${msg.vend.token}`;
               if (msg.vend?.bundle)
                 document.getElementById("lastDataBundleBox").textContent =
                   `Bundle: ${msg.vend.bundle}`;
+              if (msg.source === "telegram" && msg.transaction) {
+                showToast({
+                  title: `Telegram Owner approved #${msg.transaction.id} (${msg.transaction.amount} RLUSD)`,
+                  subtitle: msg.vend?.token
+                    ? `STS token: ${msg.vend.token}`
+                    : msg.vend?.bundle
+                      ? `Vended: ${msg.vend.bundle}`
+                      : "Signed with owner key",
+                  explorerUrl: msg.approveResult?.explorerUrl,
+                });
+              }
             } else if (msg.type === "agent_error") {
               showBlockedBanner(msg.error, "blocked");
             }

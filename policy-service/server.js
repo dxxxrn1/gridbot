@@ -31,6 +31,7 @@ const {
   ownerApprove,
   ownerReject,
   closeXrplClient,
+  resetVelocityWindow,
 } = require('./signer');
 
 const PORT = Number(process.env.PORT) || 4000;
@@ -291,6 +292,7 @@ app.post('/owner/policy', requireOwnerPasscode, async (req, res) => {
     }
 
     const updatedPolicy = await updatePolicy(updates);
+    resetVelocityWindow();
     const spent = await spentToday();
     const budgetRemaining = Math.max(
       0,
