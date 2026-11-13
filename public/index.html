@@ -1403,11 +1403,757 @@
           opacity: 1;
         }
       }
+
+      /* Emerald/Teal Operations Theme & Layout */
+      :root {
+        --bg: #080e12;
+        --sidebar-bg: linear-gradient(180deg, #0d171b 0%, #0a1116 100%);
+        --panel: linear-gradient(145deg, rgba(18, 30, 34, 0.96), rgba(13, 22, 27, 0.98));
+        --card: rgba(11, 20, 24, 0.88);
+        --line: rgba(172, 201, 194, 0.12);
+        --text: #f2f7f5;
+        --muted: #a4b5b1;
+        --dim: #748782;
+        --green: #35d6a0;
+        --amber: #f5bd66;
+        --red: #f07171;
+        --sky: #73d5d0;
+        --blue-accent: #35d6a0;
+      }
+
+      body {
+        background:
+          radial-gradient(ellipse at 68% 0%, rgba(32, 113, 94, 0.18), transparent 38%),
+          radial-gradient(ellipse at 0% 100%, rgba(29, 86, 91, 0.12), transparent 42%),
+          #080e12;
+      }
+
+      .splash-overlay,
+      .auth-overlay {
+        background:
+          radial-gradient(ellipse at 16% 12%, rgba(47, 190, 143, 0.12), transparent 38%),
+          radial-gradient(ellipse at 84% 88%, rgba(68, 172, 170, 0.1), transparent 42%),
+          rgba(5, 10, 13, 0.97);
+      }
+
+      .splash-card,
+      .auth-card {
+        background: linear-gradient(155deg, rgba(19, 32, 36, 0.98), rgba(11, 19, 24, 0.99));
+        border: 1px solid rgba(112, 173, 155, 0.24);
+        box-shadow: 0 32px 90px rgba(0, 0, 0, 0.58), 0 0 70px rgba(43, 171, 130, 0.08);
+      }
+
+      .splash-badge {
+        background: rgba(53, 214, 160, 0.08);
+        border-color: rgba(53, 214, 160, 0.2);
+        color: #9ce8ca;
+      }
+
+      .splash-check-row {
+        background: rgba(5, 13, 15, 0.72);
+        border-color: rgba(112, 173, 155, 0.15);
+      }
+
+      .auth-card {
+        max-width: 440px;
+        padding: 28px 32px 22px;
+        border-radius: 22px;
+        animation: cardEnter 0.45s ease both;
+      }
+
+      .auth-brand {
+        margin-bottom: 18px;
+      }
+
+      .auth-logo-lg,
+      .logo {
+        background: linear-gradient(145deg, rgba(53, 214, 160, 0.2), rgba(115, 213, 208, 0.12));
+        border-color: rgba(53, 214, 160, 0.42);
+        color: var(--green);
+        box-shadow: 0 0 30px rgba(53, 214, 160, 0.12);
+      }
+
+      .auth-title {
+        font-size: 25px;
+        letter-spacing: -0.035em;
+      }
+
+      .auth-sub {
+        max-width: 310px;
+        line-height: 1.6;
+      }
+
+      .auth-input {
+        min-height: 50px;
+        background: rgba(4, 10, 13, 0.8);
+        border-color: rgba(151, 180, 174, 0.2);
+        border-radius: 12px;
+      }
+
+      .auth-field {
+        margin-bottom: 12px;
+      }
+
+      .auth-input:focus,
+      .staff-input:focus,
+      .search-box:focus,
+      .form-input:focus {
+        border-color: var(--green);
+        box-shadow: 0 0 0 3px rgba(53, 214, 160, 0.13);
+      }
+
+      .auth-pw-toggle {
+        min-height: 34px;
+        color: #b7c8c3;
+      }
+
+      .auth-submit {
+        min-height: 50px;
+        margin-top: 8px;
+        border-color: rgba(65, 230, 172, 0.56);
+        background: linear-gradient(120deg, #42dfa8, #16b985);
+        box-shadow: 0 10px 24px rgba(18, 185, 133, 0.18);
+        color: #062219;
+        transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease;
+      }
+
+      .splash-actions {
+        display: flex;
+        align-items: stretch;
+        gap: 10px;
+      }
+
+      .splash-actions .auth-submit {
+        flex: 1;
+      }
+
+      .proof-refresh {
+        min-height: 50px;
+        margin-top: 8px;
+        padding: 0 15px;
+        border: 1px solid rgba(151, 180, 174, 0.24);
+        border-radius: 12px;
+        background: rgba(4, 10, 13, 0.72);
+        color: #d3e2dc;
+        font: 650 12px var(--sans);
+        cursor: pointer;
+      }
+
+      .proof-refresh:hover:not(:disabled) {
+        border-color: rgba(53, 214, 160, 0.45);
+        background: rgba(53, 214, 160, 0.07);
+      }
+
+      .auth-submit:hover:not(:disabled) {
+        filter: brightness(1.05);
+        transform: translateY(-1px);
+        box-shadow: 0 14px 28px rgba(18, 185, 133, 0.24);
+      }
+
+      .auth-submit:disabled {
+        cursor: wait;
+        opacity: 0.72;
+      }
+
+      .auth-footer {
+        border-color: var(--line);
+        color: var(--dim);
+        line-height: 1.5;
+        margin-top: 16px;
+        padding-top: 12px;
+      }
+
+      .app-layout {
+        background: transparent;
+      }
+
+      .sidebar {
+        border-right-color: var(--line);
+        box-shadow: 8px 0 32px rgba(0, 0, 0, 0.16);
+      }
+
+      .brand-sub {
+        color: var(--green);
+      }
+
+      .nav-item {
+        min-height: 46px;
+        border-radius: 12px;
+      }
+
+      .nav-item:hover,
+      .nav-item.active {
+        background: rgba(53, 214, 160, 0.08);
+        border-color: rgba(53, 214, 160, 0.16);
+      }
+
+      .nav-icon,
+      .mobile-nav-icon {
+        background: rgba(255, 255, 255, 0.04);
+        color: #94aaa4;
+      }
+
+      .nav-item:hover .nav-icon,
+      .nav-item.active .nav-icon,
+      .mobile-nav-item.active .mobile-nav-icon {
+        background: rgba(53, 214, 160, 0.16);
+        color: var(--green);
+        box-shadow: none;
+      }
+
+      .workspace-header {
+        background: rgba(8, 14, 18, 0.86);
+        border-bottom-color: var(--line);
+      }
+
+      .breadcrumb-title {
+        font-size: 20px;
+      }
+
+      .ws-pill,
+      .treasury,
+      .user-card,
+      .btn,
+      .preset-chip,
+      .filter-btn,
+      .search-box,
+      .form-input,
+      .staff-input {
+        background-color: rgba(12, 21, 25, 0.88);
+        border-color: var(--line);
+      }
+
+      .ws-pill {
+        padding: 7px 12px;
+      }
+
+      .treasury a,
+      .splash-verify-link {
+        color: #77dfb8;
+      }
+
+      .btn {
+        min-height: 36px;
+        transition: background-color 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+      }
+
+      .btn:hover:not(:disabled),
+      .filter-btn:hover {
+        background-color: rgba(53, 214, 160, 0.1);
+        border-color: rgba(53, 214, 160, 0.35);
+        transform: translateY(-1px);
+      }
+
+      .btn-sky {
+        background: rgba(53, 214, 160, 0.11);
+        border-color: rgba(53, 214, 160, 0.28);
+        color: #a7efd0;
+      }
+
+      button:focus-visible,
+      a:focus-visible,
+      input:focus-visible {
+        outline: 2px solid var(--green);
+        outline-offset: 3px;
+      }
+
+      button:disabled {
+        cursor: not-allowed;
+        opacity: 0.58;
+        transform: none;
+      }
+
+      .tab-view {
+        width: 100%;
+        max-width: 1680px;
+        margin: 0 auto;
+        padding: clamp(20px, 3vw, 36px) clamp(18px, 3vw, 42px);
+        gap: 20px;
+      }
+
+      .dashboard-intro {
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 18px;
+        padding: 2px 2px 4px;
+      }
+
+      .dashboard-eyebrow {
+        color: var(--green);
+        font: 700 10px var(--mono);
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        margin-bottom: 8px;
+      }
+
+      .dashboard-heading {
+        color: #f1f7f4;
+        font-size: clamp(28px, 3.2vw, 38px);
+        line-height: 1.12;
+        letter-spacing: -0.045em;
+      }
+
+      .dashboard-summary {
+        margin-top: 8px;
+        max-width: 620px;
+        color: var(--muted);
+        font-size: 13px;
+        line-height: 1.65;
+      }
+
+      .dashboard-product-facts {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 14px;
+      }
+
+      .product-fact {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        padding: 7px 10px;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        background: rgba(12, 21, 25, 0.72);
+        color: #b7c8c3;
+        font: 700 9px var(--mono);
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+      }
+
+      .workflow-card,
+      .owner-setup-card {
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        background: linear-gradient(145deg, rgba(18, 30, 34, 0.94), rgba(11, 19, 23, 0.96));
+        padding: 20px 22px;
+      }
+
+      .workflow-heading,
+      .owner-setup-heading {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 16px;
+      }
+
+      .workflow-title,
+      .owner-setup-title {
+        color: #f1f7f4;
+        font-size: 15px;
+        font-weight: 750;
+      }
+
+      .workflow-subtitle,
+      .owner-setup-note {
+        margin-top: 5px;
+        color: var(--muted);
+        font-size: 12px;
+        line-height: 1.55;
+      }
+
+      .workflow-steps {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 10px;
+        list-style: none;
+      }
+
+      .workflow-step {
+        min-width: 0;
+        border: 1px solid var(--line);
+        border-radius: 13px;
+        background: rgba(4, 12, 14, 0.42);
+        padding: 13px;
+      }
+
+      .workflow-step-number {
+        display: inline-flex;
+        width: 25px;
+        height: 25px;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid rgba(53, 214, 160, 0.22);
+        border-radius: 8px;
+        background: rgba(53, 214, 160, 0.08);
+        color: var(--green);
+        font: 700 11px var(--mono);
+      }
+
+      .workflow-step strong {
+        display: block;
+        margin-top: 10px;
+        color: #e7f0ec;
+        font-size: 12px;
+      }
+
+      .workflow-step p {
+        margin-top: 5px;
+        color: var(--muted);
+        font-size: 11px;
+        line-height: 1.5;
+      }
+
+      .owner-setup-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px;
+      }
+
+      .owner-setup-action {
+        display: flex;
+        min-height: 76px;
+        flex-direction: column;
+        align-items: flex-start;
+        justify-content: center;
+        gap: 5px;
+        padding: 12px 14px;
+        border: 1px solid var(--line);
+        border-radius: 12px;
+        background: rgba(4, 12, 14, 0.42);
+        color: #e7f0ec;
+        text-align: left;
+        cursor: pointer;
+      }
+
+      .owner-setup-action:hover {
+        border-color: rgba(53, 214, 160, 0.36);
+        background: rgba(53, 214, 160, 0.07);
+      }
+
+      .owner-setup-action strong {
+        font-size: 12px;
+      }
+
+      .owner-setup-action span {
+        color: var(--muted);
+        font-size: 11px;
+        line-height: 1.4;
+      }
+
+      .owner-setup-note {
+        margin-top: 12px;
+        padding-top: 11px;
+        border-top: 1px solid var(--line);
+        color: var(--dim);
+        font-size: 10px;
+        line-height: 1.55;
+      }
+
+      .grid {
+        gap: 16px;
+      }
+
+      .panel,
+      .staff-card,
+      .table-card {
+        border-color: var(--line);
+        border-radius: 18px;
+        box-shadow: 0 18px 45px rgba(0, 0, 0, 0.2);
+      }
+
+      .panel {
+        padding: 22px;
+      }
+
+      .panel-title {
+        letter-spacing: 0.045em;
+      }
+
+      .gauge-card,
+      .budget-card,
+      .allow-card,
+      .stat,
+      .add-staff-card {
+        border-color: var(--line);
+        border-radius: 14px;
+      }
+
+      .gauge-card {
+        background: linear-gradient(155deg, rgba(15, 27, 29, 0.95), rgba(10, 18, 22, 0.94));
+        padding: 16px 12px;
+      }
+
+      .tag {
+        background: rgba(53, 214, 160, 0.08);
+        border-color: rgba(53, 214, 160, 0.16);
+        color: #a9c5bb;
+      }
+
+      .gauge-name {
+        margin-top: 10px;
+      }
+
+      .vend-box {
+        background: rgba(4, 11, 14, 0.72);
+        border-color: var(--line);
+      }
+
+      .terminal {
+        background: rgba(5, 12, 15, 0.82);
+        border-color: var(--line);
+      }
+
+      .terminal-top,
+      .outcome,
+      th,
+      td,
+      .panel-footer {
+        border-color: var(--line);
+      }
+
+      .typewriter {
+        color: #c8ddd5;
+      }
+
+      .model {
+        background: rgba(115, 213, 208, 0.08);
+        border-color: rgba(115, 213, 208, 0.2);
+        color: #a5e1dc;
+      }
+
+      .staff-role-badge.staff {
+        background: rgba(53, 214, 160, 0.08);
+        border-color: rgba(53, 214, 160, 0.22);
+        color: #a7efd0;
+      }
+
+      .staff-card,
+      .table-card {
+        padding: 22px;
+      }
+
+      .staff-input {
+        min-height: 46px;
+      }
+
+      .btn-submit-req {
+        border-color: rgba(53, 214, 160, 0.4);
+        background: linear-gradient(120deg, #28c997, #159c79);
+        box-shadow: 0 8px 20px rgba(18, 185, 133, 0.12);
+      }
+
+      .preset-chip:hover,
+      .filter-btn.active {
+        border-color: rgba(53, 214, 160, 0.48);
+        background: rgba(53, 214, 160, 0.1);
+        color: #b9f4dc;
+      }
+
+      .table-wrap {
+        border-radius: 10px;
+      }
+
+      th {
+        background: rgba(255, 255, 255, 0.025);
+      }
+
+      tbody tr {
+        transition: background-color 0.16s ease;
+      }
+
+      tbody tr:hover {
+        background: rgba(53, 214, 160, 0.035);
+      }
+
+      .toast {
+        background: rgba(13, 23, 27, 0.98);
+        border-color: rgba(53, 214, 160, 0.24);
+        border-left-color: var(--green);
+      }
+
+      .mobile-bottom-nav {
+        background: rgba(9, 16, 20, 0.96);
+        border-top-color: var(--line);
+      }
+
+      @media (min-width: 821px) and (max-width: 1100px) {
+        .grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .grid > :first-child {
+          grid-column: 1 / -1;
+        }
+
+        .gauges {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+      }
+
+      @media (max-width: 820px) {
+        .tab-view {
+          padding: 20px 16px 24px;
+        }
+
+        .dashboard-intro {
+          align-items: flex-start;
+        }
+
+        .workflow-steps {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .owner-setup-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .panel,
+        .staff-card,
+        .table-card {
+          padding: 17px;
+          border-radius: 16px;
+        }
+
+        .workspace-header {
+          background: rgba(8, 14, 18, 0.94);
+        }
+
+        .header-right {
+          flex-wrap: nowrap;
+        }
+
+        .treasury {
+          min-width: 0;
+          max-width: calc(100vw - 130px);
+        }
+
+        .treasury a {
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+      }
+
+      @media (max-width: 480px) {
+        .auth-overlay {
+          padding: 18px;
+        }
+
+        .auth-card {
+          padding: 28px 22px 22px;
+        }
+
+        .auth-brand {
+          margin-bottom: 22px;
+        }
+
+        .auth-footer {
+          align-items: flex-start;
+          text-align: left;
+          font-size: 10px;
+        }
+
+        .dashboard-heading {
+          font-size: 25px;
+        }
+
+        .workflow-card,
+        .owner-setup-card {
+          padding: 16px;
+        }
+
+        .workflow-steps {
+          grid-template-columns: 1fr;
+        }
+
+        .splash-actions {
+          flex-direction: column-reverse;
+        }
+
+        .splash-actions .auth-submit {
+          width: 100%;
+        }
+
+        .gauges {
+          gap: 10px;
+        }
+
+        .gauge-wrap {
+          transform: scale(0.9);
+          margin: -6px 0;
+        }
+
+        .gauge-card {
+          padding: 12px 8px;
+        }
+
+        .treasury {
+          gap: 5px;
+          padding: 5px 7px;
+        }
+
+        .treasury-label {
+          font-size: 9px;
+        }
+      }
+
+      @media (max-height: 680px) {
+        .splash-overlay,
+        .auth-overlay {
+          justify-content: flex-start;
+          overflow-y: auto;
+          padding-top: 20px;
+          padding-bottom: 20px;
+        }
+
+        .splash-card,
+        .auth-card {
+          margin-block: auto;
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          scroll-behavior: auto !important;
+          animation-duration: 0.01ms !important;
+          animation-iteration-count: 1 !important;
+          transition-duration: 0.01ms !important;
+        }
+      }
+
+      @keyframes cardEnter {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      /* Staff-only single-dashboard mode (no sidebar or bottom nav) */
+      body.staff-mode .sidebar,
+      body.staff-mode .mobile-bottom-nav,
+      body.staff-mode .mobile-header-actions {
+        display: none !important;
+      }
+
+      body.staff-mode .workspace {
+        padding-bottom: 24px;
+      }
+
+      .staff-header-actions {
+        display: none;
+        align-items: center;
+        gap: 8px;
+      }
+
+      body.staff-mode .staff-header-actions {
+        display: inline-flex;
+      }
     </style>
   </head>
   <body>
-    <!-- Ledger Proof Splash Screen -->
-    <div id="splashOverlay" class="splash-overlay">
+    <!-- Ledger Proof Splash Screen (shown only after sign-in) -->
+    <div id="splashOverlay" class="splash-overlay hidden">
       <div class="splash-card">
         <div class="auth-brand" style="margin-bottom: 10px">
           <div class="auth-logo-lg">
@@ -1486,9 +2232,14 @@
           </div>
         </div>
 
-        <button onclick="dismissSplashScreen()" class="auth-submit">
-          Continue to GridBot &rarr;
-        </button>
+        <div class="splash-actions">
+          <button type="button" onclick="refreshXrplProof()" class="proof-refresh">
+            Refresh
+          </button>
+          <button onclick="dismissSplashScreen()" class="auth-submit">
+            Continue to GridBot &rarr;
+          </button>
+        </div>
       </div>
     </div>
 
@@ -1702,10 +2453,6 @@
             <div id="storageModeBadge" class="ws-pill hidden" style="border-color: rgba(255, 181, 71, 0.45); color: #fde68a; background: rgba(255, 181, 71, 0.12);">
               Local fallback storage
             </div>
-            <div class="ws-pill">
-              <span id="wsDotCircle" class="ws-dot"></span>
-              <span id="wsStatusText">Connecting</span>
-            </div>
             <div class="treasury">
               <span class="treasury-label">Treasury</span>
               <a
@@ -1719,6 +2466,11 @@
             <button id="demoToggleBtn" onclick="toggleDemoBar()" class="btn">
               Demo Controls
             </button>
+            <div class="staff-header-actions">
+              <button onclick="openSignInModal()" class="btn btn-red" title="Sign Out">
+                Sign Out
+              </button>
+            </div>
             <div class="mobile-header-actions">
               <button onclick="openSplashScreen()" class="btn" title="Ledger Proof" aria-label="Ledger Proof" style="display:inline-flex;align-items:center;gap:4px;">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
@@ -2018,13 +2770,6 @@
               </span>
             </div>
 
-            <p class="staff-desc">
-              Cashiers request operational utility top-ups in plain English
-              without accessing bank logins, seed phrases, or policy rules.
-              GridBot matches the request to an approved vendor SKU and requests
-              co-signing from the Policy Service.
-            </p>
-
             <div class="staff-input-row">
               <input
                 id="staffRequestInput"
@@ -2077,7 +2822,7 @@
             <div class="table-header">
               <h2 class="panel-title">Recent Transactions</h2>
               <button onclick="switchTab('history')" class="btn btn-sky">
-                View Full Audit History &rarr;
+                Show Audit History &rarr;
               </button>
             </div>
             <div class="table-wrap">
@@ -2112,11 +2857,21 @@
         <section id="view-history" class="tab-view hidden">
           <div class="table-card">
             <div class="table-header">
-              <div>
-                <h2 class="panel-title">Transaction Audit Feed</h2>
-                <p class="panel-sub">
-                  Complete on-chain and policy-enforced ledger audit trail
-                </p>
+              <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+                <button
+                  id="staffBackToDashBtn"
+                  type="button"
+                  onclick="switchTab('dashboard')"
+                  class="btn btn-sky hidden"
+                >
+                  &larr; Back to Dashboard
+                </button>
+                <div>
+                  <h2 class="panel-title">Transaction Audit Feed</h2>
+                  <p class="panel-sub">
+                    Complete on-chain and policy-enforced ledger audit trail
+                  </p>
+                </div>
               </div>
 
               <div class="filter-group">
@@ -2432,11 +3187,6 @@
       let currentTab = "dashboard";
       let activeTxFilter = "all";
 
-      // Splash dismissal state
-      if (sessionStorage.getItem(SPLASH_SEEN_KEY) === "1") {
-        document.getElementById("splashOverlay").classList.add("hidden");
-      }
-
       function dismissSplashScreen() {
         sessionStorage.setItem(SPLASH_SEEN_KEY, "1");
         document.getElementById("splashOverlay").classList.add("hidden");
@@ -2506,6 +3256,9 @@
         sessionStorage.removeItem(SESSION_TOKEN_KEY);
         sessionStorage.removeItem(SESSION_USER_KEY);
         sessionStorage.removeItem(PASSCODE_STORAGE_KEY);
+        sessionStorage.removeItem(SPLASH_SEEN_KEY);
+        document.body.classList.remove("staff-mode");
+        document.getElementById("splashOverlay").classList.add("hidden");
         document.getElementById("authErrorBox").classList.add("hidden");
         document.getElementById("loginPassword").value = "";
         document.getElementById("loginPassword").type = "password";
@@ -2550,7 +3303,9 @@
 
           document.getElementById("authOverlay").classList.add("hidden");
           applyRolePermissions();
+          switchTab("dashboard");
           renderTransactions(appState.transactions);
+          refreshXrplProof();
           showToast({
             title: `Signed in as ${currentUser.displayName}`,
             subtitle: `Role: ${currentUser.role.toUpperCase()}`,
@@ -2577,8 +3332,10 @@
         const btnSavePolicyCaps = document.getElementById("btnSavePolicyCaps");
         const inputDailyCap = document.getElementById("inputDailyCap");
         const inputPerTxCap = document.getElementById("inputPerTxCap");
+        const staffBackToDashBtn = document.getElementById("staffBackToDashBtn");
 
         if (!currentUser) {
+          document.body.classList.remove("staff-mode");
           document.getElementById("authOverlay").classList.remove("hidden");
           return;
         }
@@ -2588,9 +3345,11 @@
         userNameEl.textContent = currentUser.displayName;
 
         if (currentUser.role === "owner") {
+          document.body.classList.remove("staff-mode");
           userCard.className = "user-card owner";
           avatarEl.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>`;
           userRoleEl.textContent = "OWNER / ADMIN ACCESS";
+          if (staffBackToDashBtn) staffBackToDashBtn.classList.add("hidden");
           if (editCapsBtn) editCapsBtn.classList.remove("hidden");
           if (btnToggleAddStaff) btnToggleAddStaff.classList.remove("hidden");
           if (staffNotice) staffNotice.classList.add("hidden");
@@ -2608,9 +3367,14 @@
             inputPerTxCap.readOnly = false;
           }
         } else {
+          document.body.classList.add("staff-mode");
           userCard.className = "user-card staff";
           avatarEl.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`;
           userRoleEl.textContent = "STAFF / CASHIER ACCESS";
+          if (staffBackToDashBtn) staffBackToDashBtn.classList.remove("hidden");
+          if (currentTab !== "dashboard" && currentTab !== "history") {
+            switchTab("dashboard");
+          }
           if (editCapsBtn) editCapsBtn.classList.add("hidden");
           if (btnToggleAddStaff) btnToggleAddStaff.classList.add("hidden");
           if (staffNotice) staffNotice.classList.remove("hidden");
@@ -3426,14 +4190,7 @@
         }
       }
 
-      function setWsBadge(on) {
-        document.getElementById("wsDotCircle").className = on
-          ? "ws-dot online"
-          : "ws-dot";
-        document.getElementById("wsStatusText").textContent = on
-          ? "Live"
-          : "Reconnecting...";
-      }
+      function setWsBadge() {}
 
       function connectWebSocket() {
         const proto = window.location.protocol === "https:" ? "wss:" : "ws:";
@@ -3525,8 +4282,12 @@
         .catch(() => {});
 
       connectWebSocket();
-      refreshXrplProof();
-      setInterval(refreshXrplProof, 10000);
+      if (currentUser) {
+        refreshXrplProof();
+      }
+      setInterval(() => {
+        if (currentUser) refreshXrplProof();
+      }, 10000);
     </script>
   </body>
 </html>
