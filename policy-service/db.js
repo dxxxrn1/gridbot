@@ -241,6 +241,8 @@ async function expirePendingTransactions() {
   if (changed) saveLocalStore(localStore);
 }
 
+let inMemoryFrozen = false;
+
 /**
  * Fetches policy row (id = 1). Seeds default policy if missing.
  * Falls back to local store if Supabase is unreachable.
@@ -254,7 +256,10 @@ async function getPolicy() {
       localStore.policy.allowed_payees = [utilityAddress];
       saveLocalStore(localStore);
     }
-    return localStore.policy;
+    return {
+      ...localStore.policy,
+      frozen: localStore.policy.frozen !== undefined ? Boolean(localStore.policy.frozen) : inMemoryFrozen,
+    };
   }
 
   try {
@@ -281,12 +286,14 @@ async function getPolicy() {
         throw new Error(insertError.message);
       }
 
+      if (inserted.frozen !== undefined) inMemoryFrozen = Boolean(inserted.frozen);
       const result = {
         ...inserted,
         daily_cap: Number(inserted.daily_cap),
         per_tx_cap: Number(inserted.per_tx_cap),
         allowed_payees: parseAllowedPayees(inserted.allowed_payees),
         demo_day_started_at: inserted.demo_day_started_at || null,
+        frozen: inserted.frozen !== undefined ? Boolean(inserted.frozen) : inMemoryFrozen,
       };
       localStore.policy = result;
       saveLocalStore(localStore);
@@ -305,12 +312,14 @@ async function getPolicy() {
         .single();
 
       if (!syncErr && synced) {
+        if (synced.frozen !== undefined) inMemoryFrozen = Boolean(synced.frozen);
         const result = {
           ...synced,
           daily_cap: Number(synced.daily_cap),
           per_tx_cap: Number(synced.per_tx_cap),
           allowed_payees: parseAllowedPayees(synced.allowed_payees),
           demo_day_started_at: synced.demo_day_started_at || null,
+          frozen: synced.frozen !== undefined ? Boolean(synced.frozen) : inMemoryFrozen,
         };
         localStore.policy = result;
         saveLocalStore(localStore);
@@ -318,12 +327,14 @@ async function getPolicy() {
       }
     }
 
+    if (data.frozen !== undefined) inMemoryFrozen = Boolean(data.frozen);
     const result = {
       ...data,
       daily_cap: Number(data.daily_cap),
       per_tx_cap: Number(data.per_tx_cap),
       allowed_payees: currentAllowlist,
       demo_day_started_at: data.demo_day_started_at || null,
+      frozen: data.frozen !== undefined ? Boolean(data.frozen) : inMemoryFrozen,
     };
     localStore.policy = result;
     saveLocalStore(localStore);
@@ -334,7 +345,10 @@ async function getPolicy() {
       localStore.policy.allowed_payees = [utilityAddress];
       saveLocalStore(localStore);
     }
-    return localStore.policy;
+    return {
+      ...localStore.policy,
+      frozen: localStore.policy.frozen !== undefined ? Boolean(localStore.policy.frozen) : inMemoryFrozen,
+    };
   }
 }
 
@@ -350,6 +364,10 @@ async function updatePolicy(fields) {
   if (fields.demo_day_started_at !== undefined) {
     updatePayload.demo_day_started_at = fields.demo_day_started_at;
   }
+  if (fields.frozen !== undefined) {
+    inMemoryFrozen = Boolean(fields.frozen);
+    updatePayload.frozen = inMemoryFrozen;
+  }
 
   localStore.policy = {
     ...localStore.policy,
@@ -359,18 +377,35 @@ async function updatePolicy(fields) {
     allowed_payees: parseAllowedPayees(
       updatePayload.allowed_payees ?? localStore.policy.allowed_payees
     ),
+    frozen: updatePayload.frozen !== undefined ? Boolean(updatePayload.frozen) : Boolean(inMemoryFrozen || localStore.policy.frozen),
   };
   saveLocalStore(localStore);
 
-  if (!supabase) return localStore.policy;
+  if (!supabase || Object.keys(updatePayload).length === 0) return localStore.policy;
 
   try {
-    const { data, error } = await supabase
+    let { data, error } = await supabase
       .from('policy')
       .update(updatePayload)
       .eq('id', 1)
       .select()
       .single();
+
+    if (error && updatePayload.frozen !== undefined && /frozen/i.test(error.message)) {
+      delete updatePayload.frozen;
+      if (Object.keys(updatePayload).length > 0) {
+        const retry = await supabase
+          .from('policy')
+          .update(updatePayload)
+          .eq('id', 1)
+          .select()
+          .single();
+        data = retry.data;
+        error = retry.error;
+      } else {
+        return { ...localStore.policy, frozen: inMemoryFrozen };
+      }
+    }
 
     if (error) throw new Error(error.message);
 
@@ -379,6 +414,8 @@ async function updatePolicy(fields) {
       daily_cap: Number(data.daily_cap),
       per_tx_cap: Number(data.per_tx_cap),
       allowed_payees: parseAllowedPayees(data.allowed_payees),
+      demo_day_started_at: data.demo_day_started_at || localStore.policy.demo_day_started_at || null,
+      frozen: data.frozen !== undefined ? Boolean(data.frozen) : inMemoryFrozen,
     };
     localStore.policy = synced;
     saveLocalStore(localStore);

@@ -264,8 +264,12 @@ app.post('/owner/reject/:id', requireOwnerOrTelegramPin, async (req, res) => {
  */
 app.post('/owner/policy', requireOwnerPasscode, async (req, res) => {
   try {
-    const { daily_cap, per_tx_cap, allowed_payees } = req.body || {};
+    const { daily_cap, per_tx_cap, allowed_payees, frozen } = req.body || {};
     const updates = {};
+
+    if (frozen !== undefined) {
+      updates.frozen = Boolean(frozen);
+    }
 
     if (daily_cap !== undefined) {
       const n = Number(daily_cap);

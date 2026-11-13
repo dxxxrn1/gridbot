@@ -192,6 +192,34 @@ async function signAndSubmitAgentRequest({
     : [];
 
   // -------------------------------------------------------------------------
+  // Step 0: Emergency Owner Freeze check (stops all spending immediately)
+  // -------------------------------------------------------------------------
+  if (policy.frozen) {
+    const blockedReason = "Emergency Freeze active: spending paused by Owner";
+    try {
+      const row = await logTx({
+        resource: safeResource,
+        amount: safeAmount,
+        payee: rawPayee,
+        reason: safeReason,
+        status: "blocked",
+        tx_hash: null,
+        blocked_reason: blockedReason,
+      });
+      return {
+        status: "blocked",
+        reason: blockedReason,
+        id: row.id,
+      };
+    } catch (dbErr) {
+      return {
+        status: "blocked",
+        reason: `${blockedReason} (DB error: ${dbErr.message})`,
+      };
+    }
+  }
+
+  // -------------------------------------------------------------------------
   // Step 1: Validate tx_json fields and payee allowlist
   // -------------------------------------------------------------------------
   const validationErrors = [];
@@ -516,6 +544,14 @@ async function ownerApprove(txId) {
     }
     const pubWallets = loadPublicWallets();
     const policy = await getPolicy();
+
+    if (policy.frozen) {
+      return {
+        status: "blocked",
+        reason: "Emergency Freeze active: unfreeze spending before approving",
+        id: txRow.id,
+      };
+    }
 
     if (!policy.allowed_payees.includes(txRow.payee)) {
       const blockedReason = `Payee ${txRow.payee} is not in policy.allowed_payees`;

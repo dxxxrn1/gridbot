@@ -490,10 +490,10 @@
         flex: 1;
       }
       .nav-badge {
-        background: var(--amber);
-        color: #030718;
+        background: #d97706;
+        color: #ffffff;
         font: 700 10px var(--mono);
-        padding: 1px 7px;
+        padding: 2px 7px;
         border-radius: 999px;
       }
 
@@ -1184,42 +1184,47 @@
         white-space: nowrap;
       }
       .pill-green {
-        background: rgba(16, 185, 129, 0.14);
-        color: #6ee7b7;
-        border: 1px solid rgba(16, 185, 129, 0.4);
+        background: #16a34a;
+        color: #ffffff;
+        border: 1px solid #15803d;
       }
       .pill-amber {
-        background: rgba(245, 158, 11, 0.14);
-        color: #fde68a;
-        border: 1px solid rgba(245, 158, 11, 0.4);
+        background: #d97706;
+        color: #ffffff;
+        border: 1px solid #b45309;
       }
       .pill-red {
-        background: rgba(239, 68, 68, 0.14);
-        color: #fca5a5;
-        border: 1px solid rgba(239, 68, 68, 0.4);
+        background: #dc2626;
+        color: #ffffff;
+        border: 1px solid #b91c1c;
       }
       .pill-dot {
-        width: 5px;
-        height: 5px;
+        width: 6px;
+        height: 6px;
         border-radius: 50%;
+        background: rgba(255, 255, 255, 0.95);
+        flex-shrink: 0;
       }
 
       /* Staff Management Specific */
       .staff-role-badge {
+        display: inline-flex;
+        align-items: center;
         font: 700 10px var(--mono);
         text-transform: uppercase;
-        padding: 2px 8px;
-        border-radius: 6px;
+        padding: 3px 9px;
+        border-radius: 999px;
+        letter-spacing: 0.04em;
       }
       .staff-role-badge.owner {
-        background: rgba(245, 158, 11, 0.15);
-        color: #fde68a;
-        border: 1px solid rgba(245, 158, 11, 0.4);
+        background: #d97706;
+        color: #ffffff;
+        border: 1px solid #b45309;
       }
       .staff-role-badge.staff {
-        background: rgba(56, 189, 248, 0.15);
-        color: #bae6fd;
-        border: 1px solid rgba(56, 189, 248, 0.4);
+        background: #0284c7;
+        color: #ffffff;
+        border: 1px solid #0369a1;
       }
       .add-staff-card {
         background: var(--card);
@@ -1358,8 +1363,8 @@
         position: absolute;
         top: 2px;
         right: calc(50% - 22px);
-        background: var(--amber);
-        color: #03081c;
+        background: #d97706;
+        color: #ffffff;
         font: 800 9px var(--mono);
         padding: 1px 5px;
         border-radius: 999px;
@@ -1999,12 +2004,6 @@
         color: #a5e1dc;
       }
 
-      .staff-role-badge.staff {
-        background: rgba(53, 214, 160, 0.08);
-        border-color: rgba(53, 214, 160, 0.22);
-        color: #a7efd0;
-      }
-
       .staff-card,
       .table-card {
         padding: 22px;
@@ -2303,21 +2302,32 @@
 
       .nav-item {
         border: none;
+        box-shadow: none;
+        min-height: 50px;
+        padding: 11px 14px;
+        border-radius: 14px;
+        background: #122026;
+        margin-bottom: 6px;
+        transition: background-color 0.18s ease, transform 0.18s ease;
       }
 
       .nav-item:hover {
         background: #16242a;
         border: none;
+        box-shadow: none;
+        transform: translateY(-1px);
       }
 
       .nav-item.active {
         background: #18322b;
         border: none;
+        box-shadow: none;
       }
 
       .nav-icon,
       .mobile-nav-icon {
         background: #1c2d34;
+        border-radius: 10px;
         box-shadow: none;
       }
 
@@ -2380,11 +2390,37 @@
       .proof-refresh,
       .tag,
       .model,
-      .splash-badge,
-      .staff-role-badge.staff {
+      .splash-badge {
         background: #16242a;
         border: none;
         box-shadow: none;
+      }
+
+      .btn,
+      .side-btn,
+      .filter-btn,
+      .proof-refresh,
+      .auth-submit,
+      .btn-submit-req {
+        border-radius: 14px;
+        transition: background-color 0.18s ease, transform 0.18s ease;
+      }
+
+      .btn,
+      .side-btn {
+        min-height: 40px;
+        padding: 10px 16px;
+      }
+
+      .filter-btn {
+        min-height: 38px;
+        padding: 9px 15px;
+      }
+
+      .preset-chip {
+        border-radius: 12px;
+        padding: 9px 14px;
+        transition: background-color 0.18s ease, transform 0.18s ease;
       }
 
       .btn:hover:not(:disabled),
@@ -2394,7 +2430,17 @@
       .proof-refresh:hover:not(:disabled) {
         background: #1e3138;
         border: none;
-        transform: none;
+        transform: translateY(-1px);
+      }
+
+      .btn:active:not(:disabled),
+      .side-btn:active,
+      .preset-chip:active,
+      .filter-btn:active,
+      .proof-refresh:active:not(:disabled),
+      .auth-submit:active:not(:disabled),
+      .btn-submit-req:active:not(:disabled) {
+        transform: translateY(0);
       }
 
       .btn-sky {
@@ -2516,9 +2562,908 @@
         background: #0c1519;
         border-top: none;
       }
+
+      .budget-row {
+        gap: 10px;
+      }
+
+      .budget-row span,
+      .budget-row b {
+        white-space: nowrap;
+      }
+
+      /* Apple-style Glassmorphism Loading Overlay */
+      .glass-loader-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 24px;
+        background: rgba(6, 12, 16, 0.42);
+        backdrop-filter: blur(18px) saturate(160%);
+        -webkit-backdrop-filter: blur(18px) saturate(160%);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.14s ease;
+      }
+
+      .glass-loader-overlay.active {
+        opacity: 1;
+        pointer-events: auto;
+      }
+
+      .glass-loader-card {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        gap: 14px;
+        min-width: 260px;
+        max-width: 360px;
+        padding: 28px 34px;
+        border-radius: 24px;
+        background: rgba(20, 34, 40, 0.62);
+        backdrop-filter: blur(28px) saturate(180%);
+        -webkit-backdrop-filter: blur(28px) saturate(180%);
+        border: 1px solid rgba(255, 255, 255, 0.14);
+        box-shadow:
+          0 24px 64px rgba(0, 0, 0, 0.48),
+          inset 0 1px 0 rgba(255, 255, 255, 0.16);
+        transform: scale(0.96);
+        transition: transform 0.16s ease;
+      }
+
+      .glass-loader-overlay.active .glass-loader-card {
+        transform: scale(1);
+      }
+
+      .glass-spinner {
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        border: 2.5px solid rgba(255, 255, 255, 0.16);
+        border-top-color: #35d6a0;
+        animation: glassSpin 0.72s linear infinite;
+      }
+
+      .glass-loader-title {
+        font-size: 15px;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+        color: #f4faf7;
+      }
+
+      .glass-loader-sub {
+        font-size: 12px;
+        line-height: 1.45;
+        color: rgba(214, 231, 225, 0.76);
+      }
+
+      @keyframes glassSpin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+
+      /* Purposeful Policy Check Pop-Up Modal */
+      .policy-popup-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 9500;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        background: rgba(6, 12, 16, 0.56);
+        backdrop-filter: blur(14px) saturate(150%);
+        -webkit-backdrop-filter: blur(14px) saturate(150%);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.16s ease;
+      }
+
+      .policy-popup-overlay.active {
+        opacity: 1;
+        pointer-events: auto;
+      }
+
+      .policy-popup-card {
+        width: 100%;
+        max-width: 460px;
+        padding: 24px 26px;
+        border-radius: 22px;
+        background: rgba(16, 28, 33, 0.88);
+        backdrop-filter: blur(26px) saturate(180%);
+        -webkit-backdrop-filter: blur(26px) saturate(180%);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        box-shadow:
+          0 28px 70px rgba(0, 0, 0, 0.52),
+          inset 0 1px 0 rgba(255, 255, 255, 0.14);
+        transform: translateY(8px) scale(0.97);
+        transition: transform 0.18s ease;
+      }
+
+      .policy-popup-overlay.active .policy-popup-card {
+        transform: translateY(0) scale(1);
+      }
+
+      .policy-popup-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 14px;
+      }
+
+      .policy-popup-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+        padding: 6px 12px;
+        border-radius: 999px;
+        font: 700 11px var(--mono);
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+      }
+
+      .policy-popup-badge.approved {
+        background: #16a34a;
+        color: #ffffff;
+        border: 1px solid #15803d;
+      }
+
+      .policy-popup-badge.pending {
+        background: #d97706;
+        color: #ffffff;
+        border: 1px solid #b45309;
+      }
+
+      .policy-popup-badge.blocked {
+        background: #dc2626;
+        color: #ffffff;
+        border: 1px solid #b91c1c;
+      }
+
+      .policy-popup-title {
+        font-size: 18px;
+        font-weight: 750;
+        color: #f4faf7;
+        margin-bottom: 12px;
+      }
+
+      .policy-popup-meta {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin-bottom: 14px;
+      }
+
+      .policy-popup-stat {
+        padding: 10px 12px;
+        border-radius: 12px;
+        background: rgba(9, 17, 21, 0.72);
+      }
+
+      .policy-popup-stat-label {
+        font: 700 10px var(--mono);
+        text-transform: uppercase;
+        color: var(--muted);
+        margin-bottom: 4px;
+      }
+
+      .policy-popup-stat-val {
+        font-size: 14px;
+        font-weight: 700;
+        color: #f4faf7;
+      }
+
+      .policy-popup-reason {
+        padding: 13px 14px;
+        border-radius: 14px;
+        background: rgba(9, 17, 21, 0.72);
+        color: #d6e6e0;
+        font-size: 13px;
+        line-height: 1.55;
+        margin-bottom: 16px;
+      }
+
+      .policy-popup-actions {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 10px;
+      }
+
+      /* Left-corner header logo & clean header menu */
+      .header-corner-brand {
+        display: flex;
+        align-items: center;
+        gap: 11px;
+        min-width: 0;
+      }
+
+      .header-corner-logo {
+        width: 30px;
+        height: 30px;
+        border-radius: 9px;
+        object-fit: cover;
+        flex-shrink: 0;
+      }
+
+      .header-menu-wrap {
+        position: relative;
+      }
+
+      .header-menu-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+      }
+
+      .header-menu-dropdown {
+        position: absolute;
+        top: calc(100% + 10px);
+        right: 0;
+        z-index: 200;
+        min-width: 210px;
+        padding: 8px;
+        border-radius: 16px;
+        background: rgba(16, 28, 33, 0.92);
+        backdrop-filter: blur(22px) saturate(180%);
+        -webkit-backdrop-filter: blur(22px) saturate(180%);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 0 20px 48px rgba(0, 0, 0, 0.48);
+        display: none;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .header-menu-dropdown.open {
+        display: flex;
+      }
+
+      .header-menu-item {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 12px;
+        border: none;
+        border-radius: 11px;
+        background: transparent;
+        color: #e6f0ec;
+        font: 600 12px var(--sans);
+        text-align: left;
+        cursor: pointer;
+        transition: background-color 0.14s ease;
+      }
+
+      .header-menu-item:hover {
+        background: #1a2c33;
+      }
+
+      .header-menu-item.danger {
+        color: #fca5a5;
+        margin-top: 4px;
+        padding-top: 11px;
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 0 0 11px 11px;
+      }
+
+      .header-menu-item.danger:hover {
+        background: #33181c;
+      }
+
+      /* =========================================================
+         LIGHT THEME: Blue, Green & White (Wise-inspired crisp UI)
+         ========================================================= */
+      body.light-theme {
+        --bg: #f4f7f9;
+        --sidebar-bg: #ffffff;
+        --panel: #ffffff;
+        --card: #f0f6fa;
+        --line: #e2ebf0;
+        --text: #0f2430;
+        --muted: #4b6472;
+        --dim: #6f8694;
+        --green: #16a34a;
+        --amber: #d97706;
+        --red: #dc2626;
+        --sky: #0284c7;
+        --blue-accent: #0284c7;
+        background: #f4f7f9;
+        color: #0f2430;
+      }
+
+      body.light-theme .sidebar,
+      body.light-theme .workspace-header,
+      body.light-theme .mobile-bottom-nav {
+        background: #ffffff;
+        border-color: #e2ebf0;
+        box-shadow: 0 1px 8px rgba(15, 36, 48, 0.04);
+      }
+
+      body.light-theme .sidebar {
+        border-right: 1px solid #e5edf2;
+      }
+
+      body.light-theme .workspace-header {
+        border-bottom: 1px solid #e5edf2;
+      }
+
+      body.light-theme .brand-name,
+      body.light-theme .breadcrumb-title,
+      body.light-theme .panel-title,
+      body.light-theme .staff-title,
+      body.light-theme .auth-title,
+      body.light-theme .gauge-pct,
+      body.light-theme .gauge-name,
+      body.light-theme .stat-val,
+      body.light-theme .user-name,
+      body.light-theme .outcome,
+      body.light-theme .policy-popup-title,
+      body.light-theme .policy-popup-stat-val,
+      body.light-theme .glass-loader-title,
+      body.light-theme #dailyCapText,
+      body.light-theme #budgetRemainingRingText,
+      body.light-theme #view-policy h3,
+      body.light-theme #view-staff h3,
+      body.light-theme #view-trust-center h2 {
+        color: #0f2430 !important;
+      }
+
+      body.light-theme .brand-sub {
+        color: #16a34a;
+      }
+
+      body.light-theme .panel,
+      body.light-theme .staff-card,
+      body.light-theme .table-card,
+      body.light-theme .splash-card,
+      body.light-theme .auth-card,
+      body.light-theme .demo-bar {
+        background: #ffffff;
+        border: 1px solid #e5edf2;
+        box-shadow: 0 4px 16px rgba(15, 36, 48, 0.04);
+      }
+
+      body.light-theme .gauge-card,
+      body.light-theme .budget-card,
+      body.light-theme .allow-card,
+      body.light-theme .stat,
+      body.light-theme .add-staff-card,
+      body.light-theme .terminal,
+      body.light-theme .vend-box,
+      body.light-theme .splash-check-row,
+      body.light-theme .outcome,
+      body.light-theme .user-card,
+      body.light-theme .user-card.owner,
+      body.light-theme .user-card.staff,
+      body.light-theme .policy-popup-stat,
+      body.light-theme .policy-popup-reason {
+        background: #f2f7fa;
+        border: 1px solid #e4edf2;
+        color: #0f2430;
+      }
+
+      body.light-theme .user-card.owner .user-avatar {
+        background: #dcfce7;
+        color: #15803d;
+      }
+
+      body.light-theme .user-card.staff .user-avatar {
+        background: #e0f2fe;
+        color: #0369a1;
+      }
+
+      body.light-theme .nav-item {
+        background: #f5f9fb;
+        border: 1px solid transparent;
+        color: #35505e;
+      }
+
+      body.light-theme .nav-item:hover {
+        background: #e7f3fa;
+        border-color: #bae6fd;
+        color: #0f2430;
+      }
+
+      body.light-theme .nav-item.active {
+        background: #e6f7ed;
+        border: 1px solid #16a34a;
+        color: #14532d;
+        box-shadow: 0 3px 10px rgba(22, 163, 74, 0.12);
+      }
+
+      body.light-theme .nav-icon,
+      body.light-theme .mobile-nav-icon {
+        background: #e5eff5;
+        color: #4b6472;
+      }
+
+      body.light-theme .nav-item:hover .nav-icon {
+        background: #0284c7;
+        color: #ffffff;
+      }
+
+      body.light-theme .nav-item.active .nav-icon,
+      body.light-theme .mobile-nav-item.active .mobile-nav-icon {
+        background: #16a34a;
+        color: #ffffff;
+      }
+
+      body.light-theme .gauge-card,
+      body.light-theme .budget-card,
+      body.light-theme .allow-card,
+      body.light-theme .stat,
+      body.light-theme .add-staff-card {
+        border: 1px solid #d5e4ed;
+      }
+
+      body.light-theme .gauge-card:hover {
+        border-color: #38bdf8;
+        box-shadow: 0 4px 14px rgba(2, 132, 199, 0.1);
+      }
+
+      body.light-theme .btn,
+      body.light-theme .side-btn,
+      body.light-theme .preset-chip,
+      body.light-theme .filter-btn,
+      body.light-theme .proof-refresh {
+        background: #eef5f9;
+        color: #0f2430;
+        border: 1px solid #cbdce7;
+      }
+
+      body.light-theme .treasury {
+        background: #f0f9ff;
+        color: #0f2430;
+        border: 1px solid #bae6fd;
+      }
+
+      body.light-theme .tag,
+      body.light-theme .model,
+      body.light-theme .splash-badge {
+        background: #e0f2fe;
+        color: #0369a1;
+        border: 1px solid #bae6fd;
+        font-weight: 700;
+      }
+
+      body.light-theme .btn:hover:not(:disabled),
+      body.light-theme .side-btn:hover,
+      body.light-theme .preset-chip:hover,
+      body.light-theme .filter-btn:hover,
+      body.light-theme .proof-refresh:hover:not(:disabled) {
+        background: #e0f2fe;
+        color: #0369a1;
+        border: 1px solid #38bdf8;
+        box-shadow: 0 2px 8px rgba(2, 132, 199, 0.12);
+      }
+
+      body.light-theme .preset-chip.amber {
+        background: #fffbeb;
+        color: #b45309;
+        border: 1px solid #f59e0b;
+      }
+
+      body.light-theme .preset-chip.amber:hover {
+        background: #fef3c7;
+        color: #92400e;
+        border: 1px solid #d97706;
+        box-shadow: 0 2px 8px rgba(217, 119, 6, 0.14);
+      }
+
+      body.light-theme .filter-btn.active {
+        background: #0284c7;
+        color: #ffffff;
+        border: 1px solid #0369a1;
+        box-shadow: 0 2px 8px rgba(2, 132, 199, 0.18);
+      }
+
+      body.light-theme .btn-sky {
+        background: #e0f2fe;
+        color: #0369a1;
+        border: 1px solid #38bdf8;
+      }
+
+      body.light-theme .btn-sky:hover:not(:disabled) {
+        background: #bae6fd;
+        color: #0c4a6e;
+        border: 1px solid #0284c7;
+      }
+
+      body.light-theme .btn-amber {
+        background: #fef3c7;
+        color: #92400e;
+        border: 1px solid #f59e0b;
+      }
+
+      body.light-theme .btn-amber:hover:not(:disabled) {
+        background: #fde68a;
+        color: #78350f;
+        border: 1px solid #d97706;
+      }
+
+      body.light-theme .btn-red {
+        background: #fee2e2;
+        color: #b91c1c;
+        border: 1px solid #fca5a5;
+      }
+
+      body.light-theme .btn-red:hover:not(:disabled) {
+        background: #fecaca;
+        color: #991b1b;
+        border: 1px solid #dc2626;
+      }
+
+      body.light-theme .auth-submit,
+      body.light-theme .btn-submit-req,
+      body.light-theme .btn-approve {
+        background: #16a34a;
+        color: #ffffff;
+        border: 1px solid #15803d;
+      }
+
+      body.light-theme .auth-submit:hover:not(:disabled),
+      body.light-theme .btn-submit-req:hover:not(:disabled),
+      body.light-theme .btn-approve:hover:not(:disabled) {
+        background: #15803d;
+        border-color: #166534;
+      }
+
+      body.light-theme .auth-input,
+      body.light-theme .staff-input,
+      body.light-theme .search-box,
+      body.light-theme .form-input {
+        background: #f8fbfd;
+        color: #0f2430;
+        border: 1px solid #cbdce7;
+      }
+
+      body.light-theme .auth-input:hover,
+      body.light-theme .staff-input:hover,
+      body.light-theme .search-box:hover,
+      body.light-theme .form-input:hover {
+        border-color: #7dd3fc;
+      }
+
+      body.light-theme .auth-input:focus,
+      body.light-theme .staff-input:focus,
+      body.light-theme .search-box:focus,
+      body.light-theme .form-input:focus {
+        background: #ffffff;
+        border-color: #0284c7;
+        box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.14);
+      }
+
+      body.light-theme button:focus-visible,
+      body.light-theme a:focus-visible,
+      body.light-theme input:focus-visible {
+        outline: 2px solid #0284c7;
+      }
+
+      body.light-theme .table-wrap {
+        background: #ffffff;
+        border: 1px solid #e5edf2;
+      }
+
+      body.light-theme th {
+        background: #f0f6fa;
+        color: #4b6472;
+        border-bottom: 1px solid #e2ebf0;
+      }
+
+      body.light-theme td {
+        color: #0f2430;
+        border-bottom: 1px solid #eef4f7;
+      }
+
+      body.light-theme tbody tr:hover {
+        background: #e8f4fb;
+      }
+
+      body.light-theme .typewriter,
+      body.light-theme #allowlistContainer,
+      body.light-theme #allowlistPolicyView,
+      body.light-theme .splash-check-val {
+        color: #1e3a4a !important;
+      }
+
+      body.light-theme circle[stroke="#1e293b"] {
+        stroke: #dce8ef;
+      }
+
+      body.light-theme #spentTodayText,
+      body.light-theme #treasuryBalanceText,
+      body.light-theme .treasury a,
+      body.light-theme .splash-verify-link {
+        color: #0284c7 !important;
+      }
+
+      body.light-theme #budgetRemainingText {
+        color: #16a34a !important;
+      }
+
+      body.light-theme #perTxCapText {
+        color: #d97706 !important;
+      }
+
+      body.light-theme .vend-box {
+        background: #e8f3f9;
+        border: 1px solid #cbe0ec;
+        color: #0f2430 !important;
+        font-weight: 600;
+      }
+
+      body.light-theme .terminal-top,
+      body.light-theme .outcome,
+      body.light-theme .auth-footer {
+        border-color: #dde8ef;
+      }
+
+      body.light-theme .demo-inner strong {
+        color: #b45309;
+      }
+
+      body.light-theme .auth-error {
+        background: #fef2f2;
+        border-color: #fca5a5;
+        color: #b91c1c;
+      }
+
+      body.light-theme .blocked-banner {
+        background: #fef2f2;
+        color: #991b1b;
+        border-bottom-color: #dc2626;
+      }
+
+      body.light-theme .blocked-title {
+        color: #991b1b;
+      }
+
+      body.light-theme .blocked-icon {
+        background: #dc2626;
+        border-color: #b91c1c;
+        color: #ffffff;
+      }
+
+      body.light-theme .splash-overlay,
+      body.light-theme .auth-overlay {
+        background: rgba(244, 247, 249, 0.92);
+      }
+
+      body.light-theme .glass-loader-overlay,
+      body.light-theme .policy-popup-overlay {
+        background: rgba(15, 36, 48, 0.24);
+      }
+
+      body.light-theme .glass-loader-card,
+      body.light-theme .policy-popup-card,
+      body.light-theme .header-menu-dropdown {
+        background: rgba(255, 255, 255, 0.9);
+        border: 1px solid rgba(15, 36, 48, 0.08);
+        box-shadow: 0 20px 50px rgba(15, 36, 48, 0.14);
+        color: #0f2430;
+      }
+
+      body.light-theme .glass-loader-sub {
+        color: #4b6472;
+      }
+
+      body.light-theme .header-menu-item {
+        color: #0f2430;
+      }
+
+      body.light-theme .header-menu-item:hover {
+        background: #eef6fb;
+      }
+
+      body.light-theme .header-menu-item.danger {
+        color: #dc2626;
+        border-top-color: #e5edf2;
+      }
+
+      body.light-theme .header-menu-item.danger:hover {
+        background: #fee2e2;
+      }
+
+      body.light-theme .toast {
+        background: #ffffff;
+        color: #0f2430;
+        border: 1px solid #d5e4ed;
+        border-left: 4px solid #16a34a;
+        box-shadow: 0 12px 30px rgba(15, 36, 48, 0.12);
+      }
+
+      .toast-title {
+        font-weight: 700;
+        margin-bottom: 4px;
+        color: var(--text);
+      }
+
+      .toast-sub {
+        font-size: 11px;
+        color: var(--muted);
+      }
+
+      .toast-link {
+        display: inline-block;
+        margin-top: 6px;
+        font-size: 11px;
+        color: var(--green);
+        text-decoration: underline;
+      }
+
+      .toast.toast-blocked {
+        background: #33181c;
+        border-left-color: #dc2626;
+      }
+
+      .toast.toast-warning {
+        background: #2b2112;
+        border-left-color: #d97706;
+      }
+
+      body.light-theme .toast.toast-blocked {
+        background: #fef2f2;
+        border-color: #fca5a5;
+        border-left: 4px solid #dc2626;
+      }
+
+      body.light-theme .toast.toast-warning {
+        background: #fffbeb;
+        border-color: #fcd34d;
+        border-left: 4px solid #d97706;
+      }
+
+      .ws-pill-amber {
+        background: #d97706 !important;
+        color: #ffffff !important;
+        border: 1px solid #b45309 !important;
+      }
+
+      .allow-wallet-item {
+        padding: 5px 9px;
+        background: #0f172a;
+        border: 1px solid #1e293b;
+        border-radius: 6px;
+        color: #6ee7b7;
+      }
+
+      body.light-theme .allow-wallet-item {
+        background: #ecfdf5;
+        border: 1px solid #6ee7b7;
+        color: #065f46;
+        font-weight: 600;
+      }
+
+      .readonly-notice {
+        background: rgba(0, 117, 255, 0.12);
+        border: 1px solid rgba(0, 117, 255, 0.35);
+        color: #bae6fd;
+        font-size: 12px;
+        padding: 9px 12px;
+        border-radius: 8px;
+        margin-bottom: 16px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      body.light-theme .readonly-notice {
+        background: #e0f2fe;
+        border: 1px solid #38bdf8;
+        color: #075985;
+        font-weight: 600;
+      }
+
+      .redteam-panel {
+        border-color: rgba(251, 191, 36, 0.45) !important;
+      }
+
+      body.light-theme .redteam-panel {
+        border-color: #f59e0b !important;
+      }
+
+      .redteam-heading {
+        color: #fbbf24;
+      }
+
+      body.light-theme .redteam-heading {
+        color: #b45309;
+      }
+
+      body.light-theme #frozen-banner {
+        background: #fef2f2 !important;
+        color: #991b1b !important;
+        border-bottom: 1px solid #fecaca;
+      }
+
+      .tx-note-pending {
+        color: #fcd34d;
+      }
+
+      .tx-note-blocked {
+        color: #fca5a5;
+      }
+
+      body.light-theme .tx-note-pending {
+        color: #b45309;
+        font-weight: 600;
+      }
+
+      body.light-theme .tx-note-blocked {
+        color: #b91c1c;
+        font-weight: 600;
+      }
     </style>
   </head>
   <body>
+    <!-- Instant Glassmorphism Loading Overlay -->
+    <div id="glassLoadingOverlay" class="glass-loader-overlay" aria-live="polite" aria-busy="false">
+      <div class="glass-loader-card">
+        <div class="glass-spinner" aria-hidden="true"></div>
+        <div id="glassLoaderTitle" class="glass-loader-title">Processing...</div>
+        <div id="glassLoaderSub" class="glass-loader-sub">Please wait a moment</div>
+      </div>
+    </div>
+
+    <!-- Policy Check Pop-Up Modal -->
+    <div
+      id="policyCheckPopup"
+      class="policy-popup-overlay"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="policyPopupTitle"
+      onclick="if (event.target === this) closePolicyCheckPopup()"
+    >
+      <div class="policy-popup-card">
+        <div class="policy-popup-head">
+          <span id="policyPopupBadge" class="policy-popup-badge approved">POLICY CHECK</span>
+          <button
+            type="button"
+            onclick="closePolicyCheckPopup()"
+            class="btn"
+            style="min-height: 32px; padding: 4px 10px; font-size: 12px"
+            aria-label="Close"
+          >
+            ✕
+          </button>
+        </div>
+        <h3 id="policyPopupTitle" class="policy-popup-title">Policy Decision</h3>
+        <div id="policyPopupMeta" class="policy-popup-meta">
+          <div class="policy-popup-stat">
+            <div class="policy-popup-stat-label">Resource</div>
+            <div id="policyPopupResource" class="policy-popup-stat-val">-</div>
+          </div>
+          <div class="policy-popup-stat">
+            <div class="policy-popup-stat-label">Amount</div>
+            <div id="policyPopupAmount" class="policy-popup-stat-val">-</div>
+          </div>
+        </div>
+        <div id="policyPopupReason" class="policy-popup-reason"></div>
+        <div id="policyPopupExtra" class="mono" style="font-size: 11px; color: var(--green); margin-bottom: 14px; display: none;"></div>
+        <div class="policy-popup-actions">
+          <a
+            id="policyPopupExplorer"
+            href="#"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="btn btn-sky hidden"
+            style="text-decoration: none"
+          >
+            View on XRPL ↗
+          </a>
+          <button type="button" onclick="closePolicyCheckPopup()" class="btn btn-sky">
+            Got it
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- Ledger Proof Splash Screen (shown only after sign-in) -->
     <div id="splashOverlay" class="splash-overlay hidden">
       <div class="splash-card">
@@ -2727,6 +3672,16 @@
             </span>
             <span class="nav-text">Policy &amp; Treasury</span>
           </button>
+          <button
+            id="nav-trust-center"
+            class="nav-item"
+            onclick="switchTab('trust-center')"
+          >
+            <span class="nav-icon">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            </span>
+            <span class="nav-text">Trust Center</span>
+          </button>
         </nav>
 
         <div class="sidebar-footer">
@@ -2763,7 +3718,7 @@
 
       <!-- Workspace Area -->
       <div class="workspace">
-        <div id="blockedBanner" class="blocked-banner hidden">
+            <div id="blockedBanner" class="blocked-banner hidden">
           <div class="blocked-inner">
             <div class="blocked-left">
               <span class="blocked-icon">!</span>
@@ -2784,10 +3739,13 @@
 
         <header class="workspace-header">
           <div class="breadcrumb-wrap">
-            <h2 id="currentViewTitle" class="breadcrumb-title">Dashboard</h2>
+            <div class="header-corner-brand">
+              <img src="/brand/gridbot-mark.png" alt="GridBot" class="header-corner-logo" />
+              <h2 id="currentViewTitle" class="breadcrumb-title">Dashboard</h2>
+            </div>
           </div>
           <div class="header-right">
-            <div id="storageModeBadge" class="ws-pill hidden" style="border-color: rgba(255, 181, 71, 0.45); color: #fde68a; background: rgba(255, 181, 71, 0.12);">
+            <div id="storageModeBadge" class="ws-pill ws-pill-amber hidden">
               Local fallback storage
             </div>
             <div class="treasury">
@@ -2800,24 +3758,77 @@
                 >Loading...</a
               >
             </div>
-            <button id="demoToggleBtn" onclick="toggleDemoBar()" class="btn">
-              Demo Controls
+            <button id="btn-owner-freeze" onclick="toggleOwnerFreeze()" class="btn btn-red hidden">
+              🧊 Freeze All Spend
             </button>
-            <div class="staff-header-actions">
-              <button onclick="openSignInModal()" class="btn btn-red" title="Sign Out">
-                Sign Out
+            <div id="headerMenuWrap" class="header-menu-wrap">
+              <button
+                type="button"
+                id="headerMenuBtn"
+                onclick="toggleHeaderMenu(event)"
+                class="btn btn-sky header-menu-btn"
+                aria-expanded="false"
+                aria-haspopup="true"
+              >
+                <span>Controls</span>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
               </button>
-            </div>
-            <div class="mobile-header-actions">
-              <button onclick="openSplashScreen()" class="btn" title="Ledger Proof" aria-label="Ledger Proof" style="display:inline-flex;align-items:center;gap:4px;">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-              </button>
-              <button onclick="openSignInModal()" class="btn btn-red" title="Sign Out" aria-label="Sign Out" style="display:inline-flex;align-items:center;gap:4px;">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-              </button>
+              <div id="headerMenuDropdown" class="header-menu-dropdown" role="menu">
+                <button
+                  id="demoToggleBtn"
+                  type="button"
+                  role="menuitem"
+                  onclick="toggleDemoBar(); closeHeaderMenu();"
+                  class="header-menu-item"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                  <span>Demo Controls</span>
+                </button>
+                <button
+                  type="button"
+                  role="menuitem"
+                  onclick="switchTab('trust-center'); closeHeaderMenu();"
+                  class="header-menu-item"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                  <span>Trust Center</span>
+                </button>
+                <button
+                  type="button"
+                  role="menuitem"
+                  onclick="openSplashScreen(); closeHeaderMenu();"
+                  class="header-menu-item"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                  <span>Ledger Proof</span>
+                </button>
+                <button
+                  type="button"
+                  id="themeToggleBtn"
+                  role="menuitem"
+                  onclick="toggleTheme(); closeHeaderMenu();"
+                  class="header-menu-item"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+                  <span id="themeToggleLabel">Dark Mode</span>
+                </button>
+                <button
+                  type="button"
+                  role="menuitem"
+                  onclick="openSignInModal(); closeHeaderMenu();"
+                  class="header-menu-item danger"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                  <span>Sign Out</span>
+                </button>
+              </div>
             </div>
           </div>
         </header>
+
+        <div id="frozen-banner" class="hidden" style="background:#451418; color:#fecaca; padding:12px 24px; font-weight:600; font-size:13px;">
+          🧊 SPENDING FROZEN BY OWNER — All autonomous and staff top-ups are paused immediately.
+        </div>
 
         <div id="demoControlBar" class="demo-bar hidden">
           <div class="demo-inner">
@@ -2850,7 +3861,7 @@
               </div>
               <div class="gauges">
                 <div class="gauge-card">
-                  <span class="tag">Auto-pay at 5%</span>
+                  <span class="tag">Auto top-up at 5%</span>
                   <div class="gauge-wrap">
                     <svg width="124" height="124" viewBox="0 0 120 120">
                       <circle
@@ -2883,7 +3894,7 @@
                     </div>
                   </div>
                   <h3 class="gauge-name">Electricity</h3>
-                  <p class="gauge-cost">Unit cost <b>5 RLUSD</b></p>
+                  <p class="gauge-cost">Top-up cost <b>5 RLUSD</b></p>
                   <div
                     id="lastStsTokenBox"
                     class="vend-box"
@@ -2894,7 +3905,7 @@
                 </div>
 
                 <div class="gauge-card">
-                  <span class="tag">Auto-pay at 5%</span>
+                  <span class="tag">Auto top-up at 5%</span>
                   <div class="gauge-wrap">
                     <svg width="124" height="124" viewBox="0 0 120 120">
                       <circle
@@ -2927,11 +3938,10 @@
                     </div>
                   </div>
                   <h3 class="gauge-name">Router Data</h3>
-                  <p class="gauge-cost">Unit cost <b>3 RLUSD</b></p>
+                  <p class="gauge-cost">Top-up cost <b>3 RLUSD</b></p>
                   <div
                     id="lastDataBundleBox"
                     class="vend-box"
-                    style="color: #7dd3fc"
                     title="Last vended data bundle (mock)"
                   >
                     Bundle: none yet
@@ -2944,7 +3954,6 @@
               <div class="panel-header">
                 <div>
                   <h2 class="panel-title">Agent Brain</h2>
-                  <p class="panel-sub">Proposes only. Cannot pay alone.</p>
                 </div>
                 <span id="agentModeBadge" class="model"
                   >llama-3.3-70b-versatile</span
@@ -2960,11 +3969,11 @@
                   <div id="brainResourceText" class="stat-val">-</div>
                 </div>
                 <div class="stat">
-                  <div class="stat-label">Proposed</div>
+                  <div class="stat-label">Proposed Spend</div>
                   <div
                     id="brainAmountText"
                     class="stat-val"
-                    style="color: #34d399"
+                    style="color: var(--green)"
                   >
                     0 RLUSD
                   </div>
@@ -2972,7 +3981,7 @@
               </div>
               <div class="terminal">
                 <div class="terminal-top">
-                  <span>AI REASONING</span
+                  <span>WHY THE AI CHOSE THIS</span
                   ><span id="brainTimestamp">Waiting...</span>
                 </div>
                 <div style="margin: auto 0; padding: 4px 0">
@@ -2982,7 +3991,7 @@
                   </p>
                 </div>
                 <div class="outcome">
-                  <span>Policy signer:</span
+                  <span>Policy check:</span
                   ><span id="brainOutcomeStatus">Idle</span>
                 </div>
               </div>
@@ -2997,7 +4006,7 @@
                   class="btn"
                   style="padding: 4px 10px; font-size: 11px"
                 >
-                  Edit caps
+                  Edit limits
                 </button>
               </div>
               <div class="budget-card">
@@ -3050,30 +4059,34 @@
                 </div>
                 <div class="budget-rows">
                   <div class="budget-row">
-                    <span>Daily cap</span
+                    <span>Daily auto-pay limit</span
                     ><b id="dailyCapText" style="color: #fff">15 RLUSD</b>
                   </div>
                   <div class="budget-row">
-                    <span>Spent this demo day</span
+                    <span>Spent today</span
                     ><b id="spentTodayText" style="color: #7dd3fc">0 RLUSD</b>
                   </div>
                   <div class="budget-row">
-                    <span>Remaining</span
+                    <span>Treasury balance</span
+                    ><b id="treasuryBalanceText" style="color: #7dd3fc">Checking...</b>
+                  </div>
+                  <div class="budget-row">
+                    <span>Auto-pay left</span
                     ><b id="budgetRemainingText" style="color: #34d399"
                       >15 RLUSD</b
                     >
                   </div>
                   <div
                     class="budget-row"
-                    style="padding-top: 6px; border-top: 1px solid #1e293b"
+                    style="padding-top: 6px; border-top: 1px solid var(--line)"
                   >
-                    <span>Per-payment cap</span
+                    <span>Max per payment</span
                     ><b id="perTxCapText" style="color: #fcd34d">10 RLUSD</b>
                   </div>
                 </div>
               </div>
               <div class="allow-card">
-                <div class="allow-head"><span>Allowed payee</span></div>
+                <div class="allow-head"><span>Approved Vendor Wallet</span></div>
                 <div
                   id="allowlistContainer"
                   class="mono"
@@ -3096,7 +4109,6 @@
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
                   Staff Operational Purchase Request
                 </span>
-                <span class="model">PLAIN-LANGUAGE AI SKU MATCHER</span>
               </div>
               <span
                 id="requesterLabel"
@@ -3154,10 +4166,10 @@
             </div>
           </section>
 
-          <section id="redTeamPanel" class="staff-card hidden" style="border-color:rgba(251,191,36,.45)">
+          <section id="redTeamPanel" class="staff-card redteam-panel hidden">
             <div class="staff-header">
               <div class="staff-header-left">
-                <span class="staff-title" style="color:#fbbf24">Red Team — Policy Guardrail Test</span>
+                <span class="staff-title redteam-heading">Red Team — Policy Guardrail Test</span>
                 <span class="model">DEMO MODE ONLY · NO PAYMENT SHOULD BE SUBMITTED</span>
               </div>
             </div>
@@ -3170,15 +4182,15 @@
             <div id="redTeamResult" class="hidden" style="margin-top:16px">
               <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px">
                 <article class="panel" style="background:var(--card)">
-                  <strong style="color:#fbbf24">1. AI proposal</strong>
+                  <strong class="redteam-heading">1. AI proposal</strong>
                   <p id="redTeamAiResult" class="panel-sub" style="margin-top:8px;white-space:pre-wrap;overflow-wrap:anywhere"></p>
                 </article>
                 <article class="panel" style="background:var(--card)">
-                  <strong style="color:#fbbf24">2. Policy Service decision</strong>
+                  <strong class="redteam-heading">2. Policy Service decision</strong>
                   <p id="redTeamPolicyResult" class="panel-sub" style="margin-top:8px;white-space:pre-wrap;overflow-wrap:anywhere"></p>
                 </article>
                 <article class="panel" style="background:var(--card)">
-                  <strong style="color:#fbbf24">3. Ledger signature</strong>
+                  <strong class="redteam-heading">3. Ledger signature</strong>
                   <p id="redTeamLedgerResult" class="panel-sub" style="margin-top:8px;white-space:pre-wrap;overflow-wrap:anywhere"></p>
                 </article>
               </div>
@@ -3343,7 +4355,7 @@
               </button>
             </div>
 
-            <div id="staffReadOnlyNotice" class="auth-error hidden" style="background: rgba(0, 117, 255, 0.12); border-color: rgba(0, 117, 255, 0.35); color: #bae6fd; display:flex; align-items:center; gap:8px;">
+            <div id="staffReadOnlyNotice" class="readonly-notice hidden">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
               <span>You are viewing the staff directory in read-only mode. Adding or removing staff accounts is restricted to the Cafe Owner.</span>
             </div>
@@ -3444,7 +4456,7 @@
               </div>
             </div>
 
-            <div id="policyReadOnlyNotice" class="auth-error hidden" style="background: rgba(0, 117, 255, 0.12); border-color: rgba(0, 117, 255, 0.35); color: #bae6fd; display:flex; align-items:center; gap:8px; margin-bottom: 16px;">
+            <div id="policyReadOnlyNotice" class="readonly-notice hidden">
               <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
               <span>You are viewing spending limits in read-only mode. Editing policy caps is restricted to the Cafe Owner.</span>
             </div>
@@ -3484,7 +4496,7 @@
                     Save Policy Caps
                   </button>
                 </form>
-                <div style="border-top:1px solid #1e293b;margin-top:18px;padding-top:16px">
+                <div style="border-top:1px solid var(--line);margin-top:18px;padding-top:16px">
                   <p class="panel-sub" style="margin:0 0 12px">
                     Starts a fresh spending window from now. Earlier Testnet payments remain in the audit history; this does not reverse or erase them.
                   </p>
@@ -3511,6 +4523,81 @@
                   Only payments to verified utility vendor addresses are co-signed.
                 </div>
               </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- VIEW 5: Read-Only Trust Center -->
+        <section id="view-trust-center" class="tab-view hidden">
+          <div class="panel">
+            <div class="panel-header" style="margin-bottom:10px;">
+              <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+                <button
+                  id="staffTrustBackBtn"
+                  type="button"
+                  onclick="switchTab('dashboard')"
+                  class="btn btn-sky hidden"
+                >
+                  &larr; Back to Dashboard
+                </button>
+                <div>
+                  <div style="font-size:10px;text-transform:uppercase;letter-spacing:0.12em;color:var(--green);font-weight:700;margin-bottom:4px;">
+                    Independent Cryptographic &amp; Policy Enforcement (Read-Only)
+                  </div>
+                  <h2 style="font-size:20px;color:var(--text);">
+                    "The AI can propose, it cannot pay alone."
+                  </h2>
+                </div>
+              </div>
+              <button type="button" onclick="loadTrustCenter()" class="btn btn-sky">
+                ↻ Refresh Live Check
+              </button>
+            </div>
+            <p style="color:var(--muted);line-height:1.6;font-size:13px;">
+              GridBot separates <strong>who asks</strong> (Staff / AI Agent) from <strong>who enforces the rules</strong> (Isolated Policy Service + XRP Ledger Multi-Sign).
+              The AI agent only holds a <strong>Weight-1</strong> key. Because the Treasury account's Master Key is permanently disabled on-chain and requires a
+              <strong>SignerQuorum of 2</strong>, any transaction without Policy Signer co-approval (or the Owner's Weight-2 key) is rejected by the XRP Ledger itself.
+            </p>
+          </div>
+
+          <div class="table-card">
+            <div class="table-header">
+              <h3 class="panel-title">⛓️ Live XRP Ledger Testnet Proof</h3>
+            </div>
+            <div id="tc-ledger-summary" style="color:var(--muted);font-size:13px;margin-bottom:14px;">
+              Loading live XRPL account_info &amp; signer_list...
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Signer Role</th>
+                    <th>XRPL Address (Explorer Link)</th>
+                    <th>Weight</th>
+                    <th>Signing Authority</th>
+                  </tr>
+                </thead>
+                <tbody id="tc-signers-body"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="table-card">
+            <div class="table-header">
+              <h3 class="panel-title">🛑 Last 10 Blocked Attempts &amp; Enforcement Rules</h3>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Time</th>
+                    <th>Resource</th>
+                    <th>Amount</th>
+                    <th>Rule That Stopped It</th>
+                  </tr>
+                </thead>
+                <tbody id="tc-blocked-body"></tbody>
+              </table>
             </div>
           </div>
         </section>
@@ -3544,6 +4631,12 @@
         </span>
         <span>Policy</span>
       </button>
+      <button id="mnav-trust-center" class="mobile-nav-item" onclick="switchTab('trust-center')">
+        <span class="mobile-nav-icon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        </span>
+        <span>Trust</span>
+      </button>
     </nav>
 
     <div id="toastContainer" class="toasts"></div>
@@ -3555,6 +4648,24 @@
       const SESSION_USER_KEY = "gridbot_session_user";
       const PASSCODE_STORAGE_KEY = "gridbot_owner_passcode";
       const SPLASH_SEEN_KEY = "gridbot_splash_seen";
+
+      const THEME_STORAGE_KEY = "gridbot_theme";
+      let latestTreasuryBalance = null;
+
+      function applyTheme(themeName) {
+        const isLight = themeName !== "dark";
+        document.body.classList.toggle("light-theme", isLight);
+        const label = document.getElementById("themeToggleLabel");
+        if (label) label.textContent = isLight ? "Switch to Dark Mode" : "Switch to Light Mode";
+      }
+
+      function toggleTheme() {
+        const next = document.body.classList.contains("light-theme") ? "dark" : "light";
+        localStorage.setItem(THEME_STORAGE_KEY, next);
+        applyTheme(next);
+      }
+
+      applyTheme(localStorage.getItem(THEME_STORAGE_KEY) || "light");
 
       let sessionToken = sessionStorage.getItem(SESSION_TOKEN_KEY) || "";
       let currentUser = null;
@@ -3597,7 +4708,7 @@
       // Tab Switching
       function switchTab(tabName) {
         currentTab = tabName;
-        ["dashboard", "history", "staff", "policy"].forEach((t) => {
+        ["dashboard", "history", "staff", "policy", "trust-center"].forEach((t) => {
           const btn = document.getElementById(`nav-${t}`);
           const mbtn = document.getElementById(`mnav-${t}`);
           const view = document.getElementById(`view-${t}`);
@@ -3615,12 +4726,15 @@
           history: "Transaction History",
           staff: "Staff Management",
           policy: "Policy & Treasury Controls",
+          "trust-center": "Trust Center",
         };
         document.getElementById("currentViewTitle").textContent =
           titles[tabName] || "Dashboard";
 
         if (tabName === "staff") {
           loadStaffList();
+        } else if (tabName === "trust-center") {
+          loadTrustCenter();
         }
       }
 
@@ -3672,6 +4786,7 @@
         errBox.classList.add("hidden");
         submitBtn.disabled = true;
         submitBtn.textContent = "Signing in...";
+        showGlassLoader("Signing in...", "Verifying your GridBot workspace credentials");
 
         try {
           const res = await fetch("/api/auth/login", {
@@ -3708,6 +4823,7 @@
           errBox.textContent = `Sign-in failed: ${err.message}`;
           errBox.classList.remove("hidden");
         } finally {
+          hideGlassLoader();
           submitBtn.disabled = false;
           submitBtn.textContent = "Sign In to GridBot";
         }
@@ -3729,9 +4845,12 @@
         const inputDailyCap = document.getElementById("inputDailyCap");
         const inputPerTxCap = document.getElementById("inputPerTxCap");
         const staffBackToDashBtn = document.getElementById("staffBackToDashBtn");
+        const staffTrustBackBtn = document.getElementById("staffTrustBackBtn");
+        const btnOwnerFreeze = document.getElementById("btn-owner-freeze");
 
         if (!currentUser) {
           document.body.classList.remove("staff-mode");
+          if (btnOwnerFreeze) btnOwnerFreeze.classList.add("hidden");
           if (redTeamPanel) redTeamPanel.classList.add("hidden");
           document.getElementById("authOverlay").classList.remove("hidden");
           return;
@@ -3752,7 +4871,9 @@
           userCard.className = "user-card owner";
           avatarEl.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>`;
           userRoleEl.textContent = "OWNER / ADMIN ACCESS";
+          if (btnOwnerFreeze) btnOwnerFreeze.classList.remove("hidden");
           if (staffBackToDashBtn) staffBackToDashBtn.classList.add("hidden");
+          if (staffTrustBackBtn) staffTrustBackBtn.classList.add("hidden");
           if (editCapsBtn) editCapsBtn.classList.remove("hidden");
           if (btnToggleAddStaff) btnToggleAddStaff.classList.remove("hidden");
           if (staffNotice) staffNotice.classList.add("hidden");
@@ -3778,8 +4899,10 @@
           userCard.className = "user-card staff";
           avatarEl.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`;
           userRoleEl.textContent = "STAFF / CASHIER ACCESS";
+          if (btnOwnerFreeze) btnOwnerFreeze.classList.add("hidden");
           if (staffBackToDashBtn) staffBackToDashBtn.classList.remove("hidden");
-          if (currentTab !== "dashboard" && currentTab !== "history") {
+          if (staffTrustBackBtn) staffTrustBackBtn.classList.remove("hidden");
+          if (currentTab !== "dashboard" && currentTab !== "history" && currentTab !== "trust-center") {
             switchTab("dashboard");
           }
           if (editCapsBtn) editCapsBtn.classList.add("hidden");
@@ -3831,6 +4954,7 @@
 
         btn.disabled = true;
         btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Submitting...`;
+        showGlassLoader("Evaluating Request...", "Matching approved SKU & checking Policy Signer");
         typewriteBrainText(
           `Evaluating staff request from ${currentUser.displayName}: "${requestText}"...`,
         );
@@ -3854,6 +4978,7 @@
         } catch (err) {
           showBlockedBanner(`Request error: ${err.message}`, "blocked");
         } finally {
+          hideGlassLoader();
           btn.disabled = false;
           btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg> Submit Request`;
         }
@@ -4022,21 +5147,21 @@
             return `<tr>
           <td>
             <div style="display:flex;align-items:center;gap:10px">
-              <span style="display:inline-flex;align-items:center;color:${s.role === 'owner' ? '#fbbf24' : '#38bdf8'};">
+              <span style="display:inline-flex;align-items:center;color:${s.role === 'owner' ? 'var(--amber)' : 'var(--sky)'};">
                 ${s.role === "owner"
                   ? '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>'
                   : '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>'}
               </span>
               <div>
-                <strong style="color:#fff;display:block">${escapeHtml(s.displayName)}</strong>
-                <span class="mono" style="font-size:11px;color:#94a3b8">@${escapeHtml(s.username)}</span>
+                <strong style="color:var(--text);display:block">${escapeHtml(s.displayName)}</strong>
+                <span class="mono" style="font-size:11px;color:var(--muted)">@${escapeHtml(s.username)}</span>
               </div>
             </div>
           </td>
           <td><span class="staff-role-badge ${roleClass}">${roleLabel}</span></td>
-          <td style="color:#cbd5e1">${escapeHtml(s.shift || "Flexible Shift")}</td>
-          <td><span class="pill pill-green"><span class="pill-dot" style="background:#10b981"></span>Active</span></td>
-          <td class="mono" style="font-size:11px;color:#94a3b8">${formatTimeSAST(s.created_at)}</td>
+          <td style="color:var(--muted)">${escapeHtml(s.shift || "Flexible Shift")}</td>
+          <td><span class="pill pill-green"><span class="pill-dot"></span>Active</span></td>
+          <td class="mono" style="font-size:11px;color:var(--muted)">${formatTimeSAST(s.created_at)}</td>
           <td style="text-align:right">${deleteBtn}</td>
         </tr>`;
           })
@@ -4079,27 +5204,150 @@
           clearInterval(typewriterTimer);
           typewriterTimer = null;
         }
-        el.textContent = "";
-        const chars = Array.from(String(text || ""));
-        let i = 0;
-        typewriterTimer = setInterval(() => {
-          if (i < chars.length) {
-            el.textContent += chars[i++];
-          } else {
-            clearInterval(typewriterTimer);
-            typewriterTimer = null;
-          }
-        }, 14);
+        el.textContent = String(text || "");
       }
 
-      function showToast({ title, subtitle, explorerUrl }) {
+      function showPolicyCheckPopup({
+        status = "blocked",
+        title,
+        resource,
+        amount,
+        reason,
+        vend,
+        explorerUrl,
+      }) {
+        const overlay = document.getElementById("policyCheckPopup");
+        const badgeEl = document.getElementById("policyPopupBadge");
+        const titleEl = document.getElementById("policyPopupTitle");
+        const metaEl = document.getElementById("policyPopupMeta");
+        const resEl = document.getElementById("policyPopupResource");
+        const amtEl = document.getElementById("policyPopupAmount");
+        const reasonEl = document.getElementById("policyPopupReason");
+        const extraEl = document.getElementById("policyPopupExtra");
+        const linkEl = document.getElementById("policyPopupExplorer");
+        if (!overlay) return;
+
+        const isApproved =
+          status === "auto_approved" || status === "owner_approved";
+        const isPending = status === "pending_owner";
+
+        badgeEl.className = `policy-popup-badge ${
+          isApproved ? "approved" : isPending ? "pending" : "blocked"
+        }`;
+        badgeEl.textContent =
+          status === "auto_approved"
+            ? "AUTO-APPROVED & PAID"
+            : status === "owner_approved"
+              ? "OWNER APPROVED & PAID"
+              : isPending
+                ? "HELD FOR OWNER APPROVAL"
+                : "BLOCKED BY POLICY SERVICE";
+
+        titleEl.textContent =
+          title ||
+          (isApproved
+            ? "Payment Approved & Settled"
+            : isPending
+              ? "Waiting for Owner Approval"
+              : "Payment Blocked by Policy");
+
+        if (resource || amount) {
+          metaEl.style.display = "grid";
+          resEl.textContent = resource ? String(resource).toUpperCase() : "-";
+          amtEl.textContent = amount !== undefined ? `${amount} RLUSD` : "-";
+        } else {
+          metaEl.style.display = "none";
+        }
+
+        reasonEl.textContent =
+          formatPolicyReason(reason) ||
+          (isApproved
+            ? "Passed all spending limits and vendor allowlist checks."
+            : "The policy service refused to co-sign this payment.");
+
+        const extraText = vend?.token
+          ? `STS Electricity Token: ${vend.token}`
+          : vend?.bundle
+            ? `Data Bundle Activated: ${vend.bundle}`
+            : "";
+        if (extraText) {
+          extraEl.textContent = extraText;
+          extraEl.style.display = "block";
+        } else {
+          extraEl.style.display = "none";
+        }
+
+        if (explorerUrl) {
+          linkEl.href = explorerUrl;
+          linkEl.classList.remove("hidden");
+        } else {
+          linkEl.classList.add("hidden");
+        }
+
+        overlay.classList.add("active");
+      }
+
+      function closePolicyCheckPopup() {
+        document.getElementById("policyCheckPopup")?.classList.remove("active");
+      }
+
+      function toggleHeaderMenu(e) {
+        if (e) e.stopPropagation();
+        const menu = document.getElementById("headerMenuDropdown");
+        const btn = document.getElementById("headerMenuBtn");
+        if (!menu) return;
+        const isOpen = menu.classList.toggle("open");
+        if (btn) btn.setAttribute("aria-expanded", String(isOpen));
+      }
+
+      function closeHeaderMenu() {
+        const menu = document.getElementById("headerMenuDropdown");
+        const btn = document.getElementById("headerMenuBtn");
+        if (menu) menu.classList.remove("open");
+        if (btn) btn.setAttribute("aria-expanded", "false");
+      }
+
+      document.addEventListener("click", (e) => {
+        const wrap = document.getElementById("headerMenuWrap");
+        if (wrap && !wrap.contains(e.target)) {
+          closeHeaderMenu();
+        }
+      });
+
+      function showGlassLoader(title = "Processing...", subtitle = "Please wait a moment") {
+        const el = document.getElementById("glassLoadingOverlay");
+        const t = document.getElementById("glassLoaderTitle");
+        const s = document.getElementById("glassLoaderSub");
+        if (t) t.textContent = title;
+        if (s) s.textContent = subtitle;
+        if (el) {
+          el.setAttribute("aria-busy", "true");
+          el.classList.add("active");
+        }
+      }
+
+      function hideGlassLoader() {
+        const el = document.getElementById("glassLoadingOverlay");
+        if (el) {
+          el.setAttribute("aria-busy", "false");
+          el.classList.remove("active");
+        }
+      }
+
+      function showToast({ title, subtitle, explorerUrl, variant = "default", tone }) {
         const box = document.getElementById("toastContainer");
         const t = document.createElement("div");
+        const resolvedVariant = variant === "default" && tone === "red" ? "blocked" : variant;
         t.className = "toast";
+        if (resolvedVariant === "blocked") {
+          t.classList.add("toast-blocked");
+        } else if (resolvedVariant === "warning") {
+          t.classList.add("toast-warning");
+        }
         t.innerHTML = `<div>
-        <div style="font-weight:700;margin-bottom:4px;color:#fff">${escapeHtml(title)}</div>
-        <div class="mono" style="font-size:11px;color:#cbd5e1">${escapeHtml(subtitle)}</div>
-        ${explorerUrl ? `<a href="${escapeHtml(explorerUrl)}" target="_blank" rel="noopener noreferrer" class="mono" style="display:inline-block;margin-top:6px;font-size:11px;color:#34d399;text-decoration:underline">View on explorer</a>` : ""}
+        <div class="toast-title">${escapeHtml(title)}</div>
+        <div class="mono toast-sub">${escapeHtml(subtitle)}</div>
+        ${explorerUrl ? `<a href="${escapeHtml(explorerUrl)}" target="_blank" rel="noopener noreferrer" class="mono toast-link">View on explorer</a>` : ""}
       </div>
       <button class="toast-x" onclick="this.parentElement.remove()">x</button>`;
         box.appendChild(t);
@@ -4109,14 +5357,16 @@
       }
 
       function showBlockedBanner(reason, status = "blocked") {
-        document.getElementById("blockedBannerTitle").textContent =
-          status === "pending_owner"
-            ? "OVER LIMIT: WAITING FOR OWNER APPROVAL"
-            : "BLOCKED BY POLICY SIGNER";
-        document.getElementById("blockedBannerText").textContent =
-          formatPolicyReason(reason) ||
-          "The policy signer refused to co-sign this payment.";
-        document.getElementById("blockedBanner").classList.remove("hidden");
+        const isPending = status === "pending_owner";
+        showPolicyCheckPopup({
+          status: isPending ? "pending_owner" : "blocked",
+          title: isPending
+            ? "Over Limit: Waiting for Owner Approval"
+            : "Blocked by Policy Service",
+          reason:
+            formatPolicyReason(reason) ||
+            "The policy signer refused to co-sign this payment.",
+        });
       }
       function formatPolicyReason(reason) {
         return String(reason || "")
@@ -4129,7 +5379,7 @@
           .join("; ");
       }
       function hideBlockedBanner() {
-        document.getElementById("blockedBanner").classList.add("hidden");
+        document.getElementById("blockedBanner")?.classList.add("hidden");
       }
 
       // Gauges Rendering
@@ -4144,17 +5394,17 @@
         );
         text.textContent = `${pct.toFixed(0)}%`;
         if (pct <= threshold) {
-          ring.setAttribute("stroke", "#ef4444");
+          ring.setAttribute("stroke", "#dc2626");
           status.textContent = "CRITICAL LOW";
-          status.style.color = "#f87171";
+          status.style.color = "var(--red)";
         } else if (pct <= 20) {
-          ring.setAttribute("stroke", "#f59e0b");
+          ring.setAttribute("stroke", "#d97706");
           status.textContent = "LOW (<=20%)";
-          status.style.color = "#fbbf24";
+          status.style.color = "var(--amber)";
         } else {
-          ring.setAttribute("stroke", "#10b981");
+          ring.setAttribute("stroke", "#16a34a");
           status.textContent = "Healthy";
-          status.style.color = "#10b981";
+          status.style.color = "var(--green)";
         }
       }
       function renderGauges(levels) {
@@ -4184,18 +5434,30 @@
         const cap = Number(appState.policy?.daily_cap ?? 15),
           perTx = Number(appState.policy?.per_tx_cap ?? 10);
         const spent = Number(appState.spentToday ?? 0);
-        const left = Math.max(
+        const capLeft = Math.max(
           0,
           Number(appState.budgetRemaining ?? Math.max(0, cap - spent)),
         );
+        const effectiveLeft =
+          latestTreasuryBalance !== null
+            ? Math.max(0, Math.min(capLeft, latestTreasuryBalance))
+            : capLeft;
+        const left = Number(effectiveLeft.toFixed(2));
         document.getElementById("dailyCapText").textContent = `${cap} RLUSD`;
         document.getElementById("spentTodayText").textContent =
-          `${spent} RLUSD`;
+          `${Number(spent.toFixed(2))} RLUSD`;
+        const tBalEl = document.getElementById("treasuryBalanceText");
+        if (tBalEl) {
+          tBalEl.textContent =
+            latestTreasuryBalance !== null
+              ? `${Number(latestTreasuryBalance.toFixed(2))} RLUSD`
+              : "Checking...";
+        }
         document.getElementById("budgetRemainingText").textContent =
           `${left} RLUSD`;
         document.getElementById("perTxCapText").textContent = `${perTx} RLUSD`;
         document.getElementById("budgetRemainingRingText").textContent =
-          left.toFixed(1);
+          left.toFixed(2);
 
         const storageBadge = document.getElementById("storageModeBadge");
         if (storageBadge) {
@@ -4204,6 +5466,8 @@
             appState.storage !== "local fallback",
           );
         }
+
+        syncFreezeUI(appState.policy?.frozen);
 
         const ring = document.getElementById("budgetGaugeRing");
         const ratio = cap > 0 ? Math.max(0, Math.min(1, left / cap)) : 0;
@@ -4218,11 +5482,11 @@
         const payees = appState.policy?.allowed_payees || [];
         const html =
           payees.length === 0
-            ? '<span style="color:#64748b">No allowed payees</span>'
+            ? '<span style="color:var(--muted)">No allowed payees</span>'
             : payees
                 .map(
                   (a) =>
-                    `<div style="padding:4px 8px;background:#0f172a;border:1px solid #1e293b;border-radius:6px;color:#6ee7b7">${escapeHtml(a)}</div>`,
+                    `<div class="allow-wallet-item">${escapeHtml(a)}</div>`,
                 )
                 .join("");
         if (list) list.innerHTML = html;
@@ -4245,10 +5509,10 @@
         badge.textContent = decision;
         badge.style.color =
           decision === "BUY"
-            ? "#34d399"
+            ? "var(--green)"
             : decision === "ESCALATE"
-              ? "#fbbf24"
-              : "#cbd5e1";
+              ? "var(--amber)"
+              : "var(--text)";
         document.getElementById("brainResourceText").textContent =
           proposal.resource || "-";
         document.getElementById("brainAmountText").textContent =
@@ -4261,41 +5525,53 @@
         const out = document.getElementById("brainOutcomeStatus");
         if (payment.status === "auto_approved") {
           out.textContent = "Auto-approved";
-          out.style.color = "#34d399";
+          out.style.color = "var(--green)";
           hideBlockedBanner();
-          showToast({
-            title: `Paid ${proposal.amount} RLUSD (${proposal.resource})`,
-            subtitle: vend?.token
-              ? `STS token: ${vend.token}`
-              : vend?.bundle
-                ? `Vended: ${vend.bundle}`
-                : `TX: ${shortHash(payment.txHash)}`,
+          showPolicyCheckPopup({
+            status: "auto_approved",
+            title: "Auto-Approved & Settled on XRPL",
+            resource: proposal.resource,
+            amount: proposal.amount,
+            reason: proposal.reason || "Within daily & per-payment limits.",
+            vend,
             explorerUrl: payment.explorerUrl,
           });
         } else if (payment.status === "owner_approved") {
           out.textContent = "Owner-approved";
-          out.style.color = "#34d399";
+          out.style.color = "var(--green)";
           hideBlockedBanner();
-          showToast({
-            title: `Owner Paid ${proposal.amount} RLUSD (${proposal.resource})`,
-            subtitle: vend?.token
-              ? `STS token: ${vend.token}`
-              : vend?.bundle
-                ? `Vended: ${vend.bundle}`
-                : `TX: ${shortHash(payment.txHash)}`,
+          showPolicyCheckPopup({
+            status: "owner_approved",
+            title: "Owner Approved & Settled on XRPL",
+            resource: proposal.resource,
+            amount: proposal.amount,
+            reason: proposal.reason || "Approved with owner override.",
+            vend,
             explorerUrl: payment.explorerUrl,
           });
         } else if (payment.status === "pending_owner") {
           out.textContent = "Over cap: waiting for owner";
-          out.style.color = "#fbbf24";
-          showBlockedBanner(payment.reason, "pending_owner");
+          out.style.color = "var(--amber)";
+          showPolicyCheckPopup({
+            status: "pending_owner",
+            title: "Held for Owner Approval",
+            resource: proposal.resource,
+            amount: proposal.amount,
+            reason: payment.reason || proposal.reason,
+          });
         } else if (payment.status === "blocked") {
           out.textContent = "Blocked by policy signer";
-          out.style.color = "#f87171";
-          showBlockedBanner(payment.reason, "blocked");
+          out.style.color = "var(--red)";
+          showPolicyCheckPopup({
+            status: "blocked",
+            title: "Blocked by Policy Service",
+            resource: proposal.resource,
+            amount: proposal.amount,
+            reason: payment.reason || proposal.reason,
+          });
         } else {
           out.textContent = payment.status || "Waited";
-          out.style.color = "#94a3b8";
+          out.style.color = "var(--muted)";
         }
 
         if (vend?.token)
@@ -4308,12 +5584,12 @@
 
       function statusPillHtml(s) {
         if (s === "auto_approved")
-          return `<span class="pill pill-green"><span class="pill-dot" style="background:#10b981"></span>auto-approved</span>`;
+          return `<span class="pill pill-green"><span class="pill-dot"></span>auto-approved</span>`;
         if (s === "owner_approved")
-          return `<span class="pill pill-green"><span class="pill-dot" style="background:#34d399"></span>owner-approved</span>`;
+          return `<span class="pill pill-green"><span class="pill-dot"></span>owner-approved</span>`;
         if (s === "pending_owner")
-          return `<span class="pill pill-amber"><span class="pill-dot" style="background:#f59e0b"></span>pending</span>`;
-        return `<span class="pill pill-red"><span class="pill-dot" style="background:#ef4444"></span>blocked</span>`;
+          return `<span class="pill pill-amber"><span class="pill-dot"></span>pending</span>`;
+        return `<span class="pill pill-red"><span class="pill-dot"></span>blocked</span>`;
       }
 
       // Transactions Rendering
@@ -4407,26 +5683,26 @@
             ? `https://testnet.xrpl.org/transactions/${tx.tx_hash}`
             : null);
         const note = tx.blocked_reason
-          ? `<div style="color:${tx.status === "pending_owner" ? "#fcd34d" : "#fca5a5"}" title="${escapeHtml(displayedBlockedReason)}">${escapeHtml(displayedBlockedReason)}</div>`
-          : `<div style="color:#e2e8f0" title="${escapeHtml(displayedReason)}">${escapeHtml(displayedReason)}</div>`;
+          ? `<div class="${tx.status === "pending_owner" ? "tx-note-pending" : "tx-note-blocked"}" title="${escapeHtml(displayedBlockedReason)}">${escapeHtml(displayedBlockedReason)}</div>`
+          : `<div style="color:var(--text)" title="${escapeHtml(displayedReason)}">${escapeHtml(displayedReason)}</div>`;
         let action;
         if (tx.status === "pending_owner") {
           if (isOwner) {
             action = `<div class="pending-actions"><button type="button" id="approveBtn-${escapeHtml(tx.id)}" onclick="approveTransaction('${escapeHtml(tx.id)}')" class="btn btn-approve" aria-label="Approve pending request ${escapeHtml(tx.id)}">Approve</button><button type="button" id="rejectBtn-${escapeHtml(tx.id)}" onclick="rejectTransaction('${escapeHtml(tx.id)}')" class="btn btn-red" style="padding:5px 10px">Reject</button></div>`;
           } else {
-            action = `<span class="mono" style="color:#fcd34d;font-size:11px;display:inline-flex;align-items:center;gap:5px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Sent to Owner</span>`;
+            action = `<span class="mono tx-note-pending" style="font-size:11px;display:inline-flex;align-items:center;gap:5px;"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>Sent to Owner</span>`;
           }
         } else if (url) {
-          action = `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" class="mono" style="color:#38bdf8;text-decoration:underline">${escapeHtml(shortHash(tx.tx_hash))}</a>`;
+          action = `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" class="mono" style="color:var(--sky);text-decoration:underline">${escapeHtml(shortHash(tx.tx_hash))}</a>`;
         } else {
-          action = `<span class="mono" style="color:#64748b">-</span>`;
+          action = `<span class="mono" style="color:var(--dim)">-</span>`;
         }
 
         return `<tr>
-        <td class="mono" style="color:#94a3b8;white-space:nowrap">${escapeHtml(formatTimeSAST(tx.ts))}</td>
+        <td class="mono" style="color:var(--muted);white-space:nowrap">${escapeHtml(formatTimeSAST(tx.ts))}</td>
         <td style="white-space:nowrap">${statusPillHtml(tx.status)}</td>
-        <td class="mono" style="text-transform:uppercase;color:#f1f5f9;white-space:nowrap">${escapeHtml(tx.resource)}</td>
-        <td class="mono" style="font-weight:700;color:#fff;white-space:nowrap">${escapeHtml(tx.amount)} RLUSD</td>
+        <td class="mono" style="text-transform:uppercase;color:var(--text);white-space:nowrap">${escapeHtml(tx.resource)}</td>
+        <td class="mono" style="font-weight:700;color:var(--text);white-space:nowrap">${escapeHtml(tx.amount)} RLUSD</td>
         <td style="max-width:440px">${note}</td>
         <td style="text-align:right;white-space:nowrap">${action}</td>
       </tr>`;
@@ -4536,14 +5812,18 @@
       }
 
       async function drainResource(r) {
+        showGlassLoader("Simulating Meter Drain...", `Draining ${r} level`);
         try {
           await fetch(`/api/demo/drain/${r}`, { method: "POST" });
         } catch (err) {
           console.error(`Failed to drain ${r}:`, err);
+        } finally {
+          hideGlassLoader();
         }
       }
 
       async function resetDemo() {
+        showGlassLoader("Resetting Demo...", "Refilling utility meters to 100%");
         try {
           const res = await fetch("/api/demo/reset", { method: "POST" });
           const data = await res.json();
@@ -4555,6 +5835,8 @@
           }
         } catch (err) {
           console.error("Failed to reset demo:", err);
+        } finally {
+          hideGlassLoader();
         }
       }
 
@@ -4579,6 +5861,12 @@
             badgeTextEl.textContent = data.cached
               ? `Ledger Proof (Cached • checked ${data.ageSeconds ?? 0}s ago)`
               : "Ledger Proof (Live XRPL Testnet)";
+          }
+
+          const balNum = Number(data.rlusdBalance);
+          if (Number.isFinite(balNum)) {
+            latestTreasuryBalance = balNum;
+            renderBudget();
           }
 
           if (balEl) {
@@ -4640,6 +5928,7 @@
           btn.disabled = true;
           btn.textContent = "Signing...";
         }
+        showGlassLoader("Signing XRPL Payment...", `Co-signing transaction #${id} on XRPL Testnet`);
         try {
           const res = await fetch(`/api/approve/${id}`, {
             method: "POST",
@@ -4674,6 +5963,7 @@
         } catch (err) {
           showBlockedBanner(`Owner approval failed: ${err.message}`, "blocked");
         } finally {
+          hideGlassLoader();
           if (btn?.isConnected && btn.textContent === "Signing...") {
             btn.disabled = false;
             btn.textContent = "Approve";
@@ -4687,6 +5977,7 @@
           btn.disabled = true;
           btn.textContent = "Rejecting...";
         }
+        showGlassLoader("Rejecting Request...", `Blocking transaction #${id} in Policy Service`);
         try {
           const res = await fetch(`/api/reject/${id}`, {
             method: "POST",
@@ -4715,10 +6006,126 @@
           }
         } catch (err) {
           showBlockedBanner(`Reject failed: ${err.message}`, "blocked");
+        } finally {
+          hideGlassLoader();
         }
       }
 
       function setWsBadge() {}
+
+      let currentFrozenState = false;
+
+      function syncFreezeUI(isFrozen) {
+        currentFrozenState = Boolean(isFrozen);
+        const banner = document.getElementById("frozen-banner");
+        const btn = document.getElementById("btn-owner-freeze");
+        if (banner) banner.classList.toggle("hidden", !currentFrozenState);
+        if (btn) {
+          btn.textContent = currentFrozenState
+            ? "▶️ Unfreeze Spending"
+            : "🧊 Freeze All Spend";
+          btn.className = currentFrozenState ? "btn btn-sky" : "btn btn-red";
+        }
+      }
+
+      async function toggleOwnerFreeze() {
+        showGlassLoader(
+          currentFrozenState ? "Resuming Spending..." : "Freezing All Spending...",
+          "Updating Policy Service & notifying Telegram",
+        );
+        try {
+          const res = await fetch("/api/freeze", {
+            method: "POST",
+            headers: authHeaders({ "Content-Type": "application/json" }),
+            body: JSON.stringify({ frozen: !currentFrozenState }),
+          });
+          const data = await res.json();
+          if (!res.ok || !data.ok) {
+            showToast({
+              title: "Freeze update failed",
+              subtitle: data.error || "Owner authorization required",
+              isError: true,
+            });
+            return;
+          }
+          if (data.policy) appState.policy = data.policy;
+          syncFreezeUI(data.frozen);
+          showToast({
+            title: data.frozen
+              ? "Emergency Freeze Activated"
+              : "Spending Resumed",
+            subtitle: data.frozen
+              ? "All autonomous and staff spending is paused immediately."
+              : "GridBot is active again within policy caps.",
+          });
+        } catch (err) {
+          showToast({
+            title: "Freeze request failed",
+            subtitle: err.message,
+            isError: true,
+          });
+        } finally {
+          hideGlassLoader();
+        }
+      }
+
+      async function loadTrustCenter() {
+        const summaryEl = document.getElementById("tc-ledger-summary");
+        const signersBody = document.getElementById("tc-signers-body");
+        const blockedBody = document.getElementById("tc-blocked-body");
+
+        try {
+          const res = await fetch("/api/trust-center");
+          const data = await res.json();
+          const lp = data.ledgerProof || {};
+
+          syncFreezeUI(data.policy?.frozen);
+
+          summaryEl.innerHTML = `
+            <div style="display:flex;flex-wrap:wrap;gap:16px;">
+              <span><strong>Treasury:</strong> <a href="${escapeHtml(lp.explorerAccountUrl || "#")}" target="_blank" rel="noopener noreferrer" style="color:var(--sky);">${escapeHtml(lp.treasuryAddress || "N/A")} ↗</a></span>
+              <span><strong>Master Key Disabled (lsfDisableMaster):</strong> ${lp.masterKeyDisabled ? '<span style="color:var(--green);">✅ YES (0x00100000)</span>' : '<span style="color:var(--red);">❌ NO</span>'}</span>
+              <span><strong>Required Quorum:</strong> <span style="color:var(--sky);font-weight:700;">${escapeHtml(String(lp.signerQuorum ?? 2))}</span></span>
+            </div>
+          `;
+
+          const roleDescriptions = {
+            agent: "Proposes routine top-ups only (cannot reach quorum 2 alone)",
+            policy: "Co-signs only if daily cap, per-tx cap, allowlist & freeze checks pass",
+            owner: "Human CFO override (weight 2 meets quorum alone)",
+          };
+
+          signersBody.innerHTML = (lp.signerEntries || [])
+            .map(
+              (s) => `
+              <tr>
+                <td style="text-transform:uppercase;font-weight:700;">${escapeHtml(s.role)}</td>
+                <td class="mono"><a href="https://testnet.xrpl.org/accounts/${encodeURIComponent(s.account)}" target="_blank" rel="noopener noreferrer" style="color:var(--sky);">${escapeHtml(s.account)} ↗</a></td>
+                <td style="font-weight:700;">${escapeHtml(String(s.weight))}</td>
+                <td style="color:var(--muted);">${escapeHtml(roleDescriptions[s.role] || "Authorized signer")}</td>
+              </tr>`,
+            )
+            .join("");
+
+          const blocked = data.recentBlocked || [];
+          blockedBody.innerHTML =
+            blocked.length === 0
+              ? `<tr><td colspan="4" style="text-align:center;color:var(--muted);padding:18px;">No blocked attempts recorded yet.</td></tr>`
+              : blocked
+                  .map(
+                    (b) => `
+                <tr>
+                  <td class="mono" style="color:var(--muted);">${escapeHtml(new Date(b.ts).toLocaleTimeString())}</td>
+                  <td style="text-transform:capitalize;">${escapeHtml(b.resource)}</td>
+                  <td class="mono">${escapeHtml(String(b.amount))} RLUSD</td>
+                  <td class="tx-note-blocked">${escapeHtml(b.ruleTriggered)}</td>
+                </tr>`,
+                  )
+                  .join("");
+        } catch (err) {
+          summaryEl.textContent = `Error loading Trust Center: ${err.message}`;
+        }
+      }
 
       function connectWebSocket() {
         const proto = window.location.protocol === "https:" ? "wss:" : "ws:";

@@ -15,6 +15,7 @@ const {
   getTx,
   proxyOwnerApprove,
   proxyOwnerReject,
+  proxyOwnerPolicy,
 } = require("./policy-client");
 const { getResource, listResources } = require("./resources");
 
@@ -25,6 +26,7 @@ const XRPL_EXPLORER_BASE = (
 const POLL_INTERVAL_MS = 1000;
 
 let pollTimer = null;
+let weeklyTimer = null;
 let pollInFlight = false;
 let lastUpdateId = 0;
 let onStateChangedCallback = null;
@@ -89,7 +91,7 @@ function cleanMd(val) {
 /**
  * Standard Owner Control Panel inline keyboard buttons shown in Telegram.
  */
-function getOwnerMenuInlineKeyboard() {
+function getOwnerMenuInlineKeyboard(isFrozen = false) {
   return {
     inline_keyboard: [
       [
@@ -102,6 +104,13 @@ function getOwnerMenuInlineKeyboard() {
           callback_data: "topup:electricity",
         },
         { text: "📶 Top Up LTE Data (3 RLUSD)", callback_data: "topup:data" },
+      ],
+      [
+        {
+          text: isFrozen ? "▶️ Unfreeze Spending" : "🧊 Freeze All Spending",
+          callback_data: isFrozen ? "freeze:off" : "freeze:on",
+        },
+        { text: "📅 Weekly Summary", callback_data: "menu:weekly" },
       ],
     ],
   };
@@ -238,15 +247,112 @@ async function sendOwnerControlMenu(
       `• *Remaining Budget:* ${remaining} RLUSD (Daily Cap: ${policy.daily_cap ?? 15} RLUSD)`,
       `• *Per-Payment Cap:* ${policy.per_tx_cap ?? 10} RLUSD`,
       `• *Pending Owner Approvals:* ${pendingList.length}`,
+      `• *Treasury Status:* ${policy.frozen ? "🧊 FROZEN" : "🟢 Active"}`,
       "",
       `👇 *Select an Owner action below:*`,
     ];
 
     await sendTelegramMessage(lines.join("\n"), {
-      reply_markup: getOwnerMenuInlineKeyboard(),
+      reply_markup: getOwnerMenuInlineKeyboard(Boolean(policy.frozen)),
     });
   } catch (err) {
     console.warn("[Telegram sendOwnerControlMenu] Warning:", err.message);
+  }
+}
+
+/**
+ * Builds and sends the 7-day Weekly Summary to the Owner's Telegram.
+ */
+async function sendWeeklySummary() {
+  const { enabled } = getConfig();
+  if (!enabled) return null;
+
+  try {
+    const state = await getState();
+    const allTx = Array.isArray(state?.transactions) ? state.transactions : [];
+    const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+
+    const weekTx = allTx.filter((t) => {
+      const ts = Date.parse(t.ts || "");
+      return Number.isFinite(ts) && ts >= sevenDaysAgo;
+    });
+
+    const paidTx = weekTx.filter(
+      (t) => t.status === "auto_approved" || t.status === "owner_approved",
+    );
+    const blockedTx = weekTx.filter((t) => t.status === "blocked");
+    const approvalNeededTx = weekTx.filter(
+      (t) => t.status === "pending_owner" || t.status === "owner_approved",
+    );
+
+    const totalRLUSD =
+      Math.round(
+        paidTx.reduce((sum, t) => sum + Number(t.amount || 0), 0) * 100,
+      ) / 100;
+
+    const headline = `This week: ${paidTx.length} top-ups paid, ${blockedTx.length} blocked, ${approvalNeededTx.length} needed your approval.`;
+
+    const lines = [
+      `📅 *GridBot Weekly Summary (Last 7 Days)*`,
+      `*${headline}*`,
+      "",
+      `• ✅ *Settled Top-Ups:* ${paidTx.length} (${totalRLUSD} RLUSD total)`,
+      `• 🛑 *Blocked by Policy:* ${blockedTx.length}`,
+      `• 🔐 *Escalated to Owner:* ${approvalNeededTx.length}`,
+      `• 🛡️ *Treasury Status:* ${state?.policy?.frozen ? "🧊 FROZEN" : "🟢 Active"}`,
+    ];
+
+    await sendTelegramMessage(lines.join("\n"), {
+      reply_markup: getOwnerMenuInlineKeyboard(Boolean(state?.policy?.frozen)),
+    });
+
+    return {
+      headline,
+      paid: paidTx.length,
+      blocked: blockedTx.length,
+      neededApproval: approvalNeededTx.length,
+      totalRLUSD,
+    };
+  } catch (err) {
+    console.warn("[Telegram sendWeeklySummary] Warning:", err.message);
+    return null;
+  }
+}
+
+/**
+ * Toggles Emergency Freeze from Telegram.
+ */
+async function handleTelegramFreeze(nextFrozen, { callbackQueryId } = {}) {
+  const { ok, data } = await proxyOwnerPolicy(
+    { frozen: nextFrozen },
+    ENV_OWNER_PASSCODE,
+  );
+
+  if (callbackQueryId) {
+    await callTelegramApi("answerCallbackQuery", {
+      callback_query_id: callbackQueryId,
+      text: ok
+        ? nextFrozen
+          ? "🧊 All spending FROZEN"
+          : "▶️ Spending UNFROZEN"
+        : "Failed to update freeze state",
+    });
+  }
+
+  if (ok) {
+    await sendTelegramMessage(
+      nextFrozen
+        ? `🧊 *EMERGENCY FREEZE ACTIVE*\nAll autonomous and staff utility spending is now paused immediately.`
+        : `▶️ *SPENDING RESUMED*\nGridBot is active again within your daily and per-payment caps.`,
+      { reply_markup: getOwnerMenuInlineKeyboard(nextFrozen) },
+    );
+    if (typeof onStateChangedCallback === "function") {
+      await onStateChangedCallback({
+        type: "freeze_toggled",
+        frozen: nextFrozen,
+        policy: data.policy,
+      });
+    }
   }
 }
 
@@ -784,13 +890,19 @@ async function processUpdate(update) {
         text:
           rawId === "pending"
             ? "Loading pending approvals..."
-            : "Refreshing status...",
+            : rawId === "weekly"
+              ? "Building weekly summary..."
+              : "Refreshing status...",
       });
       if (rawId === "pending") {
         await sendPendingApprovalsList();
+      } else if (rawId === "weekly") {
+        await sendWeeklySummary();
       } else {
         await sendOwnerControlMenu();
       }
+    } else if (action === "freeze") {
+      await handleTelegramFreeze(rawId === "on", { callbackQueryId: cb.id });
     } else if (
       action === "topup" &&
       (rawId === "electricity" || rawId === "data")
@@ -848,6 +960,21 @@ async function processUpdate(update) {
 
     if (text === "/pending") {
       await sendPendingApprovalsList();
+      return;
+    }
+
+    if (text === "/weekly") {
+      await sendWeeklySummary();
+      return;
+    }
+
+    if (text === "/freeze") {
+      await handleTelegramFreeze(true);
+      return;
+    }
+
+    if (text === "/unfreeze") {
+      await handleTelegramFreeze(false);
       return;
     }
 
@@ -998,6 +1125,11 @@ function initTelegram({ onStateChanged } = {}) {
     console.log(`[Telegram] Polling active (every 1s) for chat ID ${chatId}`);
   }
 
+  if (!weeklyTimer) {
+    weeklyTimer = setInterval(sendWeeklySummary, 7 * 24 * 60 * 60 * 1000);
+    if (typeof weeklyTimer.unref === "function") weeklyTimer.unref();
+  }
+
   return { stop: stopTelegram };
 }
 
@@ -1005,6 +1137,10 @@ function stopTelegram() {
   if (pollTimer) {
     clearInterval(pollTimer);
     pollTimer = null;
+  }
+  if (weeklyTimer) {
+    clearInterval(weeklyTimer);
+    weeklyTimer = null;
   }
 }
 
@@ -1015,6 +1151,7 @@ module.exports = {
   deleteTelegramMessage,
   getOwnerMenuInlineKeyboard,
   sendOwnerControlMenu,
+  sendWeeklySummary,
   notifyLowWarning,
   notifyPendingOwner,
   notifyAutoApproved,

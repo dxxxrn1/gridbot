@@ -602,6 +602,83 @@ app.post("/api/policy", requireOwner, async (req, res) => {
   }
 });
 
+/**
+ * POST /api/freeze -> Owner-only instant Freeze toggle.
+ */
+app.post("/api/freeze", requireOwner, async (req, res) => {
+  try {
+    const passcode = (req.headers["x-owner-passcode"] || "").trim();
+    const frozen = Boolean(req.body?.frozen);
+    const { status, ok, data } = await proxyOwnerPolicy({ frozen }, passcode);
+    if (!ok) {
+      return res.status(status).json({
+        ok: false,
+        error: data?.error || "Unauthorized or failed to toggle freeze",
+      });
+    }
+    await broadcastBudgetAndTxUpdate(
+      frozen ? "owner_freeze_on" : "owner_freeze_off",
+    );
+    await sendTelegramMessage(
+      frozen
+        ? "🧊 *GridBot Frozen from Dashboard:* All spending is paused immediately."
+        : "▶️ *GridBot Unfrozen from Dashboard:* Spending resumed within policy caps.",
+    ).catch(() => {});
+
+    res.json({
+      ok: true,
+      frozen: Boolean(data.policy?.frozen),
+      policy: data.policy,
+    });
+  } catch (err) {
+    console.error("[POST /api/freeze] Error:", err.message);
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
+/**
+ * GET /api/trust-center -> Read-only Trust Center endpoint (accessible to everyone).
+ */
+app.get("/api/trust-center", async (req, res) => {
+  try {
+    const [proof, state] = await Promise.all([
+      getXrplProof().catch((err) => ({ error: err.message })),
+      getState(),
+    ]);
+
+    const allTx = Array.isArray(state?.transactions) ? state.transactions : [];
+    const recentBlocked = allTx
+      .filter((tx) => tx.status === "blocked")
+      .slice(0, 10)
+      .map((tx) => ({
+        id: tx.id,
+        ts: tx.ts,
+        resource: tx.resource,
+        amount: tx.amount,
+        payee: tx.payee,
+        reason: tx.reason,
+        ruleTriggered: tx.blocked_reason || "Blocked by Policy Signer",
+      }));
+
+    res.json({
+      ok: true,
+      guarantee: "The AI can propose, it cannot pay alone",
+      enforcementModel: {
+        onChain:
+          "XRPL Testnet Multi-Sign (SignerQuorum: 2, Master Key Disabled via lsfDisableMaster)",
+        offChain:
+          "Isolated Policy Service (Port 4000) enforcing daily cap, per-payment cap, allowlist, velocity limit, and Owner Freeze",
+      },
+      policy: state?.policy || {},
+      ledgerProof: proof,
+      recentBlocked,
+    });
+  } catch (err) {
+    console.error("[GET /api/trust-center] Error:", err.message);
+    res.status(500).json({ ok: false, error: err.message });
+  }
+});
+
 app.post("/api/policy/start-demo-day", requireOwner, async (req, res) => {
   try {
     const passcode = req.headers["x-owner-passcode"] || "";
