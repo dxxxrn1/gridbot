@@ -2149,6 +2149,225 @@
       body.staff-mode .staff-header-actions {
         display: inline-flex;
       }
+
+      /* Solid flat surface palette (no border lines, gradients, or glow highlights) */
+      :root {
+        --bg: #080e12;
+        --sidebar-bg: #0c1519;
+        --panel: #101c21;
+        --card: #16242a;
+        --line: transparent;
+      }
+
+      body {
+        background: #080e12;
+      }
+
+      .splash-overlay,
+      .auth-overlay {
+        background: rgba(8, 14, 18, 0.96);
+      }
+
+      .sidebar {
+        background: #0c1519;
+        border-right: none;
+        box-shadow: none;
+      }
+
+      .workspace-header {
+        background: #0c1519;
+        border-bottom: none;
+      }
+
+      .panel,
+      .staff-card,
+      .table-card,
+      .splash-card,
+      .auth-card,
+      .demo-bar {
+        background: #101c21;
+        border: none;
+        box-shadow: none;
+      }
+
+      .gauge-card,
+      .budget-card,
+      .allow-card,
+      .stat,
+      .add-staff-card,
+      .terminal,
+      .vend-box,
+      .splash-check-row,
+      .outcome,
+      .user-card,
+      .user-card.owner,
+      .user-card.staff {
+        background: #16242a;
+        border: none;
+        box-shadow: none;
+      }
+
+      .user-card.owner .user-avatar {
+        background: #1f3a32;
+        color: #35d6a0;
+      }
+
+      .user-card.staff .user-avatar {
+        background: #1c2d35;
+        color: #73d5d0;
+      }
+
+      .nav-item {
+        border: none;
+      }
+
+      .nav-item:hover {
+        background: #16242a;
+        border: none;
+      }
+
+      .nav-item.active {
+        background: #18322b;
+        border: none;
+      }
+
+      .nav-icon,
+      .mobile-nav-icon {
+        background: #1c2d34;
+        box-shadow: none;
+      }
+
+      .nav-item:hover .nav-icon,
+      .nav-item.active .nav-icon,
+      .mobile-nav-item.active .mobile-nav-icon {
+        background: #23473c;
+        color: #35d6a0;
+        box-shadow: none;
+      }
+
+      .auth-logo-lg,
+      .logo {
+        background: #18322b;
+        border: none;
+        box-shadow: none;
+        color: #35d6a0;
+      }
+
+      .btn,
+      .side-btn,
+      .preset-chip,
+      .filter-btn,
+      .treasury,
+      .ws-pill,
+      .proof-refresh,
+      .tag,
+      .model,
+      .splash-badge,
+      .staff-role-badge.staff {
+        background: #16242a;
+        border: none;
+        box-shadow: none;
+      }
+
+      .btn:hover:not(:disabled),
+      .side-btn:hover,
+      .preset-chip:hover,
+      .filter-btn:hover,
+      .proof-refresh:hover:not(:disabled) {
+        background: #1e3138;
+        border: none;
+        transform: none;
+      }
+
+      .btn-sky {
+        background: #18322b;
+        color: #a7efd0;
+      }
+
+      .btn-sky:hover:not(:disabled) {
+        background: #21453b;
+      }
+
+      .btn-red {
+        background: #33181c;
+        color: #fca5a5;
+      }
+
+      .btn-red:hover:not(:disabled) {
+        background: #442026;
+      }
+
+      .filter-btn.active {
+        background: #1f4439;
+        color: #b9f4dc;
+      }
+
+      .auth-submit,
+      .btn-submit-req {
+        background: #1eb985;
+        border: none;
+        box-shadow: none;
+        color: #062219;
+      }
+
+      .auth-submit:hover:not(:disabled),
+      .btn-submit-req:hover:not(:disabled) {
+        background: #25cd94;
+        filter: none;
+        transform: none;
+        box-shadow: none;
+      }
+
+      .auth-input,
+      .staff-input,
+      .search-box,
+      .form-input {
+        background: #0a1317;
+        border: none;
+      }
+
+      .auth-input:focus,
+      .staff-input:focus,
+      .search-box:focus,
+      .form-input:focus {
+        background: #0d191f;
+        box-shadow: none;
+      }
+
+      .terminal-top,
+      .panel-footer,
+      .auth-footer,
+      .sidebar-brand,
+      .sidebar-footer,
+      th,
+      td {
+        border-color: transparent;
+      }
+
+      .table-wrap {
+        border: none;
+        background: #0d171c;
+      }
+
+      th {
+        background: #16242a;
+      }
+
+      tbody tr:hover {
+        background: #16242a;
+      }
+
+      .toast {
+        background: #16242a;
+        border: none;
+        border-left: 4px solid var(--green);
+        box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35);
+      }
+
+      .mobile-bottom-nav {
+        background: #0c1519;
+        border-top: none;
+      }
     </style>
   </head>
   <body>
@@ -3056,10 +3275,6 @@
             <div class="table-header">
               <div>
                 <h2 class="panel-title">Policy &amp; Treasury Controls</h2>
-                <p class="panel-sub">
-                  Enforced off-chain by the independent Policy Service; settled
-                  on XRPL via 2-of-2 Multi-Sig
-                </p>
               </div>
             </div>
 
