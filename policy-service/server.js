@@ -44,6 +44,7 @@ const TELEGRAM_ALLOWED_CHAT_IDS = new Set(
     process.env.TELEGRAM_ALLOWED_CHAT_IDS ||
       process.env.TELEGRAM_CHAT_ID ||
       process.env.OWNER_CHAT_ID ||
+      process.env.TELEGRAM_OWNER_USER_ID ||
       ''
   )
     .split(',')

@@ -49,10 +49,15 @@ function getConfig() {
   const chatId = (
     process.env.TELEGRAM_CHAT_ID ||
     process.env.OWNER_CHAT_ID ||
+    process.env.TELEGRAM_OWNER_USER_ID ||
     ""
   ).trim();
   const allowedChatIds = new Set(
-    String(process.env.TELEGRAM_ALLOWED_CHAT_IDS || chatId)
+    String(
+      process.env.TELEGRAM_ALLOWED_CHAT_IDS ||
+        process.env.TELEGRAM_OWNER_USER_ID ||
+        chatId
+    )
       .split(",")
       .map((s) => s.trim())
       .filter(Boolean),
