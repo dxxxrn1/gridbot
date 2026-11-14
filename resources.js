@@ -95,7 +95,7 @@ const data = {
   threshold: 5, // 5% low-balance threshold
   unitCostRLUSD: 3,
   capacityGb: 5, // Simulated capacity: a 3 RLUSD refill represents 5 GB
-  percentPerRLUSD: 33.3, // 1 RLUSD adds 33.3% (~3 RLUSD refills ~100%)
+  percentPerRLUSD: 33.34, // 1 RLUSD adds 33.34% (3 RLUSD refills 100%)
   isMock: true,
 
   getLevel() {

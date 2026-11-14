@@ -10,7 +10,7 @@ function resetResources() {
   monitor.resetLatch();
 }
 
-test('monitor ticks report levels without draining simulated meters', (t) => {
+test('monitor ticks drain simulated meters and report levels', (t) => {
   resetResources();
   const snapshots = [];
   const onLevel = (levels) => snapshots.push(levels);
@@ -22,8 +22,8 @@ test('monitor ticks report levels without draining simulated meters', (t) => {
 
   monitor.tick();
 
-  assert.equal(electricity.getLevel(), 100);
-  assert.equal(data.getLevel(), 100);
+  assert.ok(electricity.getLevel() < 100 && electricity.getLevel() > 95);
+  assert.ok(data.getLevel() < 100 && data.getLevel() > 95);
   assert.equal(snapshots.length, 1);
   assert.equal(snapshots[0].find((item) => item.id === 'electricity').capacityKwh, 60);
   assert.equal(snapshots[0].find((item) => item.id === 'data').capacityGb, 5);

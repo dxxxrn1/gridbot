@@ -51,7 +51,10 @@ function loadUtilityAddress() {
 function calcRlusdNeededToRefill(level, percentPerRLUSD) {
   const missing = Math.max(0, 100 - Number(level || 0));
   const rate = Number(percentPerRLUSD) || 20;
-  return Math.ceil((missing / rate) * 100) / 100;
+  if (rate >= 33) {
+    return Math.min(3, Math.ceil((missing / 33.34) * 100) / 100);
+  }
+  return Math.min(5, Math.ceil((missing / rate) * 100) / 100);
 }
 
 function quantizeResourceAmount(resource, amount) {
@@ -234,9 +237,20 @@ async function askAiDecision(context) {
         continue;
       }
 
-      const escalateDefault = context?.lowResource?.rlusdNeededToRefill || context?.lowResource?.unitCostRLUSD || 5;
+      const escalateDefault = context?.lowResource?.unitCostRLUSD || 5;
       const parsed = parseAndValidateDecision(content, context.lowResource.id, context.perTxCapRLUSD, escalateDefault);
       if (parsed && !parsed.fallback) {
+        const unitCost = parsed.resource === 'data' ? 3 : 5;
+        if (parsed.amount > context.perTxCapRLUSD && unitCost <= context.perTxCapRLUSD) {
+          parsed.amount = unitCost;
+        }
+        if (
+          parsed.decision === 'escalate' &&
+          parsed.amount <= context.perTxCapRLUSD &&
+          parsed.amount <= context.remainingDailyBudgetRLUSD
+        ) {
+          parsed.decision = 'buy';
+        }
         activeModelName = modelId;
         return parsed;
       }
@@ -484,10 +498,21 @@ async function handleLow(lowEventOrResourceId) {
       targetPlugin.getLevel(),
       targetPlugin.percentPerRLUSD
     );
-    const amountToRequest = quantizeResourceAmount(
+    let amountToRequest = quantizeResourceAmount(
       targetPlugin.id,
       proposal.amount > 0 ? proposal.amount : targetNeeded || targetPlugin.unitCostRLUSD,
     );
+    if (amountToRequest > perTxCap && targetPlugin.unitCostRLUSD <= perTxCap) {
+      amountToRequest = targetPlugin.unitCostRLUSD;
+      proposal.amount = amountToRequest;
+    }
+    if (
+      proposal.decision === 'escalate' &&
+      amountToRequest <= perTxCap &&
+      amountToRequest <= remainingDailyBudget
+    ) {
+      proposal.decision = 'buy';
+    }
 
     paymentResult = await requestPayment({
       resource: targetPlugin.id,
@@ -594,15 +619,15 @@ ELIGIBLE OPERATIONAL SKU CATALOG:
 STRICT RULES:
 1. Only approve legitimate cafe operational utility needs (prepaid electricity / Eskom / meter tokens / power, or router LTE internet / data bundles / wifi).
 2. If the staff member asks for anything non-operational (e.g. food, lunch, airtime for personal phone, cash transfer, salary advance, gambling, or unrelated items), return decision = "reject" and amount = 0.
-3. Match valid operational requests to the best-fitting SKU from the catalog above (if the staff asks for 15 RLUSD or bulk top-up, choose ELEC_BULK; if 10 RLUSD or 120 kWh, choose ELEC_LRG; if 9 RLUSD or 15GB weekly, choose DATA_WEEKLY; otherwise default to ELEC_STD for electricity or DATA_FAILOVER for data).
-4. If the selected SKU amount exceeds perTxCapRLUSD or remainingDailyBudgetRLUSD, still select that SKU and set decision = "escalate" so the Policy Service queues it for Owner approval.
+3. Match valid operational requests to the best-fitting option from the catalog above (if the staff asks for 15 RLUSD or bulk top-up, choose ELEC_BULK; if 10 RLUSD or 120 kWh, choose ELEC_LRG; if 9 RLUSD or 15GB weekly, choose DATA_WEEKLY; otherwise default to ELEC_STD for electricity or DATA_FAILOVER for data).
+4. If the selected amount exceeds perTxCapRLUSD or remainingDailyBudgetRLUSD, set decision = "escalate" so the Policy Service queues it for Owner approval. Do NOT mention internal SKU codes (like ELEC_BULK or ELEC_STD) in the "reason" field — use plain human language.
 5. Output STRICT JSON only:
 {
   "decision": "buy" | "escalate" | "reject",
   "sku": "ELEC_STD" | "ELEC_LRG" | "ELEC_BULK" | "DATA_FAILOVER" | "DATA_WEEKLY" | null,
   "resource": "electricity" | "data",
   "amount": number,
-  "reason": "one or two plain sentences explaining the operational match or rejection"
+  "reason": "one or two plain sentences explaining the operational match or rejection without internal SKU codes"
 }`;
 
 /**
@@ -619,7 +644,7 @@ function deterministicStaffFallback(requestText, perTxCap, remainingDailyBudget)
       sku: null,
       resource: 'electricity',
       amount: 0,
-      reason: 'Rejected: Request is for a non-operational personal expense outside the approved utility SKU catalog.',
+      reason: 'Rejected: Request is for a non-operational personal expense outside approved cafe utilities.',
     };
   }
 
@@ -658,7 +683,7 @@ function deterministicStaffFallback(requestText, perTxCap, remainingDailyBudget)
     sku: selectedSku.sku,
     resource: selectedSku.resource,
     amount: selectedSku.amount,
-    reason: `Matched staff request to ${selectedSku.sku} (${selectedSku.name}, ${selectedSku.amount} RLUSD).`,
+    reason: `Matched staff request to ${selectedSku.name} (${selectedSku.amount} RLUSD).`,
   };
 }
 
@@ -720,10 +745,16 @@ async function askAiStaffDecision(staffContext) {
           STAFF_SKU_CATALOG.find(
             (s) => s.resource === parsed.resource && s.amount === Number(parsed.amount)
           ) ||
-          (parsed.resource === 'data' ? STAFF_SKU_CATALOG[2] : STAFF_SKU_CATALOG[0]);
+          (parsed.resource === 'data'
+            ? STAFF_SKU_CATALOG.find((s) => s.sku === 'DATA_FAILOVER')
+            : STAFF_SKU_CATALOG[0]);
+
+        const isOverCap =
+          matchedSku.amount > perTxCapRLUSD ||
+          matchedSku.amount > remainingDailyBudgetRLUSD;
 
         return {
-          decision: parsed.decision === 'escalate' ? 'escalate' : 'buy',
+          decision: isOverCap ? 'escalate' : 'buy',
           sku: matchedSku.sku,
           skuName: matchedSku.name,
           resource: matchedSku.resource,

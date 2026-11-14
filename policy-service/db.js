@@ -203,28 +203,35 @@ function getRequesterFromReason(reason) {
   return text.match(/\[requester:([^\]]+)\]\s*$/)?.[1] || '';
 }
 
+let inMemoryFrozen = false;
+const BASELINE_DEMO_DAY_START = new Date().toISOString();
+let inMemoryDemoDayStartedAt = resolveInitialDemoDayStart();
+
+function resolveInitialDemoDayStart() {
+  const stored = localStore.policy?.demo_day_started_at;
+  if (stored && stored > BASELINE_DEMO_DAY_START) return stored;
+  return BASELINE_DEMO_DAY_START;
+}
+
+function resolveDemoDayStart(dbValue) {
+  const candidates = [
+    BASELINE_DEMO_DAY_START,
+    dbValue,
+    inMemoryDemoDayStartedAt,
+    localStore.policy?.demo_day_started_at,
+  ].filter(Boolean);
+  candidates.sort();
+  const latest = candidates[candidates.length - 1];
+  inMemoryDemoDayStartedAt = latest;
+  return latest;
+}
+
 async function expirePendingTransactions() {
-  const cutoffISO = new Date(Date.now() - 30 * 60 * 1000).toISOString();
+  const thirtyMinCutoff = new Date(Date.now() - 30 * 60 * 1000).toISOString();
+  const demoStart = resolveDemoDayStart(localStore.policy?.demo_day_started_at);
+  const cutoffISO =
+    demoStart && demoStart > thirtyMinCutoff ? demoStart : thirtyMinCutoff;
   const expiryReason = 'Owner approval request expired after 30 minutes';
-
-  if (supabase) {
-    const { data, error } = await supabase
-      .from('transactions')
-      .select('id')
-      .eq('status', 'pending_owner')
-      .lt('ts', cutoffISO);
-    if (error) throw new Error('Unable to verify pending request expiry');
-
-    for (const tx of data || []) {
-      const { error: updateError } = await supabase
-        .from('transactions')
-        .update({ status: 'expired', blocked_reason: expiryReason })
-        .eq('id', tx.id)
-        .eq('status', 'pending_owner');
-      if (updateError) throw new Error('Unable to expire an old owner request');
-    }
-    return;
-  }
 
   let changed = false;
   for (const tx of localStore.transactions) {
@@ -239,9 +246,26 @@ async function expirePendingTransactions() {
     }
   }
   if (changed) saveLocalStore(localStore);
-}
 
-let inMemoryFrozen = false;
+  if (supabase) {
+    try {
+      const { data, error } = await supabase
+        .from('transactions')
+        .select('id')
+        .eq('status', 'pending_owner')
+        .lt('ts', cutoffISO);
+      if (error) return;
+
+      for (const tx of data || []) {
+        await supabase
+          .from('transactions')
+          .update({ status: 'expired', blocked_reason: expiryReason })
+          .eq('id', tx.id)
+          .eq('status', 'pending_owner');
+      }
+    } catch (_) {}
+  }
+}
 
 /**
  * Fetches policy row (id = 1). Seeds default policy if missing.
@@ -258,6 +282,7 @@ async function getPolicy() {
     }
     return {
       ...localStore.policy,
+      demo_day_started_at: resolveDemoDayStart(localStore.policy.demo_day_started_at),
       frozen: localStore.policy.frozen !== undefined ? Boolean(localStore.policy.frozen) : inMemoryFrozen,
     };
   }
@@ -292,7 +317,7 @@ async function getPolicy() {
         daily_cap: Number(inserted.daily_cap),
         per_tx_cap: Number(inserted.per_tx_cap),
         allowed_payees: parseAllowedPayees(inserted.allowed_payees),
-        demo_day_started_at: inserted.demo_day_started_at || null,
+        demo_day_started_at: resolveDemoDayStart(inserted.demo_day_started_at),
         frozen: inserted.frozen !== undefined ? Boolean(inserted.frozen) : inMemoryFrozen,
       };
       localStore.policy = result;
@@ -318,7 +343,7 @@ async function getPolicy() {
           daily_cap: Number(synced.daily_cap),
           per_tx_cap: Number(synced.per_tx_cap),
           allowed_payees: parseAllowedPayees(synced.allowed_payees),
-          demo_day_started_at: synced.demo_day_started_at || null,
+          demo_day_started_at: resolveDemoDayStart(synced.demo_day_started_at),
           frozen: synced.frozen !== undefined ? Boolean(synced.frozen) : inMemoryFrozen,
         };
         localStore.policy = result;
@@ -333,7 +358,7 @@ async function getPolicy() {
       daily_cap: Number(data.daily_cap),
       per_tx_cap: Number(data.per_tx_cap),
       allowed_payees: currentAllowlist,
-      demo_day_started_at: data.demo_day_started_at || null,
+      demo_day_started_at: resolveDemoDayStart(data.demo_day_started_at),
       frozen: data.frozen !== undefined ? Boolean(data.frozen) : inMemoryFrozen,
     };
     localStore.policy = result;
@@ -347,6 +372,7 @@ async function getPolicy() {
     }
     return {
       ...localStore.policy,
+      demo_day_started_at: resolveDemoDayStart(localStore.policy.demo_day_started_at),
       frozen: localStore.policy.frozen !== undefined ? Boolean(localStore.policy.frozen) : inMemoryFrozen,
     };
   }
@@ -358,10 +384,16 @@ async function getPolicy() {
 async function updatePolicy(fields) {
   await getPolicy();
   const updatePayload = {};
-  if (fields.daily_cap !== undefined) updatePayload.daily_cap = Number(fields.daily_cap);
+  if (fields.daily_cap !== undefined) {
+    updatePayload.daily_cap = Number(fields.daily_cap);
+    const freshStart = new Date().toISOString();
+    inMemoryDemoDayStartedAt = freshStart;
+    updatePayload.demo_day_started_at = freshStart;
+  }
   if (fields.per_tx_cap !== undefined) updatePayload.per_tx_cap = Number(fields.per_tx_cap);
   if (fields.allowed_payees !== undefined) updatePayload.allowed_payees = fields.allowed_payees;
   if (fields.demo_day_started_at !== undefined) {
+    inMemoryDemoDayStartedAt = fields.demo_day_started_at;
     updatePayload.demo_day_started_at = fields.demo_day_started_at;
   }
   if (fields.frozen !== undefined) {
@@ -377,6 +409,7 @@ async function updatePolicy(fields) {
     allowed_payees: parseAllowedPayees(
       updatePayload.allowed_payees ?? localStore.policy.allowed_payees
     ),
+    demo_day_started_at: resolveDemoDayStart(updatePayload.demo_day_started_at),
     frozen: updatePayload.frozen !== undefined ? Boolean(updatePayload.frozen) : Boolean(inMemoryFrozen || localStore.policy.frozen),
   };
   saveLocalStore(localStore);
@@ -391,8 +424,13 @@ async function updatePolicy(fields) {
       .select()
       .single();
 
-    if (error && updatePayload.frozen !== undefined && /frozen/i.test(error.message)) {
-      delete updatePayload.frozen;
+    if (
+      error &&
+      (updatePayload.frozen !== undefined || updatePayload.demo_day_started_at !== undefined) &&
+      /frozen|demo_day_started_at/i.test(error.message)
+    ) {
+      if (/frozen/i.test(error.message)) delete updatePayload.frozen;
+      if (/demo_day_started_at/i.test(error.message)) delete updatePayload.demo_day_started_at;
       if (Object.keys(updatePayload).length > 0) {
         const retry = await supabase
           .from('policy')
@@ -403,7 +441,11 @@ async function updatePolicy(fields) {
         data = retry.data;
         error = retry.error;
       } else {
-        return { ...localStore.policy, frozen: inMemoryFrozen };
+        return {
+          ...localStore.policy,
+          demo_day_started_at: resolveDemoDayStart(localStore.policy.demo_day_started_at),
+          frozen: inMemoryFrozen,
+        };
       }
     }
 
@@ -414,7 +456,7 @@ async function updatePolicy(fields) {
       daily_cap: Number(data.daily_cap),
       per_tx_cap: Number(data.per_tx_cap),
       allowed_payees: parseAllowedPayees(data.allowed_payees),
-      demo_day_started_at: data.demo_day_started_at || localStore.policy.demo_day_started_at || null,
+      demo_day_started_at: resolveDemoDayStart(data.demo_day_started_at),
       frozen: data.frozen !== undefined ? Boolean(data.frozen) : inMemoryFrozen,
     };
     localStore.policy = synced;
@@ -429,36 +471,36 @@ async function updatePolicy(fields) {
 async function startNewDemoDay() {
   await getPolicy();
   const startedAt = new Date().toISOString();
-
-  if (supabase) {
-    const { data, error } = await supabase
-      .from('policy')
-      .update({ demo_day_started_at: startedAt })
-      .eq('id', 1)
-      .select()
-      .single();
-
-    if (error || !data) {
-      throw new Error(
-        'Unable to start a new demo day. Apply policy-service/migrations/002_demo_day_reset.sql first.'
-      );
-    }
-
-    usingLocalFallback = false;
-    localStore.policy = {
-      ...localStore.policy,
-      ...data,
-      daily_cap: Number(data.daily_cap),
-      per_tx_cap: Number(data.per_tx_cap),
-      allowed_payees: parseAllowedPayees(data.allowed_payees),
-      demo_day_started_at: data.demo_day_started_at || startedAt,
-    };
-    saveLocalStore(localStore);
-    return localStore.policy;
-  }
-
+  inMemoryDemoDayStartedAt = startedAt;
   localStore.policy.demo_day_started_at = startedAt;
   saveLocalStore(localStore);
+
+  if (supabase) {
+    try {
+      const { data, error } = await supabase
+        .from('policy')
+        .update({ demo_day_started_at: startedAt })
+        .eq('id', 1)
+        .select()
+        .single();
+
+      if (!error && data) {
+        usingLocalFallback = false;
+        localStore.policy = {
+          ...localStore.policy,
+          ...data,
+          daily_cap: Number(data.daily_cap),
+          per_tx_cap: Number(data.per_tx_cap),
+          allowed_payees: parseAllowedPayees(data.allowed_payees),
+          demo_day_started_at: resolveDemoDayStart(data.demo_day_started_at || startedAt),
+        };
+        saveLocalStore(localStore);
+      }
+    } catch (_) {
+      // Fallback to localStore.policy.demo_day_started_at
+    }
+  }
+
   return localStore.policy;
 }
 
@@ -514,7 +556,10 @@ async function findRecentPendingDuplicate(
   requestedBy = '',
 ) {
   await expirePendingTransactions();
-  const cutoffISO = new Date(Date.now() - withinSeconds * 1000).toISOString();
+  const windowCutoffISO = new Date(Date.now() - withinSeconds * 1000).toISOString();
+  const demoStart = resolveDemoDayStart(localStore.policy?.demo_day_started_at);
+  const cutoffISO =
+    demoStart && demoStart > windowCutoffISO ? demoStart : windowCutoffISO;
 
   if (supabase) {
     const { data, error } = await supabase

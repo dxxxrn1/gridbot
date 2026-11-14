@@ -3861,15 +3861,15 @@
 
       /* Modern focus state */
       :focus-visible {
-        outline: 2px solid #8B5CF6 !important;
+        outline: 2px solid #5d4eff !important;
         outline-offset: 2px !important;
       }
 
-      /* Layout: Sidebar (DreamsAI Style) */
+      /* Layout: Sidebar (Spectrum Gradient Style) */
       .sidebar {
         width: 255px !important;
         background: #FFFFFF !important;
-        border-right: 1px solid #F1F5F9 !important;
+        border-right: 1px solid #E2E8F0 !important;
         box-shadow: 2px 0 16px rgba(15, 23, 42, 0.03) !important;
       }
 
@@ -3887,9 +3887,12 @@
       }
 
       .brand-sub {
-        color: #7C3AED !important;
+        background: linear-gradient(90deg, #5d4eff 0%, #52a4ff 50%, #00c4cc 100%) !important;
+        -webkit-background-clip: text !important;
+        -webkit-text-fill-color: transparent !important;
+        color: #5d4eff !important;
         font-size: 10px !important;
-        font-weight: 700 !important;
+        font-weight: 800 !important;
         letter-spacing: 0.08em !important;
       }
 
@@ -3922,20 +3925,20 @@
       }
 
       .nav-item:hover {
-        background: #F5F3FF !important;
-        color: #7C3AED !important;
+        background: rgba(82, 164, 255, 0.1) !important;
+        color: #5d4eff !important;
       }
 
       .nav-item:hover .nav-icon svg {
-        stroke: #7C3AED !important;
+        stroke: #5d4eff !important;
       }
 
-      /* DreamsAI Active Navigation Item: Radiant Purple Gradient */
+      /* Active Navigation Item: Palette Gradient (#5d4eff -> #52a4ff -> #00f9ff) */
       .nav-item.active {
-        background: linear-gradient(135deg, #7C3AED 0%, #A855F7 100%) !important;
+        background: linear-gradient(135deg, #5d4eff 0%, #52a4ff 55%, #00f9ff 100%) !important;
         color: #FFFFFF !important;
         font-weight: 700 !important;
-        box-shadow: 0 4px 14px rgba(124, 58, 237, 0.35) !important;
+        box-shadow: 0 4px 16px rgba(93, 78, 255, 0.32) !important;
       }
 
       .nav-item.active .nav-icon svg {
@@ -3960,20 +3963,20 @@
 
       .user-card {
         background: #F8FAFC !important;
-        border: 1px solid #F1F5F9 !important;
+        border: 1px solid #E2E8F0 !important;
         border-radius: 12px !important;
         padding: 10px 12px !important;
       }
 
       .user-avatar {
-        background: linear-gradient(135deg, #EDE9FE 0%, #F5F3FF 100%) !important;
-        color: #7C3AED !important;
-        border: 1px solid #DDD6FE !important;
+        background: linear-gradient(135deg, rgba(93, 78, 255, 0.14) 0%, rgba(0, 249, 255, 0.18) 100%) !important;
+        color: #5d4eff !important;
+        border: 1px solid rgba(82, 164, 255, 0.35) !important;
         border-radius: 10px !important;
       }
 
       .user-avatar svg {
-        stroke: #7C3AED !important;
+        stroke: #5d4eff !important;
       }
 
       .user-name {
@@ -4000,9 +4003,9 @@
       }
 
       .side-btn:hover {
-        background: #F5F3FF !important;
-        color: #7C3AED !important;
-        border-color: #DDD6FE !important;
+        background: rgba(82, 164, 255, 0.12) !important;
+        color: #5d4eff !important;
+        border-color: rgba(93, 78, 255, 0.3) !important;
       }
 
       .side-btn.logout:hover {
@@ -4011,16 +4014,17 @@
         border-color: #FECACA !important;
       }
 
-      /* Layout: Workspace & Top Bar (DreamsAI Style) */
+      /* Layout: Workspace & Top Bar */
       .workspace {
-        background: #F8FAFC !important;
+        background: linear-gradient(145deg, #F4F7FF 0%, #F0FDFA 55%, #F2FDF4 100%) !important;
       }
 
       .workspace-header {
-        background: #FFFFFF !important;
-        border-bottom: 1px solid #F1F5F9 !important;
+        background: rgba(255, 255, 255, 0.92) !important;
+        backdrop-filter: blur(10px) !important;
+        border-bottom: 1px solid #E2E8F0 !important;
         box-shadow: 0 1px 4px rgba(15, 23, 42, 0.03) !important;
-        padding: 14px 28px !important;
+        padding: 12px 24px !important;
         display: flex !important;
         align-items: center !important;
         justify-content: space-between !important;
@@ -4033,7 +4037,7 @@
         font-weight: 700 !important;
       }
 
-      /* DreamsAI Search Pill in Header */
+      /* Search Pill in Header */
       .header-search-wrap {
         display: flex !important;
         align-items: center !important;
@@ -4048,7 +4052,7 @@
       }
 
       .header-search-wrap:hover {
-        border-color: #CBD5E1 !important;
+        border-color: #52a4ff !important;
         background: #FFFFFF !important;
       }
 
@@ -4075,23 +4079,23 @@
       }
 
       .treasury {
-        background: #F5F3FF !important;
-        border: 1px solid #DDD6FE !important;
+        background: linear-gradient(135deg, rgba(93, 78, 255, 0.08) 0%, rgba(0, 249, 255, 0.12) 100%) !important;
+        border: 1px solid rgba(82, 164, 255, 0.35) !important;
         border-radius: 9999px !important;
         padding: 6px 14px !important;
       }
 
       .treasury-label {
-        color: #7C3AED !important;
+        color: #5d4eff !important;
         font-size: 11px !important;
-        font-weight: 700 !important;
+        font-weight: 800 !important;
         margin-right: 4px !important;
       }
 
       #treasuryAddressLink {
-        color: #6D28D9 !important;
+        color: #0369A1 !important;
         font-size: 12px !important;
-        font-weight: 600 !important;
+        font-weight: 700 !important;
         text-decoration: none !important;
       }
 
@@ -4099,23 +4103,23 @@
         text-decoration: underline !important;
       }
 
-      /* DreamsAI Action Gradient Pill */
+      /* Palette Gradient Action Pill (#5d4eff -> #52a4ff -> #00f9ff -> #50ff7f) */
       .btn-sky, .header-menu-btn {
-        background: linear-gradient(135deg, #8B5CF6 0%, #D946EF 100%) !important;
+        background: linear-gradient(135deg, #5d4eff 0%, #52a4ff 45%, #00d4ff 100%) !important;
         color: #FFFFFF !important;
         border: none !important;
         border-radius: 9999px !important;
         font-weight: 700 !important;
         font-size: 12.5px !important;
         padding: 8px 18px !important;
-        box-shadow: 0 4px 14px rgba(139, 92, 246, 0.3) !important;
+        box-shadow: 0 4px 14px rgba(93, 78, 255, 0.28) !important;
         transition: all 0.18s ease !important;
         cursor: pointer !important;
       }
 
       .btn-sky:hover, .header-menu-btn:hover {
         transform: translateY(-1px) !important;
-        box-shadow: 0 6px 18px rgba(139, 92, 246, 0.4) !important;
+        box-shadow: 0 6px 20px rgba(82, 164, 255, 0.42) !important;
       }
 
       .btn-red {
@@ -4135,7 +4139,7 @@
 
       .header-menu-dropdown {
         background: #FFFFFF !important;
-        border: 1px solid #F1F5F9 !important;
+        border: 1px solid #E2E8F0 !important;
         border-radius: 14px !important;
         box-shadow: 0 12px 36px rgba(15, 23, 42, 0.08) !important;
         padding: 8px !important;
@@ -4150,512 +4154,320 @@
       }
 
       .header-menu-item:hover {
-        background: #F5F3FF !important;
-        color: #7C3AED !important;
+        background: rgba(82, 164, 255, 0.1) !important;
+        color: #5d4eff !important;
       }
 
-      /* Full-width layout for dashboard sections */
-      #view-dashboard > .grid {
-        display: flex !important;
-        flex-direction: column !important;
-        gap: 20px !important;
-        grid-template-columns: unset !important;
-        grid-template-areas: unset !important;
+      /* ===== ONE-PAGE ADMIN BENTO GRID LAYOUT ===== */
+      .tab-view.hidden,
+      #view-dashboard.hidden,
+      #view-dashboard.tab-view.hidden,
+      .dreams-hero-banner.hidden,
+      .dashboard-recent-tx-card.hidden {
+        display: none !important;
       }
 
-      #view-dashboard > .grid > .panel {
-        grid-column: unset !important;
-        grid-area: unset !important;
-      }
-
-      @media (min-width: 1200px) {
-        #view-dashboard > .grid {
+      @media (min-width: 769px) {
+        #view-dashboard.tab-view:not(.hidden) {
+          padding: 14px 20px 16px !important;
+          min-height: calc(100vh - 68px) !important;
           display: flex !important;
           flex-direction: column !important;
         }
+      }
+
+      #view-dashboard > .grid.dashboard-bento-grid {
+        display: grid !important;
+        grid-template-columns: minmax(0, 1.48fr) minmax(320px, 1fr) !important;
+        grid-template-areas: none !important;
+        grid-template-rows: minmax(0, 1fr) !important;
+        gap: 14px !important;
+        align-items: stretch !important;
+        flex: 1 !important;
+        min-height: 0 !important;
+        height: 100% !important;
+        margin: 0 !important;
+      }
+
+      #view-dashboard > .grid.dashboard-bento-grid > .bento-left-col {
+        grid-column: 1 / 2 !important;
+        grid-row: 1 !important;
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 14px !important;
+        min-width: 0 !important;
+        min-height: 0 !important;
+        height: 100% !important;
+      }
+
+      #view-dashboard > .grid.dashboard-bento-grid > .bento-right-col {
+        grid-column: 2 / 3 !important;
+        grid-row: 1 !important;
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 0 !important;
+        min-width: 0 !important;
+        min-height: 0 !important;
+        height: 100% !important;
+        background: #FFFFFF !important;
+        border: 1px solid #E2E8F0 !important;
+        border-radius: 20px !important;
+        box-shadow: 0 4px 20px rgba(15, 23, 42, 0.04) !important;
+        overflow: hidden !important;
       }
 
       /* General Panel & Card Styling */
       .panel, .staff-card, .table-card, .demo-bar,
       body.light-theme .panel, body.light-theme .staff-card, body.light-theme .table-card {
         background: #FFFFFF !important;
-        border: 1px solid #F1F5F9 !important;
+        border: 1px solid #E2E8F0 !important;
         border-radius: 18px !important;
         box-shadow: 0 4px 20px rgba(15, 23, 42, 0.03) !important;
       }
 
       .panel-header {
         border-bottom: 1px solid #F1F5F9 !important;
-        padding-bottom: 14px !important;
-        margin-bottom: 18px !important;
+        padding-bottom: 10px !important;
+        margin-bottom: 12px !important;
       }
 
       .panel-sub {
         color: #64748B !important;
-        font-size: 12.5px !important;
+        font-size: 12px !important;
       }
 
-      .panel-footer {
-        color: #94A3B8 !important;
-        font-size: 11.5px !important;
-        border-top: 1px solid #F1F5F9 !important;
-        padding-top: 12px !important;
-        margin-top: 16px !important;
-      }
-
-      /* ===== DREAMSAI VIBRANT HERO BANNER ===== */
-      .dreams-hero-banner {
-        background: linear-gradient(135deg, #6B21A8 0%, #9333EA 28%, #C026D3 65%, #E11D48 100%) !important;
-        border-radius: 20px !important;
-        padding: 30px 36px !important;
-        color: #FFFFFF !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: space-between !important;
-        gap: 24px !important;
-        margin-bottom: 20px !important;
-        box-shadow: 0 12px 36px rgba(147, 51, 234, 0.28) !important;
-        position: relative !important;
-        overflow: hidden !important;
-      }
-
-      .dreams-hero-content {
-        max-width: 620px !important;
-        z-index: 2 !important;
-      }
-
-      .dreams-hero-badge {
-        display: inline-flex !important;
-        align-items: center !important;
-        gap: 6px !important;
-        background: rgba(255, 255, 255, 0.18) !important;
-        backdrop-filter: blur(8px) !important;
-        color: #FFFFFF !important;
-        font-size: 11px !important;
-        font-weight: 700 !important;
-        letter-spacing: 0.04em !important;
-        text-transform: uppercase !important;
-        padding: 4px 12px !important;
-        border-radius: 9999px !important;
-        margin-bottom: 12px !important;
-      }
-
-      .dreams-hero-title {
-        color: #FFFFFF !important;
-        font-size: clamp(22px, 2.4vw, 30px) !important;
-        font-weight: 800 !important;
-        letter-spacing: -0.02em !important;
-        margin-bottom: 8px !important;
-      }
-
-      .dreams-hero-sub {
-        color: rgba(255, 255, 255, 0.88) !important;
-        font-size: 13.5px !important;
-        line-height: 1.55 !important;
-        margin-bottom: 20px !important;
-      }
-
-      .dreams-hero-actions {
-        display: flex !important;
-        gap: 12px !important;
-        flex-wrap: wrap !important;
-      }
-
-      .dreams-hero-btn {
-        display: inline-flex !important;
-        align-items: center !important;
-        gap: 8px !important;
-        padding: 9px 18px !important;
-        border-radius: 9999px !important;
-        font-size: 13px !important;
-        font-weight: 700 !important;
-        cursor: pointer !important;
-        transition: all 0.18s ease !important;
+      /* ---- 1. TOP-LEFT 3 KPI NUMBER CARDS (Reference Bento Format) ---- */
+      #dailyBudgetPanel.dashboard-budget-panel {
+        background: transparent !important;
         border: none !important;
-      }
-
-      .dreams-hero-btn.primary {
-        background: #FFFFFF !important;
-        color: #7C3AED !important;
-        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.14) !important;
-      }
-
-      .dreams-hero-btn.primary:hover {
-        transform: translateY(-1px) !important;
-        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2) !important;
-      }
-
-      .dreams-hero-btn.secondary {
-        background: rgba(255, 255, 255, 0.18) !important;
-        backdrop-filter: blur(10px) !important;
-        color: #FFFFFF !important;
-        border: 1px solid rgba(255, 255, 255, 0.35) !important;
-      }
-
-      .dreams-hero-btn.secondary:hover {
-        background: rgba(255, 255, 255, 0.28) !important;
-        transform: translateY(-1px) !important;
-      }
-
-      .dreams-hero-art {
-        z-index: 2 !important;
-        display: flex !important;
-        align-items: center !important;
-      }
-
-      .dreams-card-glass {
-        background: rgba(255, 255, 255, 0.15) !important;
-        backdrop-filter: blur(16px) !important;
-        border: 1px solid rgba(255, 255, 255, 0.3) !important;
-        border-radius: 16px !important;
-        padding: 14px 18px !important;
-        display: flex !important;
-        align-items: center !important;
-        gap: 14px !important;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15) !important;
-      }
-
-      .dreams-ai-avatar {
-        width: 44px !important;
-        height: 44px !important;
-        border-radius: 12px !important;
-        background: linear-gradient(135deg, #7C3AED, #C026D3) !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        box-shadow: 0 4px 12px rgba(124, 58, 237, 0.4) !important;
-      }
-
-      .dreams-glass-info strong {
-        display: block !important;
-        color: #FFFFFF !important;
-        font-size: 13.5px !important;
-        font-weight: 700 !important;
-      }
-
-      .dreams-glass-info span {
-        display: block !important;
-        color: rgba(255, 255, 255, 0.8) !important;
-        font-size: 11px !important;
-      }
-
-      .dreams-live-indicator {
-        display: inline-flex !important;
-        align-items: center !important;
-        gap: 5px !important;
-        background: rgba(16, 185, 129, 0.25) !important;
-        border: 1px solid rgba(16, 185, 129, 0.5) !important;
-        color: #FFFFFF !important;
-        font-size: 11px !important;
-        font-weight: 600 !important;
-        padding: 3px 8px !important;
-        border-radius: 9999px !important;
-      }
-
-      .live-dot {
-        width: 6px !important;
-        height: 6px !important;
-        border-radius: 50% !important;
-        background: #10B981 !important;
-        box-shadow: 0 0 8px #10B981 !important;
-      }
-
-      /* ---- 1. DAILY BUDGET: 5 PASTEL GRADIENT-TINTED TILES (DreamsAI Style) ---- */
-      .dashboard-budget-panel {
-        background: #FFFFFF !important;
-        border: 1px solid #F1F5F9 !important;
-        border-radius: 18px !important;
-        box-shadow: 0 4px 20px rgba(15, 23, 42, 0.03) !important;
-        padding: 24px !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
       }
 
       .dashboard-budget-metrics,
       .dashboard-budget-panel .dashboard-budget-metrics {
         display: grid !important;
-        grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
-        gap: 16px !important;
-        margin-bottom: 16px !important;
+        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+        gap: 14px !important;
+        margin: 0 !important;
       }
 
       .dashboard-budget-metric {
-        border-radius: 16px !important;
-        padding: 18px 20px !important;
-        box-shadow: 0 2px 10px rgba(15, 23, 42, 0.03) !important;
-        border: 1px solid #F1F5F9 !important;
-        transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease !important;
+        grid-column: span 1 !important;
+        border-radius: 18px !important;
+        padding: 16px 18px !important;
+        box-shadow: 0 6px 20px rgba(93, 78, 255, 0.06) !important;
+        border: 1px solid rgba(82, 164, 255, 0.28) !important;
+        background: #FFFFFF !important;
+        transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease !important;
         display: flex !important;
         flex-direction: column !important;
+        justify-content: space-between !important;
+        min-height: 112px !important;
+        position: relative !important;
+        overflow: hidden !important;
+      }
+
+      .dashboard-budget-metric::before {
+        content: "" !important;
+        position: absolute !important;
+        top: 0 !important;
+        left: 0 !important;
+        right: 0 !important;
+        height: 4px !important;
+        background: linear-gradient(90deg, #5d4eff 0%, #52a4ff 25%, #00f9ff 50%, #50ff7f 75%, #44ff32 100%) !important;
       }
 
       .dashboard-budget-metric:hover {
         transform: translateY(-2px) !important;
-        box-shadow: 0 8px 24px rgba(124, 58, 237, 0.08) !important;
+        box-shadow: 0 10px 26px rgba(82, 164, 255, 0.16) !important;
       }
 
-      /* Pastel Gradient Tints */
       .dashboard-budget-metric.is-primary {
-        grid-column: span 2 !important;
-        min-height: 116px !important;
-        background: linear-gradient(145deg, #FAF5FF 0%, #FFFFFF 100%) !important;
-        border-color: #EDE9FE !important;
+        background: linear-gradient(145deg, rgba(93, 78, 255, 0.09) 0%, rgba(82, 164, 255, 0.05) 55%, #FFFFFF 100%) !important;
+        border-color: rgba(93, 78, 255, 0.32) !important;
       }
       .dashboard-budget-metric.is-daily {
-        grid-column: span 2 !important;
-        min-height: 116px !important;
-        background: linear-gradient(145deg, #F0F9FF 0%, #FFFFFF 100%) !important;
-        border-color: #E0F2FE !important;
+        background: linear-gradient(145deg, rgba(82, 164, 255, 0.11) 0%, rgba(0, 249, 255, 0.07) 55%, #FFFFFF 100%) !important;
+        border-color: rgba(82, 164, 255, 0.36) !important;
       }
       .dashboard-budget-metric.is-spent {
-        grid-column: span 2 !important;
-        min-height: 116px !important;
-        background: linear-gradient(145deg, #FFFBEB 0%, #FFFFFF 100%) !important;
-        border-color: #FEF3C7 !important;
-      }
-      .dashboard-budget-metric.is-treasury {
-        grid-column: span 3 !important;
-        min-height: 104px !important;
-        background: linear-gradient(145deg, #ECFDF5 0%, #FFFFFF 100%) !important;
-        border-color: #D1FAE5 !important;
-      }
-      .dashboard-budget-metric.is-limit {
-        grid-column: span 3 !important;
-        min-height: 104px !important;
-        background: linear-gradient(145deg, #F8FAFC 0%, #FFFFFF 100%) !important;
-        border-color: #E2E8F0 !important;
+        background: linear-gradient(145deg, rgba(0, 249, 255, 0.11) 0%, rgba(80, 255, 127, 0.09) 55%, #FFFFFF 100%) !important;
+        border-color: rgba(80, 255, 127, 0.45) !important;
       }
 
       .metric-top {
         display: flex !important;
         align-items: center !important;
         justify-content: space-between !important;
+        gap: 8px !important;
         margin-bottom: 12px !important;
       }
 
+      .metric-head-left {
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 8px !important;
+        min-width: 0 !important;
+      }
+
       .metric-icon-wrap {
-        width: 38px !important;
-        height: 38px !important;
-        border-radius: 12px !important;
-        display: flex !important;
+        width: 28px !important;
+        height: 28px !important;
+        border-radius: 8px !important;
+        display: inline-flex !important;
         align-items: center !important;
         justify-content: center !important;
+        flex-shrink: 0 !important;
       }
 
       .metric-icon-wrap.violet {
-        background: #EDE9FE !important;
-        color: #7C3AED !important;
+        background: rgba(93, 78, 255, 0.14) !important;
+        color: #5d4eff !important;
       }
       .metric-icon-wrap.blue {
-        background: #E0F2FE !important;
+        background: rgba(82, 164, 255, 0.18) !important;
         color: #0284C7 !important;
       }
       .metric-icon-wrap.amber {
-        background: #FEF3C7 !important;
-        color: #D97706 !important;
-      }
-      .metric-icon-wrap.green {
-        background: #D1FAE5 !important;
+        background: rgba(80, 255, 127, 0.22) !important;
         color: #059669 !important;
-      }
-      .metric-icon-wrap.slate {
-        background: #F1F5F9 !important;
-        color: #475569 !important;
-      }
-
-      .dreams-badge {
-        font-size: 11px !important;
-        font-weight: 700 !important;
-        padding: 3px 8px !important;
-        border-radius: 6px !important;
-      }
-      .dreams-badge.green {
-        background: #ECFDF5 !important;
-        color: #10B981 !important;
-      }
-      .dreams-badge.blue {
-        background: #EFF6FF !important;
-        color: #3B82F6 !important;
-      }
-      .dreams-badge.amber {
-        background: #FFFBEB !important;
-        color: #F59E0B !important;
-      }
-      .dreams-badge.slate {
-        background: #F1F5F9 !important;
-        color: #64748B !important;
       }
 
       .metric-label {
-        color: #64748B !important;
-        font-size: 12px !important;
-        font-weight: 600 !important;
-        text-transform: capitalize !important;
-        margin-bottom: 4px !important;
+        color: #334155 !important;
+        font-size: 12.5px !important;
+        font-weight: 700 !important;
+        margin: 0 !important;
+        white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
+      }
+
+      .metric-arrow-btn,
+      #editCapsBtn.metric-arrow-btn {
+        width: 28px !important;
+        height: 28px !important;
+        min-height: 28px !important;
+        padding: 0 !important;
+        border-radius: 9999px !important;
+        background: rgba(255, 255, 255, 0.92) !important;
+        border: 1px solid rgba(82, 164, 255, 0.38) !important;
+        color: #5d4eff !important;
+        font-size: 13px !important;
+        font-weight: 700 !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        cursor: pointer !important;
+        flex-shrink: 0 !important;
+        transition: all 0.16s ease !important;
+      }
+
+      .metric-arrow-btn:hover,
+      #editCapsBtn.metric-arrow-btn:hover {
+        background: linear-gradient(135deg, #5d4eff 0%, #52a4ff 50%, #00f9ff 100%) !important;
+        border-color: transparent !important;
+        color: #FFFFFF !important;
+        transform: translateY(-1px) !important;
+      }
+
+      .metric-value-row {
+        display: flex !important;
+        align-items: center !important;
+        gap: 10px !important;
+        flex-wrap: wrap !important;
       }
 
       .dashboard-budget-metric strong {
         color: #0F172A !important;
-        font-size: 24px !important;
+        font-size: clamp(22px, 2vw, 29px) !important;
         font-weight: 800 !important;
-        letter-spacing: -0.02em !important;
+        letter-spacing: -0.03em !important;
+        line-height: 1.1 !important;
       }
 
-      .dashboard-budget-metric small {
-        color: #94A3B8 !important;
+      #view-dashboard .dreams-badge,
+      .dreams-badge {
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 4px !important;
         font-size: 11px !important;
-        margin-top: 4px !important;
-      }
-
-      #editCapsBtn {
-        background: #F5F3FF !important;
-        border: 1px solid #DDD6FE !important;
-        color: #7C3AED !important;
+        font-weight: 800 !important;
+        padding: 4px 10px !important;
         border-radius: 9999px !important;
-        font-weight: 700 !important;
-        padding: 4px 12px !important;
-        font-size: 11px !important;
-        transition: all 0.18s ease !important;
+        line-height: 1.1 !important;
+        white-space: nowrap !important;
+      }
+      #view-dashboard .dreams-badge,
+      #view-dashboard .dreams-badge span,
+      .dreams-badge,
+      .dreams-badge span {
+        font-weight: 800 !important;
+      }
+      #view-dashboard .dreams-badge.green,
+      #view-dashboard .dreams-badge.green span,
+      .dreams-badge.green,
+      .dreams-badge.green span {
+        background: linear-gradient(135deg, #50ff7f 0%, #44ff32 100%) !important;
+        color: #052E16 !important;
+      }
+      #view-dashboard .dreams-badge.green,
+      .dreams-badge.green {
+        box-shadow: 0 2px 10px rgba(68, 255, 50, 0.28) !important;
+      }
+      #view-dashboard .dreams-badge.blue,
+      #view-dashboard .dreams-badge.blue span,
+      .dreams-badge.blue,
+      .dreams-badge.blue span {
+        background: linear-gradient(135deg, #5d4eff 0%, #52a4ff 100%) !important;
+        color: #FFFFFF !important;
+      }
+      #view-dashboard .dreams-badge.blue,
+      .dreams-badge.blue {
+        box-shadow: 0 2px 10px rgba(93, 78, 255, 0.25) !important;
+      }
+      #view-dashboard .dreams-badge.amber,
+      #view-dashboard .dreams-badge.amber span,
+      .dreams-badge.amber,
+      .dreams-badge.amber span {
+        background: linear-gradient(135deg, #00f9ff 0%, #50ff7f 100%) !important;
+        color: #042F2E !important;
+      }
+      #view-dashboard .dreams-badge.amber,
+      .dreams-badge.amber {
+        box-shadow: 0 2px 10px rgba(0, 249, 255, 0.28) !important;
+      }
+      #view-dashboard .dreams-badge span,
+      .dreams-badge span {
+        background: transparent !important;
       }
 
-      #editCapsBtn:hover {
-        background: #EDE9FE !important;
+      .dashboard-budget-metric small.metric-sub {
+        display: none !important;
       }
 
-      .allow-card {
-        background: #F8FAFC !important;
-        border: 1px solid #F1F5F9 !important;
-        border-radius: 12px !important;
-        padding: 14px 18px !important;
-        margin-top: 14px !important;
-      }
-
-      .allow-head span {
-        color: #64748B !important;
-        font-size: 11px !important;
-        font-weight: 700 !important;
-        text-transform: uppercase !important;
-        letter-spacing: 0.04em !important;
-      }
-
-      #allowlistContainer {
-        color: #334155 !important;
-        font-family: "Roboto Mono", monospace !important;
-        font-size: 12px !important;
-      }
-
-      /* ---- 2. AGENT BRAIN: Flagship Analytics Panel (DreamsAI Style) ---- */
-      #agentBrainPanel {
-        width: 100% !important;
+      /* ---- 2. TWO DIALS DIRECTLY UNDER THE 3 NUMBERS ---- */
+      #resourceMonitorPanel {
         background: #FFFFFF !important;
-        border: 1px solid #F1F5F9 !important;
+        border: 1px solid #E2E8F0 !important;
         border-radius: 20px !important;
         box-shadow: 0 4px 20px rgba(15, 23, 42, 0.04) !important;
-        padding: 24px !important;
-      }
-
-      #agentBrainPanel .stats {
-        display: grid !important;
-        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
-        gap: 14px !important;
-        margin-bottom: 20px !important;
-      }
-
-      #agentBrainPanel .stat {
-        background: #F8FAFC !important;
-        border: 1px solid #F1F5F9 !important;
-        border-radius: 14px !important;
-        padding: 16px 18px !important;
-      }
-
-      #agentBrainPanel .stat-label {
-        color: #64748B !important;
-        font-size: 11.5px !important;
-        font-weight: 700 !important;
-        text-transform: uppercase !important;
-        margin-bottom: 6px !important;
-      }
-
-      #agentBrainPanel .stat-val {
-        color: #0F172A !important;
-        font-size: 16px !important;
-        font-weight: 700 !important;
-      }
-
-      #brainDecisionBadge {
-        display: inline-block !important;
-        padding: 3px 10px !important;
-        border-radius: 9999px !important;
-        font-weight: 700 !important;
-        font-size: 12px !important;
-      }
-
-      #agentModeBadge {
-        background: #F5F3FF !important;
-        border: 1px solid #DDD6FE !important;
-        color: #7C3AED !important;
-        font-size: 11px !important;
-        font-weight: 700 !important;
-        border-radius: 9999px !important;
-        padding: 4px 10px !important;
-      }
-
-      /* DreamsAI High-Tech AI Terminal Console */
-      #agentBrainPanel .terminal {
-        background: #0B0F19 !important;
-        border: 1px solid #1E293B !important;
-        border-radius: 14px !important;
-        min-height: 300px !important;
-        padding: 18px 22px !important;
+        padding: 12px 16px !important;
+        flex: 1 !important;
+        min-height: 0 !important;
         display: flex !important;
         flex-direction: column !important;
-        box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.4) !important;
-      }
-
-      #agentBrainPanel .terminal-top {
-        border-bottom: 1px solid #1E293B !important;
-        padding-bottom: 10px !important;
-        margin-bottom: 14px !important;
-        color: #94A3B8 !important;
-        font-size: 11px !important;
-        font-weight: 700 !important;
-        letter-spacing: 0.05em !important;
-        display: flex !important;
         justify-content: space-between !important;
       }
 
-      #brainTimestamp {
-        color: #A855F7 !important;
-        font-family: "Roboto Mono", monospace !important;
-      }
-
-      #agentBrainPanel .typewriter {
-        color: #F8FAFC !important;
-        font-family: "Roboto Mono", monospace !important;
-        font-size: 13.5px !important;
-        line-height: 1.65 !important;
-        min-height: 200px !important;
-        max-height: 360px !important;
-        flex: 1 !important;
-      }
-
-      .cursor::after {
-        color: #C026D3 !important;
-      }
-
-      /* ---- 3. PREPAID RESOURCES: Two Equal Cards (DreamsAI Style) ---- */
-      #resourceMonitorPanel {
-        background: #FFFFFF !important;
-        border: 1px solid #F1F5F9 !important;
-        border-radius: 20px !important;
-        box-shadow: 0 4px 20px rgba(15, 23, 42, 0.04) !important;
-        padding: 24px !important;
-      }
-
       .simulated-feed-badge {
-        background: #F5F3FF !important;
-        border: 1px solid #DDD6FE !important;
-        color: #7C3AED !important;
+        background: linear-gradient(135deg, rgba(0, 249, 255, 0.16) 0%, rgba(80, 255, 127, 0.2) 100%) !important;
+        border: 1px solid rgba(0, 200, 220, 0.38) !important;
+        color: #0F766E !important;
         font-size: 11px !important;
-        font-weight: 700 !important;
+        font-weight: 800 !important;
         border-radius: 9999px !important;
         padding: 4px 10px !important;
       }
@@ -4663,193 +4475,322 @@
       #resourceMonitorPanel .gauges {
         display: grid !important;
         grid-template-columns: 1fr 1fr !important;
-        gap: 20px !important;
+        gap: 14px !important;
+        flex: 1 !important;
       }
 
       #resourceMonitorPanel .gauge-card {
-        background: #FFFFFF !important;
-        border: 1px solid #F1F5F9 !important;
-        border-radius: 18px !important;
-        box-shadow: 0 2px 10px rgba(15, 23, 42, 0.03) !important;
-        padding: 28px 24px !important;
+        background: linear-gradient(160deg, #FFFFFF 0%, rgba(82, 164, 255, 0.04) 55%, rgba(80, 255, 127, 0.05) 100%) !important;
+        border: 1px solid rgba(82, 164, 255, 0.25) !important;
+        border-radius: 16px !important;
+        box-shadow: 0 2px 8px rgba(15, 23, 42, 0.02) !important;
+        padding: 12px 14px !important;
         display: flex !important;
         flex-direction: column !important;
         align-items: center !important;
-        transition: all 0.25s ease !important;
+        justify-content: center !important;
+        transition: all 0.2s ease !important;
       }
 
       #resourceMonitorPanel .gauge-card:hover {
-        border-color: #DDD6FE !important;
-        box-shadow: 0 8px 24px rgba(124, 58, 237, 0.08) !important;
+        border-color: #52a4ff !important;
+        box-shadow: 0 6px 20px rgba(82, 164, 255, 0.14) !important;
         transform: translateY(-2px) !important;
       }
 
       .gauge-card .tag {
-        background: #F8FAFC !important;
-        border: 1px solid #E2E8F0 !important;
-        color: #64748B !important;
-        font-size: 11px !important;
-        font-weight: 600 !important;
+        background: #FFFFFF !important;
+        border: 1px solid #CBD5E1 !important;
+        color: #475569 !important;
+        font-size: 10.5px !important;
+        font-weight: 700 !important;
         border-radius: 9999px !important;
-        padding: 3px 10px !important;
+        padding: 2px 9px !important;
       }
 
       .gauge-wrap {
-        width: 160px !important;
-        height: 160px !important;
-        margin: 16px 0 !important;
+        width: 118px !important;
+        height: 118px !important;
+        margin: 4px 0 !important;
       }
 
-      .gauge-wrap svg {
-        width: 160px !important;
-        height: 160px !important;
+      .gauge-wrap > svg {
+        width: 118px !important;
+        height: 118px !important;
       }
 
-      .gauge-wrap svg circle:not(.ring) {
-        stroke: #F1F5F9 !important;
+      .gauge-wrap > svg circle:not(.ring) {
+        stroke: #E2E8F0 !important;
       }
 
       .gauge-pct {
         color: #0F172A !important;
-        font-size: 34px !important;
+        font-size: 28px !important;
         font-weight: 800 !important;
         letter-spacing: -0.03em !important;
+        line-height: 1.05 !important;
       }
 
       .gauge-status {
-        font-size: 12px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        gap: 3px !important;
+        font-size: 11px !important;
         font-weight: 700 !important;
         margin-top: 3px !important;
       }
 
+      .gauge-status svg {
+        width: 11px !important;
+        height: 11px !important;
+        flex-shrink: 0 !important;
+      }
+
       .gauge-name {
         color: #0F172A !important;
-        font-size: 17px !important;
-        font-weight: 700 !important;
-        margin-top: 12px !important;
-        margin-bottom: 6px !important;
+        font-size: 15.5px !important;
+        font-weight: 800 !important;
+        margin-top: 6px !important;
+        margin-bottom: 3px !important;
       }
 
       .gauge-quantity strong {
         color: #0F172A !important;
-        font-size: 14.5px !important;
+        font-size: 13px !important;
       }
 
       .gauge-quantity span {
         color: #64748B !important;
-        font-size: 12px !important;
+        font-size: 11px !important;
       }
 
       .gauge-cost {
-        color: #64748B !important;
-        font-size: 13px !important;
-        margin-top: 8px !important;
+        color: #475569 !important;
+        font-size: 12px !important;
+        margin-top: 4px !important;
       }
 
       .gauge-cost b {
-        color: #7C3AED !important;
-        font-weight: 700 !important;
+        color: #5d4eff !important;
+        font-weight: 800 !important;
       }
 
       .vend-box {
-        background: #F8FAFC !important;
-        border: 1px solid #F1F5F9 !important;
-        color: #64748B !important;
-        border-radius: 10px !important;
+        background: #FFFFFF !important;
+        border: 1px solid #E2E8F0 !important;
+        color: #475569 !important;
+        border-radius: 8px !important;
         font-family: "Roboto Mono", monospace !important;
-        font-size: 11px !important;
-        padding: 8px 12px !important;
-        margin-top: 12px !important;
+        font-size: 10.5px !important;
+        padding: 6px 10px !important;
+        margin-top: 8px !important;
+        width: 100% !important;
         white-space: normal !important;
         overflow-wrap: anywhere !important;
         text-align: center !important;
       }
 
-      .gauge-card.state-critical {
-        border-color: rgba(239, 68, 68, 0.45) !important;
-        box-shadow: 0 0 16px rgba(239, 68, 68, 0.1) !important;
-      }
-      .gauge-card.state-low {
-        border-color: rgba(245, 158, 11, 0.45) !important;
-        box-shadow: 0 0 16px rgba(245, 158, 11, 0.1) !important;
-      }
-      .gauge-card.state-healthy {
-        border-color: rgba(16, 185, 129, 0.35) !important;
+      .resource-panel-note {
+        margin-top: 10px !important;
+        font-size: 11px !important;
+        color: #64748B !important;
+        text-align: center !important;
       }
 
-      /* ---- 4. STAFF OPERATIONAL PURCHASE REQUEST ---- */
-      .staff-card {
-        background: #FFFFFF !important;
-        border: 1px solid #F1F5F9 !important;
-        border-radius: 20px !important;
-        box-shadow: 0 4px 20px rgba(15, 23, 42, 0.04) !important;
-        padding: 24px !important;
+      .gauge-card.state-critical {
+        border-color: rgba(239, 68, 68, 0.55) !important;
+        box-shadow: 0 0 16px rgba(239, 68, 68, 0.12) !important;
+      }
+      .gauge-card.state-low {
+        border-color: rgba(245, 158, 11, 0.55) !important;
+        box-shadow: 0 0 16px rgba(245, 158, 11, 0.12) !important;
+      }
+      .gauge-card.state-healthy {
+        border-color: rgba(16, 185, 129, 0.4) !important;
+      }
+
+      /* ---- 3. FAR-RIGHT UNIFIED CHAT & AI BRAIN PANEL ---- */
+      #agentBrainPanel {
+        width: 100% !important;
+        background: transparent !important;
+        border: none !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+        padding: 16px 18px 12px !important;
+        flex: 1 !important;
+        min-height: 0 !important;
+        display: flex !important;
+        flex-direction: column !important;
+      }
+
+      #agentBrainPanel .stats {
+        display: grid !important;
+        grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+        gap: 8px !important;
+        margin-bottom: 10px !important;
+      }
+
+      #agentBrainPanel .stat {
+        background: #F8FAFC !important;
+        border: 1px solid #E2E8F0 !important;
+        border-radius: 12px !important;
+        padding: 8px 10px !important;
+      }
+
+      #agentBrainPanel .stat-label {
+        color: #64748B !important;
+        font-size: 10px !important;
+        font-weight: 700 !important;
+        text-transform: uppercase !important;
+        margin-bottom: 3px !important;
+      }
+
+      #agentBrainPanel .stat-val {
+        color: #0F172A !important;
+        font-size: 13.5px !important;
+        font-weight: 800 !important;
+      }
+
+      #brainDecisionBadge {
+        display: inline-block !important;
+        padding: 2px 8px !important;
+        border-radius: 9999px !important;
+        font-weight: 800 !important;
+        font-size: 11px !important;
+      }
+
+      #agentModeBadge {
+        display: none !important;
+      }
+
+      #agentBrainPanel .terminal {
+        background: #0B0F19 !important;
+        border: 1px solid rgba(82, 164, 255, 0.28) !important;
+        border-radius: 14px !important;
+        min-height: 110px !important;
+        padding: 12px 14px !important;
+        display: flex !important;
+        flex-direction: column !important;
+        flex: 1 !important;
+        min-height: 0 !important;
+        overflow-y: auto !important;
+        box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.4) !important;
+      }
+
+      #agentBrainPanel .terminal-top {
+        border-bottom: 1px solid #1E293B !important;
+        padding-bottom: 6px !important;
+        margin-bottom: 8px !important;
+        color: #94A3B8 !important;
+        font-size: 10px !important;
+        font-weight: 700 !important;
+        letter-spacing: 0.05em !important;
+        display: flex !important;
+        justify-content: space-between !important;
+      }
+
+      #brainTimestamp {
+        color: #00f9ff !important;
+        font-family: "Roboto Mono", monospace !important;
+      }
+
+      #agentBrainPanel .typewriter {
+        color: #F8FAFC !important;
+        font-family: "Roboto Mono", monospace !important;
+        font-size: 12px !important;
+        line-height: 1.5 !important;
+        min-height: 60px !important;
+        flex: 1 !important;
+      }
+
+      .cursor::after {
+        color: #50ff7f !important;
+      }
+
+      /* ---- 4. STAFF CHAT DOCKED AT BOTTOM OF RIGHT COLUMN ---- */
+      .staff-card.bento-chat-card {
+        background: linear-gradient(160deg, rgba(93, 78, 255, 0.04) 0%, rgba(0, 249, 255, 0.05) 55%, rgba(80, 255, 127, 0.05) 100%) !important;
+        border: none !important;
+        border-top: 1px solid rgba(82, 164, 255, 0.24) !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+        padding: 14px 18px 16px !important;
+        margin: 0 !important;
+        flex-shrink: 0 !important;
       }
 
       .staff-header {
         border-bottom: 1px solid #F1F5F9 !important;
-        padding-bottom: 14px !important;
-        margin-bottom: 16px !important;
+        padding-bottom: 10px !important;
+        margin-bottom: 12px !important;
       }
 
       .staff-title {
         color: #0F172A !important;
-        font-size: 16px !important;
-        font-weight: 700 !important;
+        font-size: 14.5px !important;
+        font-weight: 800 !important;
+      }
+
+      .bento-chat-card .preset-row {
+        display: flex !important;
+        flex-wrap: wrap !important;
+        gap: 6px !important;
+        margin-bottom: 10px !important;
+        margin-top: 0 !important;
       }
 
       .staff-input {
-        background: #F8FAFC !important;
-        border: 1px solid #E2E8F0 !important;
+        background: #FFFFFF !important;
+        border: 1px solid rgba(82, 164, 255, 0.35) !important;
         border-radius: 12px !important;
         color: #0F172A !important;
-        font-size: 13.5px !important;
-        padding: 12px 16px !important;
+        font-size: 13px !important;
+        padding: 10px 14px !important;
         flex: 1 !important;
       }
 
       .staff-input:focus {
         background: #FFFFFF !important;
-        border-color: #7C3AED !important;
-        box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.15) !important;
+        border-color: #5d4eff !important;
+        box-shadow: 0 0 0 3px rgba(82, 164, 255, 0.22) !important;
         outline: none !important;
       }
 
-      /* DreamsAI Gradient Pill Button */
       .btn-submit-req {
-        background: linear-gradient(135deg, #7C3AED 0%, #C026D3 100%) !important;
-        color: #FFFFFF !important;
+        background: linear-gradient(135deg, #5d4eff 0%, #52a4ff 35%, #00f9ff 70%, #50ff7f 100%) !important;
+        color: #061326 !important;
         border: none !important;
         border-radius: 9999px !important;
-        font-weight: 700 !important;
-        font-size: 13px !important;
-        padding: 11px 22px !important;
+        font-weight: 800 !important;
+        font-size: 12.5px !important;
+        padding: 10px 18px !important;
         cursor: pointer !important;
         transition: all 0.18s ease !important;
-        box-shadow: 0 4px 14px rgba(124, 58, 237, 0.35) !important;
+        box-shadow: 0 4px 16px rgba(82, 164, 255, 0.36) !important;
       }
 
       .btn-submit-req:hover {
         transform: translateY(-1px) !important;
-        box-shadow: 0 6px 20px rgba(124, 58, 237, 0.45) !important;
+        box-shadow: 0 6px 22px rgba(0, 249, 255, 0.45) !important;
       }
 
       .preset-chip {
-        background: #F8FAFC !important;
-        border: 1px solid #E2E8F0 !important;
+        background: #FFFFFF !important;
+        border: 1px solid rgba(82, 164, 255, 0.32) !important;
         border-radius: 9999px !important;
-        color: #334155 !important;
-        font-size: 12px !important;
-        font-weight: 600 !important;
-        padding: 7px 14px !important;
+        color: #1E293B !important;
+        font-size: 11.5px !important;
+        font-weight: 700 !important;
+        padding: 5px 11px !important;
         cursor: pointer !important;
         transition: all 0.18s ease !important;
       }
 
       .preset-chip:hover {
-        background: #F5F3FF !important;
-        border-color: #DDD6FE !important;
-        color: #7C3AED !important;
+        background: linear-gradient(135deg, rgba(93, 78, 255, 0.1) 0%, rgba(0, 249, 255, 0.14) 100%) !important;
+        border-color: #5d4eff !important;
+        color: #5d4eff !important;
         transform: translateY(-1px) !important;
       }
 
@@ -4867,10 +4808,10 @@
       /* ---- 5. TABLES: AUDIT FEED & RECENT ACTIVITY ---- */
       .table-card {
         background: #FFFFFF !important;
-        border: 1px solid #F1F5F9 !important;
+        border: 1px solid #E2E8F0 !important;
         border-radius: 20px !important;
         box-shadow: 0 4px 20px rgba(15, 23, 42, 0.04) !important;
-        padding: 24px !important;
+        padding: 18px 20px !important;
       }
 
       .table-wrap {
@@ -4891,19 +4832,19 @@
 
       th {
         color: #64748B !important;
-        font-size: 11.5px !important;
+        font-size: 11px !important;
         font-weight: 700 !important;
         text-transform: uppercase !important;
         letter-spacing: 0.04em !important;
-        padding: 13px 18px !important;
+        padding: 10px 14px !important;
         border-bottom: 1px solid #F1F5F9 !important;
         text-align: left !important;
       }
 
       td {
-        padding: 14px 18px !important;
+        padding: 10px 14px !important;
         color: #334155 !important;
-        font-size: 13px !important;
+        font-size: 12.5px !important;
         border-bottom: 1px solid #F1F5F9 !important;
       }
 
@@ -4950,86 +4891,75 @@
         color: #334155 !important;
       }
 
+      /* ---- DARK MODE BENTO SUPPORT (Matches Reference Dark Bento Image) ---- */
+      body:not(.light-theme) .dashboard-budget-metric {
+        background: #141923 !important;
+        border-color: rgba(255, 255, 255, 0.08) !important;
+      }
+      body:not(.light-theme) .dashboard-budget-metric strong,
+      body:not(.light-theme) .gauge-pct,
+      body:not(.light-theme) .gauge-name,
+      body:not(.light-theme) .gauge-quantity strong,
+      body:not(.light-theme) #agentBrainPanel .stat-val,
+      body:not(.light-theme) .staff-title {
+        color: #F8FAFC !important;
+      }
+      body:not(.light-theme) .metric-label,
+      body:not(.light-theme) .dashboard-budget-metric small.metric-sub {
+        color: #94A3B8 !important;
+      }
+      body:not(.light-theme) .metric-arrow-btn,
+      body:not(.light-theme) #editCapsBtn.metric-arrow-btn {
+        background: rgba(255, 255, 255, 0.06) !important;
+        border-color: rgba(255, 255, 255, 0.14) !important;
+        color: #E2E8F0 !important;
+      }
+      body:not(.light-theme) #resourceMonitorPanel,
+      body:not(.light-theme) #view-dashboard > .grid.dashboard-bento-grid > .bento-right-col,
+      body:not(.light-theme) .table-card {
+        background: #141923 !important;
+        border-color: rgba(255, 255, 255, 0.08) !important;
+      }
+      body:not(.light-theme) .staff-card.bento-chat-card {
+        background: #101520 !important;
+        border-top-color: rgba(255, 255, 255, 0.08) !important;
+      }
+      body:not(.light-theme) #resourceMonitorPanel .gauge-card,
+      body:not(.light-theme) #agentBrainPanel .stat,
+      body:not(.light-theme) .vend-box,
+      body:not(.light-theme) .staff-input {
+        background: #0D111A !important;
+        border-color: rgba(255, 255, 255, 0.08) !important;
+        color: #E2E8F0 !important;
+      }
+      body:not(.light-theme) .gauge-wrap svg circle:not(.ring) {
+        stroke: #1E293B !important;
+      }
+
       /* ---- RESPONSIVE ---- */
-      @media (max-width: 1024px) {
-        .dreams-hero-banner {
-          flex-direction: column !important;
-          align-items: flex-start !important;
-          padding: 24px 26px !important;
+      @media (max-width: 768px) {
+        #view-dashboard > .grid.dashboard-bento-grid {
+          grid-template-columns: 1fr !important;
+          height: auto !important;
+          max-height: none !important;
+        }
+        #view-dashboard > .grid.dashboard-bento-grid > .bento-left-col,
+        #view-dashboard > .grid.dashboard-bento-grid > .bento-right-col {
+          grid-column: 1 / -1 !important;
+          grid-row: auto !important;
+          height: auto !important;
         }
         .header-search-wrap {
           display: none !important;
         }
         .dashboard-budget-metrics,
         .dashboard-budget-panel .dashboard-budget-metrics {
-          grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
-          gap: 12px !important;
-        }
-        .dashboard-budget-metric.is-primary,
-        .dashboard-budget-metric.is-daily,
-        .dashboard-budget-metric.is-spent {
-          grid-column: span 2 !important;
-        }
-        .dashboard-budget-metric.is-treasury,
-        .dashboard-budget-metric.is-limit {
-          grid-column: span 3 !important;
-        }
-      }
-
-      @media (max-width: 680px) {
-        .dreams-hero-banner {
-          padding: 20px !important;
-          border-radius: 16px !important;
-        }
-        #view-dashboard > .grid {
-          gap: 14px !important;
-        }
-        .dashboard-budget-metrics,
-        .dashboard-budget-panel .dashboard-budget-metrics {
-          grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+          grid-template-columns: 1fr !important;
           gap: 10px !important;
-        }
-        .dashboard-budget-metric.is-primary {
-          grid-column: 1 / -1 !important;
-        }
-        .dashboard-budget-metric.is-daily,
-        .dashboard-budget-metric.is-spent,
-        .dashboard-budget-metric.is-treasury,
-        .dashboard-budget-metric.is-limit {
-          grid-column: span 1 !important;
         }
         #resourceMonitorPanel .gauges {
           grid-template-columns: 1fr !important;
           gap: 14px !important;
-        }
-        .gauge-wrap, .gauge-wrap svg {
-          width: 140px !important;
-          height: 140px !important;
-        }
-        #agentBrainPanel .terminal {
-          min-height: 240px !important;
-        }
-        .sidebar {
-          background: #FFFFFF !important;
-          border-right: 1px solid #F1F5F9 !important;
-        }
-        .mobile-bottom-nav {
-          background: #FFFFFF !important;
-          border-top: 1px solid #F1F5F9 !important;
-        }
-      }
-
-      @media (max-width: 420px) {
-        .dashboard-budget-metrics,
-        .dashboard-budget-panel .dashboard-budget-metrics {
-          grid-template-columns: 1fr !important;
-        }
-        .dashboard-budget-metric.is-primary,
-        .dashboard-budget-metric.is-daily,
-        .dashboard-budget-metric.is-spent,
-        .dashboard-budget-metric.is-treasury,
-        .dashboard-budget-metric.is-limit {
-          grid-column: 1 / -1 !important;
         }
       }
     </style>
@@ -5062,10 +4992,10 @@
             id="policyPopupClose"
             onclick="closePolicyCheckPopup()"
             class="btn"
-            style="min-height: 32px; padding: 4px 10px; font-size: 12px"
+            style="min-height: 32px; padding: 4px 10px; font-size: 12px; display: inline-flex; align-items: center; justify-content: center;"
             aria-label="Close"
           >
-            ✕
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
           </button>
         </div>
         <h3 id="policyPopupTitle" class="policy-popup-title">Policy Decision</h3>
@@ -5089,9 +5019,10 @@
             target="_blank"
             rel="noopener noreferrer"
             class="btn btn-sky hidden"
-            style="text-decoration: none"
+            style="text-decoration: none; display: inline-flex; align-items: center; gap: 6px;"
           >
-            View on XRPL ↗
+            <span>View on XRPL</span>
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>
           </a>
           <button type="button" onclick="closePolicyCheckPopup()" class="btn btn-sky">
             Got it
@@ -5386,8 +5317,9 @@
                 >Loading...</a
               >
             </div>
-            <button id="btn-owner-freeze" onclick="toggleOwnerFreeze()" class="btn btn-red hidden">
-              🧊 Freeze All Spend
+            <button id="btn-owner-freeze" onclick="toggleOwnerFreeze()" class="btn btn-red hidden" style="display:inline-flex;align-items:center;gap:6px;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+              <span>Freeze All Spend</span>
             </button>
             <div id="headerMenuWrap" class="header-menu-wrap">
               <button
@@ -5454,8 +5386,9 @@
           </div>
         </header>
 
-        <div id="frozen-banner" class="hidden" style="background:#451418; color:#fecaca; padding:12px 24px; font-weight:600; font-size:13px;">
-          🧊 SPENDING FROZEN BY OWNER — All autonomous and staff top-ups are paused immediately.
+        <div id="frozen-banner" class="hidden" style="background:#451418; color:#fecaca; padding:12px 24px; font-weight:600; font-size:13px; display:flex; align-items:center; gap:8px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          <span>SPENDING FROZEN BY OWNER — All autonomous and staff top-ups are paused immediately.</span>
         </div>
 
         <div id="demoControlBar" class="demo-bar hidden">
@@ -5481,346 +5414,330 @@
 
         <!-- VIEW 1: Dashboard -->
         <section id="view-dashboard" class="tab-view active">
-          <!-- DreamsAI Vibrant Hero Banner -->
-          <div class="dreams-hero-banner">
-            <div class="dreams-hero-content">
-              <div class="dreams-hero-badge">⚡ Autonomous AI Agent CFO</div>
-              <h1 class="dreams-hero-title">Welcome <span id="heroWelcomeName">Cafe Owner (Admin)</span></h1>
-              <p class="dreams-hero-sub">Experience the future of autonomous utility treasury, policy-enforced multi-sign approvals, and continuous IoT resource monitoring.</p>
-              <div class="dreams-hero-actions">
-                <button type="button" onclick="switchTab('policy')" class="dreams-hero-btn primary">
-                  <span class="dreams-btn-icon">⚡</span>
-                  <span>Policy Controls</span>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-                </button>
-                <button type="button" onclick="document.getElementById('agentBrainPanel').scrollIntoView({behavior:'smooth'})" class="dreams-hero-btn secondary">
-                  <span class="dreams-btn-icon">🤖</span>
-                  <span>Agent Brain</span>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-                </button>
-              </div>
-            </div>
-            <div class="dreams-hero-art">
-              <div class="dreams-card-glass">
-                <div class="dreams-ai-avatar">
-                  <div class="dreams-avatar-glow"></div>
-                  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a10 10 0 0 1 10 10c0 5.52-4.48 10-10 10S2 17.52 2 12A10 10 0 0 1 12 2z"/><path d="M8 12h.01M16 12h.01"/><path d="M12 16c1.5 0 2.5-1 2.5-1"/></svg>
-                </div>
-                <div class="dreams-glass-info">
-                  <strong>Agent Online</strong>
-                  <span>Llama-3.3-70b-versatile</span>
-                </div>
-                <span class="dreams-live-indicator">
-                  <span class="live-dot"></span> Active
-                </span>
-              </div>
-            </div>
+          <!-- Hidden legacy IDs preserved for script bindings -->
+          <div class="dreams-hero-banner hidden" aria-hidden="true">
+            <span id="heroWelcomeName">Cafe Owner (Admin)</span>
           </div>
 
-          <div class="grid">
-            <section id="dailyBudgetPanel" class="panel dashboard-budget-panel">
-              <div class="panel-header">
-                <h2 class="panel-title">Daily Budget</h2>
-                <button
-                  id="editCapsBtn"
-                  onclick="switchTab('policy')"
-                  class="btn"
-                  style="padding: 4px 10px; font-size: 11px"
-                >
-                  Edit limits
-                </button>
-              </div>
-              <div class="dashboard-budget-metrics" aria-live="polite">
-                <div class="dashboard-budget-metric is-primary">
-                  <div class="metric-top">
-                    <div class="metric-icon-wrap violet">
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          <div class="grid dashboard-bento-grid">
+            <!-- LEFT COLUMN: 3 Top KPI Numbers + 2 Resource Dials Underneath -->
+            <div class="bento-left-col">
+              <section id="dailyBudgetPanel" class="panel dashboard-budget-panel">
+                <div class="dashboard-budget-metrics" aria-live="polite">
+                  <div class="dashboard-budget-metric is-primary">
+                    <div class="metric-top">
+                      <div class="metric-head-left">
+                        <div class="metric-icon-wrap violet">
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                        </div>
+                        <span class="metric-label">Available for auto-pay</span>
+                      </div>
+                      <button
+                        id="editCapsBtn"
+                        type="button"
+                        onclick="switchTab('policy')"
+                        class="metric-arrow-btn"
+                        title="Edit policy limits"
+                        aria-label="Edit policy limits"
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>
+                      </button>
                     </div>
-                    <span class="dreams-badge green">▲ Active</span>
+                    <div class="metric-value-row">
+                      <strong id="budgetRemainingText">15 RLUSD</strong>
+                      <span class="dreams-badge green">
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
+                        <span>Active</span>
+                      </span>
+                    </div>
+                    <small class="metric-sub">Policy &amp; treasury applied</small>
                   </div>
-                  <span class="metric-label">Available for auto-pay</span>
-                  <strong id="budgetRemainingText">15 RLUSD</strong>
-                  <small>Policy and treasury balance applied</small>
+
+                  <div class="dashboard-budget-metric is-daily">
+                    <div class="metric-top">
+                      <div class="metric-head-left">
+                        <div class="metric-icon-wrap blue">
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                        </div>
+                        <span class="metric-label">Daily limit</span>
+                      </div>
+                      <button
+                        type="button"
+                        onclick="switchTab('policy')"
+                        class="metric-arrow-btn"
+                        title="Open Policy Controls"
+                        aria-label="Open Policy Controls"
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>
+                      </button>
+                    </div>
+                    <div class="metric-value-row">
+                      <strong id="dailyCapText">15 RLUSD</strong>
+                      <span class="dreams-badge blue">
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                        <span>Policy Cap</span>
+                      </span>
+                    </div>
+                    <small class="metric-sub">Owner-set spending cap</small>
+                  </div>
+
+                  <div class="dashboard-budget-metric is-spent">
+                    <div class="metric-top">
+                      <div class="metric-head-left">
+                        <div class="metric-icon-wrap amber">
+                          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                        </div>
+                        <span class="metric-label">Spent today</span>
+                      </div>
+                      <button
+                        type="button"
+                        onclick="switchTab('history')"
+                        class="metric-arrow-btn"
+                        title="View Transaction History"
+                        aria-label="View Transaction History"
+                      >
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>
+                      </button>
+                    </div>
+                    <div class="metric-value-row">
+                      <strong id="spentTodayText">0 RLUSD</strong>
+                      <span class="dreams-badge amber">
+                        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                        <span>Validated</span>
+                      </span>
+                    </div>
+                    <small class="metric-sub">Validated payments today</small>
+                  </div>
                 </div>
-                <div class="dashboard-budget-metric is-daily">
-                  <div class="metric-top">
-                    <div class="metric-icon-wrap blue">
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                    </div>
-                    <span class="dreams-badge blue">Policy Cap</span>
-                  </div>
-                  <span class="metric-label">Daily limit</span>
-                  <strong id="dailyCapText">15 RLUSD</strong>
-                  <small>Owner-set spending cap</small>
-                </div>
-                <div class="dashboard-budget-metric is-spent">
-                  <div class="metric-top">
-                    <div class="metric-icon-wrap amber">
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                    </div>
-                    <span class="dreams-badge amber">Validated</span>
-                  </div>
-                  <span class="metric-label">Spent today</span>
-                  <strong id="spentTodayText">0 RLUSD</strong>
-                  <small>Validated payments today</small>
-                </div>
-                <div class="dashboard-budget-metric is-treasury">
-                  <div class="metric-top">
-                    <div class="metric-icon-wrap green">
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
-                    </div>
-                    <span class="dreams-badge green">XRPL</span>
-                  </div>
-                  <span class="metric-label">Treasury balance</span>
+
+                <!-- Hidden state holders for removed secondary tiles & allowlist -->
+                <div class="hidden" aria-hidden="true">
                   <strong id="treasuryBalanceText">Checking...</strong>
-                  <small>Multi-sign on-chain vault</small>
-                </div>
-                <div class="dashboard-budget-metric is-limit">
-                  <div class="metric-top">
-                    <div class="metric-icon-wrap slate">
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-                    </div>
-                    <span class="dreams-badge slate">Max / Tx</span>
-                  </div>
-                  <span class="metric-label">Maximum per payment</span>
                   <strong id="perTxCapText">10 RLUSD</strong>
-                  <small>Policy-enforced limit</small>
+                  <div id="allowlistContainer">Loading...</div>
                 </div>
-              </div>
-              <div class="allow-card">
-                <div class="allow-head"><span>Approved Vendor Wallet</span></div>
-                <div
-                  id="allowlistContainer"
-                  class="mono"
-                  style="font-size: 11px; color: #cbd5e1; word-break: break-all"
-                >
-                  Loading...
-                </div>
-              </div>
-              <div class="panel-footer">
-                Limits: policy signer (off-chain). Payments: XRPL multi-sign.
-              </div>
-            </section>
+              </section>
 
-            <section id="agentBrainPanel" class="panel dashboard-brain-panel">
-              <div class="panel-header">
-                <div>
-                  <h2 class="panel-title">Agent Brain</h2>
-                </div>
-                <span id="agentModeBadge" class="model"
-                  >llama-3.3-70b-versatile</span
-                >
-              </div>
-              <div class="stats">
-                <div class="stat">
-                  <div class="stat-label">Decision</div>
-                  <div id="brainDecisionBadge" class="stat-val">STANDBY</div>
-                </div>
-                <div class="stat">
-                  <div class="stat-label">Resource</div>
-                  <div id="brainResourceText" class="stat-val">-</div>
-                </div>
-                <div class="stat">
-                  <div class="stat-label">Proposed Spend</div>
-                  <div
-                    id="brainAmountText"
-                    class="stat-val"
-                    style="color: var(--green)"
-                  >
-                    0 RLUSD
+              <section id="resourceMonitorPanel" class="panel dashboard-monitor-panel">
+                <div class="panel-header resource-panel-header">
+                  <div>
+                    <h2 class="panel-title">Prepaid resources</h2>
+                    <p class="panel-sub">Early warning at 20% · Agent check at 5%</p>
                   </div>
+                  <span class="simulated-feed-badge">SIMULATED</span>
                 </div>
-              </div>
-              <div class="terminal">
-                <div class="terminal-top">
-                  <span>WHY THE AI CHOSE THIS</span
-                  ><span id="brainTimestamp">Waiting...</span>
-                </div>
-                <div style="margin: auto 0; padding: 4px 0">
-                  <p id="brainTypewriter" class="typewriter cursor">
-                    Watching electricity and data levels. When one runs low, the
-                    agent proposes a top-up.
-                  </p>
-                </div>
-              </div>
-            </section>
-
-            <section id="resourceMonitorPanel" class="panel dashboard-monitor-panel">
-              <div class="panel-header resource-panel-header">
-                <div>
-                  <h2 class="panel-title">Prepaid resources</h2>
-                  <p class="panel-sub">Early warning at 20% · Agent check at 5%</p>
-                </div>
-                <span class="simulated-feed-badge">SIMULATED</span>
-              </div>
-              <div class="gauges">
-                <div class="gauge-card">
-                  <span class="tag" title="The monitor asks the agent to evaluate a request at or below 5%. Policy controls approval.">Agent check at 5%</span>
-                  <div class="gauge-wrap">
-                    <svg width="160" height="160" viewBox="0 0 120 120">
-                      <circle
-                        cx="60"
-                        cy="60"
-                        r="50"
-                        stroke="#1e293b"
-                        stroke-width="10"
-                        fill="transparent"
-                      />
-                      <circle
-                        id="elecGaugeRing"
-                        class="ring"
-                        cx="60"
-                        cy="60"
-                        r="50"
-                        stroke="#10b981"
-                        stroke-width="10"
-                        stroke-linecap="round"
-                        fill="transparent"
-                        stroke-dasharray="314.16"
-                        stroke-dashoffset="0"
-                      />
-                    </svg>
-                    <div class="gauge-center">
-                      <span id="elecLevelText" class="gauge-pct">100%</span
-                      ><span id="elecStatusLabel" class="gauge-status"
-                        >Healthy</span
-                      >
+                <div class="gauges">
+                  <div class="gauge-card">
+                    <span class="tag" title="The monitor asks the agent to evaluate a request at or below 5%. Policy controls approval.">Agent check at 5%</span>
+                    <div class="gauge-wrap">
+                      <svg width="136" height="136" viewBox="0 0 120 120">
+                        <circle
+                          cx="60"
+                          cy="60"
+                          r="50"
+                          stroke="#1e293b"
+                          stroke-width="10"
+                          fill="transparent"
+                        />
+                        <circle
+                          id="elecGaugeRing"
+                          class="ring"
+                          cx="60"
+                          cy="60"
+                          r="50"
+                          stroke="#10b981"
+                          stroke-width="10"
+                          stroke-linecap="round"
+                          fill="transparent"
+                          stroke-dasharray="314.16"
+                          stroke-dashoffset="0"
+                        />
+                      </svg>
+                      <div class="gauge-center">
+                        <span id="elecLevelText" class="gauge-pct">100%</span
+                        ><span id="elecStatusLabel" class="gauge-status"
+                          >Healthy</span
+                        >
+                      </div>
+                    </div>
+                    <h3 class="gauge-name">Electricity</h3>
+                    <p class="gauge-quantity" aria-live="polite">
+                      <strong id="elecKwhText">60.0 kWh remaining</strong>
+                      <span>of 60 kWh simulated meter capacity</span>
+                    </p>
+                    <p class="gauge-cost">Top-up cost <b>5 RLUSD</b></p>
+                    <div
+                      id="lastStsTokenBox"
+                      class="vend-box"
+                      title="Simulated electricity fulfilment; no real token is issued"
+                    >
+                      Simulated token: none yet
                     </div>
                   </div>
-                  <h3 class="gauge-name">Electricity</h3>
-                  <p class="gauge-quantity" aria-live="polite">
-                    <strong id="elecKwhText">60.0 kWh remaining</strong>
-                    <span>of 60 kWh simulated meter capacity</span>
-                  </p>
-                  <p class="gauge-cost">Top-up cost <b>5 RLUSD</b></p>
-                  <div
-                    id="lastStsTokenBox"
-                    class="vend-box"
-                    title="Simulated electricity fulfilment; no real token is issued"
-                  >
-                    Simulated token: none yet
-                  </div>
-                </div>
 
-                <div class="gauge-card">
-                  <span class="tag" title="The monitor asks the agent to evaluate a request at or below 5%. Policy controls approval.">Agent check at 5%</span>
-                  <div class="gauge-wrap">
-                    <svg width="160" height="160" viewBox="0 0 120 120">
-                      <circle
-                        cx="60"
-                        cy="60"
-                        r="50"
-                        stroke="#1e293b"
-                        stroke-width="10"
-                        fill="transparent"
-                      />
-                      <circle
-                        id="dataGaugeRing"
-                        class="ring"
-                        cx="60"
-                        cy="60"
-                        r="50"
-                        stroke="#10b981"
-                        stroke-width="10"
-                        stroke-linecap="round"
-                        fill="transparent"
-                        stroke-dasharray="314.16"
-                        stroke-dashoffset="0"
-                      />
-                    </svg>
-                    <div class="gauge-center">
-                      <span id="dataLevelText" class="gauge-pct">100%</span
-                      ><span id="dataStatusLabel" class="gauge-status"
-                        >Healthy</span
-                      >
+                  <div class="gauge-card">
+                    <span class="tag" title="The monitor asks the agent to evaluate a request at or below 5%. Policy controls approval.">Agent check at 5%</span>
+                    <div class="gauge-wrap">
+                      <svg width="136" height="136" viewBox="0 0 120 120">
+                        <circle
+                          cx="60"
+                          cy="60"
+                          r="50"
+                          stroke="#1e293b"
+                          stroke-width="10"
+                          fill="transparent"
+                        />
+                        <circle
+                          id="dataGaugeRing"
+                          class="ring"
+                          cx="60"
+                          cy="60"
+                          r="50"
+                          stroke="#10b981"
+                          stroke-width="10"
+                          stroke-linecap="round"
+                          fill="transparent"
+                          stroke-dasharray="314.16"
+                          stroke-dashoffset="0"
+                        />
+                      </svg>
+                      <div class="gauge-center">
+                        <span id="dataLevelText" class="gauge-pct">100%</span
+                        ><span id="dataStatusLabel" class="gauge-status"
+                          >Healthy</span
+                        >
+                      </div>
+                    </div>
+                    <h3 class="gauge-name">Router Data</h3>
+                    <p class="gauge-quantity" aria-live="polite">
+                      <strong id="dataGbText">5.0 GB remaining</strong>
+                      <span>of 5 GB simulated bundle capacity</span>
+                    </p>
+                    <p class="gauge-cost">Top-up cost <b>3 RLUSD</b></p>
+                    <div
+                      id="lastDataBundleBox"
+                      class="vend-box"
+                      title="Simulated data fulfilment; no live bundle is activated"
+                    >
+                      Simulated bundle: none yet
                     </div>
                   </div>
-                  <h3 class="gauge-name">Router Data</h3>
-                  <p class="gauge-quantity" aria-live="polite">
-                    <strong id="dataGbText">5.0 GB remaining</strong>
-                    <span>of 5 GB simulated bundle capacity</span>
-                  </p>
-                  <p class="gauge-cost">Top-up cost <b>3 RLUSD</b></p>
-                  <div
-                    id="lastDataBundleBox"
-                    class="vend-box"
-                    title="Simulated data fulfilment; no live bundle is activated"
-                  >
-                    Simulated bundle: none yet
+                </div>
+                <p class="resource-panel-note">
+                  Simulated readings only. No real electricity tokens or data
+                  bundles are issued.
+                </p>
+              </section>
+            </div>
+
+            <!-- RIGHT COLUMN: Agent Brain & Staff Chat Request covering the right side of the screen -->
+            <div class="bento-right-col">
+              <section id="agentBrainPanel" class="panel dashboard-brain-panel">
+                <div class="panel-header">
+                  <div>
+                    <h2 class="panel-title">Agent Brain</h2>
                   </div>
                 </div>
-              </div>
-              <p class="resource-panel-note">
-                Simulated readings only. No real electricity tokens or data
-                bundles are issued.
-              </p>
-            </section>
+                <div class="stats">
+                  <div class="stat">
+                    <div class="stat-label">Decision</div>
+                    <div id="brainDecisionBadge" class="stat-val">STANDBY</div>
+                  </div>
+                  <div class="stat">
+                    <div class="stat-label">Resource</div>
+                    <div id="brainResourceText" class="stat-val">-</div>
+                  </div>
+                  <div class="stat">
+                    <div class="stat-label">Proposed Spend</div>
+                    <div
+                      id="brainAmountText"
+                      class="stat-val"
+                      style="color: var(--green)"
+                    >
+                      0 RLUSD
+                    </div>
+                  </div>
+                </div>
+                <div class="terminal">
+                  <div class="terminal-top">
+                    <span>WHY THE AI CHOSE THIS</span
+                    ><span id="brainTimestamp">Waiting...</span>
+                  </div>
+                  <div style="margin: 0; padding: 2px 0">
+                    <p id="brainTypewriter" class="typewriter cursor">
+                      Watching electricity and data levels. When one runs low, the
+                      agent proposes a top-up.
+                    </p>
+                  </div>
+                </div>
+              </section>
+
+              <!-- Staff Operational Purchase Request Chat Box (Docked on Far Right) -->
+              <section class="staff-card bento-chat-card">
+                <div class="staff-header">
+                  <div class="staff-header-left">
+                    <span class="staff-title" style="display:inline-flex;align-items:center;gap:8px;">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+                      Staff Operational Purchase Request
+                    </span>
+                  </div>
+                  <span
+                    id="requesterLabel"
+                    class="mono"
+                    style="font-size: 11px; color: var(--muted)"
+                  >
+                    Requester: Cashier
+                  </span>
+                </div>
+
+                <div class="preset-row">
+                  <button
+                    class="preset-chip"
+                    onclick="useStaffPreset('Electricity meter is beeping low, need 5 RLUSD prepaid token')"
+                    style="display:inline-flex;align-items:center;gap:6px;"
+                  >
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                    5 RLUSD Electricity
+                  </button>
+                  <button
+                    class="preset-chip"
+                    onclick="useStaffPreset('Fibre is down and customers are waiting, need 3 RLUSD emergency LTE data')"
+                    style="display:inline-flex;align-items:center;gap:6px;"
+                  >
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
+                    3 RLUSD LTE Data
+                  </button>
+                  <button
+                    class="preset-chip amber"
+                    onclick="useStaffPreset('Busy weekend shift, request 15 RLUSD bulk electricity top-up (Over Cap)')"
+                    style="display:inline-flex;align-items:center;gap:6px;"
+                  >
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                    15 RLUSD Bulk (Over Cap)
+                  </button>
+                </div>
+
+                <div class="staff-input-row">
+                  <input
+                    id="staffRequestInput"
+                    type="text"
+                    class="staff-input"
+                    placeholder='Ask AI or request utility top-up (e.g. "Need 5 RLUSD electricity")...'
+                    onkeydown="if (event.key === 'Enter') submitStaffRequest()"
+                  />
+                  <button
+                    id="btnSubmitStaffReq"
+                    class="btn-submit-req"
+                    onclick="submitStaffRequest()"
+                    style="display:inline-flex;align-items:center;gap:7px;"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                    Send
+                  </button>
+                </div>
+              </section>
+            </div>
           </div>
-
-          <!-- Staff Operational Purchase Request Box -->
-          <section class="staff-card">
-            <div class="staff-header">
-              <div class="staff-header-left">
-                <span class="staff-title" style="display:inline-flex;align-items:center;gap:8px;">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-                  Staff Operational Purchase Request
-                </span>
-              </div>
-              <span
-                id="requesterLabel"
-                class="mono"
-                style="font-size: 11px; color: var(--muted)"
-              >
-                Requester: Cashier
-              </span>
-            </div>
-
-            <div class="staff-input-row">
-              <input
-                id="staffRequestInput"
-                type="text"
-                class="staff-input"
-                placeholder='e.g. "Electricity meter is beeping low, need 5 RLUSD prepaid token"'
-                onkeydown="if (event.key === 'Enter') submitStaffRequest()"
-              />
-              <button
-                id="btnSubmitStaffReq"
-                class="btn-submit-req"
-                onclick="submitStaffRequest()"
-                style="display:inline-flex;align-items:center;gap:7px;"
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-                Submit Request
-              </button>
-            </div>
-
-            <div class="preset-row">
-              <button
-                class="preset-chip"
-                onclick="useStaffPreset('Electricity meter is beeping low, need 5 RLUSD prepaid token')"
-                style="display:inline-flex;align-items:center;gap:6px;"
-              >
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-                Buy 5 RLUSD Prepaid Electricity
-              </button>
-              <button
-                class="preset-chip"
-                onclick="useStaffPreset('Fibre is down and customers are waiting, need 3 RLUSD emergency LTE data')"
-                style="display:inline-flex;align-items:center;gap:6px;"
-              >
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
-                Buy 3 RLUSD Emergency LTE Data
-              </button>
-              <button
-                class="preset-chip amber"
-                onclick="useStaffPreset('Busy weekend shift, request 15 RLUSD bulk electricity top-up (Over Cap)')"
-                style="display:inline-flex;align-items:center;gap:6px;"
-              >
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-                Request 15 RLUSD Bulk Top-Up (Over Cap)
-              </button>
-            </div>
-          </section>
 
           <section id="redTeamPanel" class="staff-card redteam-panel hidden">
             <div class="staff-header">
@@ -5853,8 +5770,8 @@
             </div>
           </section>
 
-          <!-- Recent Activity Strip on Dashboard -->
-          <section class="table-card">
+          <!-- Recent Activity Strip (hidden on single-page Bento Dashboard; available in Transactions tab) -->
+          <section class="table-card dashboard-recent-tx-card hidden" aria-hidden="true">
             <div class="table-header">
               <h2 class="panel-title">Recent Transactions</h2>
               <button onclick="switchTab('history')" class="btn btn-sky">
@@ -6205,8 +6122,9 @@
                   </h2>
                 </div>
               </div>
-              <button type="button" onclick="loadTrustCenter()" class="btn btn-sky">
-                ↻ Refresh Live Check
+              <button type="button" onclick="loadTrustCenter()" class="btn btn-sky" style="display:inline-flex;align-items:center;gap:6px;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+                <span>Refresh Live Check</span>
               </button>
             </div>
             <p style="color:var(--muted);line-height:1.6;font-size:13px;">
@@ -6218,7 +6136,10 @@
 
           <div class="table-card">
             <div class="table-header">
-              <h3 class="panel-title">⛓️ Live XRP Ledger Testnet Proof</h3>
+              <h3 class="panel-title" style="display:inline-flex;align-items:center;gap:8px;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0284C7" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+                <span>Live XRP Ledger Testnet Proof</span>
+              </h3>
             </div>
             <div id="tc-ledger-summary" style="color:var(--muted);font-size:13px;margin-bottom:14px;">
               Loading live XRPL account_info &amp; signer_list...
@@ -6240,7 +6161,10 @@
 
           <div class="table-card">
             <div class="table-header">
-              <h3 class="panel-title">🛑 Last 10 Blocked Attempts &amp; Enforcement Rules</h3>
+              <h3 class="panel-title" style="display:inline-flex;align-items:center;gap:8px;">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#EF4444" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+                <span>Last 10 Blocked Attempts &amp; Enforcement Rules</span>
+              </h3>
             </div>
             <div class="table-wrap">
               <table>
@@ -6369,7 +6293,10 @@
           const view = document.getElementById(`view-${t}`);
           if (btn) btn.classList.toggle("active", t === tabName);
           if (mbtn) mbtn.classList.toggle("active", t === tabName);
-          if (view) view.classList.toggle("hidden", t !== tabName);
+          if (view) {
+            view.classList.toggle("hidden", t !== tabName);
+            view.classList.toggle("active", t === tabName);
+          }
         });
 
         const wsEl = document.querySelector(".workspace");
@@ -7119,17 +7046,17 @@
         }
         if (pct <= threshold) {
           ring.setAttribute("stroke", "#E84A5F");
-          status.innerHTML = '<span aria-hidden="true" style="margin-right:3px;">⚠</span>Critical low';
+          status.innerHTML = '<span aria-hidden="true" style="display:inline-flex;vertical-align:middle;margin-right:4px;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span>Critical low';
           status.style.color = "#E84A5F";
           if (card) card.classList.add("state-critical");
         } else if (pct <= 20) {
           ring.setAttribute("stroke", "#F59E0B");
-          status.innerHTML = '<span aria-hidden="true" style="margin-right:3px;">▲</span>Low';
+          status.innerHTML = '<span aria-hidden="true" style="display:inline-flex;vertical-align:middle;margin-right:4px;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg></span>Low';
           status.style.color = "#F59E0B";
           if (card) card.classList.add("state-low");
         } else {
           ring.setAttribute("stroke", "#18B66A");
-          status.innerHTML = '<span aria-hidden="true" style="margin-right:3px;">●</span>Healthy';
+          status.innerHTML = '<span aria-hidden="true" style="display:inline-flex;vertical-align:middle;margin-right:4px;"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></span>Healthy';
           status.style.color = "#18B66A";
           if (card) card.classList.add("state-healthy");
         }
@@ -7781,9 +7708,9 @@
         const btn = document.getElementById("btn-owner-freeze");
         if (banner) banner.classList.toggle("hidden", !currentFrozenState);
         if (btn) {
-          btn.textContent = currentFrozenState
-            ? "▶️ Unfreeze Spending"
-            : "🧊 Freeze All Spend";
+          btn.innerHTML = currentFrozenState
+            ? `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg><span>Unfreeze Spending</span>`
+            : `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg><span>Freeze All Spend</span>`;
           btn.className = currentFrozenState ? "btn btn-sky" : "btn btn-red";
         }
       }
@@ -7841,10 +7768,14 @@
 
           syncFreezeUI(data.policy?.frozen);
 
+          const extIconSvg = `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-left:3px;"><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></svg>`;
+          const checkIconSvg = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px;"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>`;
+          const xIconSvg = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:middle;margin-right:4px;"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>`;
+
           summaryEl.innerHTML = `
             <div style="display:flex;flex-wrap:wrap;gap:16px;">
-              <span><strong>Treasury:</strong> <a href="${escapeHtml(lp.explorerAccountUrl || "#")}" target="_blank" rel="noopener noreferrer" style="color:var(--sky);">${escapeHtml(lp.treasuryAddress || "N/A")} ↗</a></span>
-              <span><strong>Master Key Disabled (lsfDisableMaster):</strong> ${lp.masterKeyDisabled ? '<span style="color:var(--green);">✅ YES (0x00100000)</span>' : '<span style="color:var(--red);">❌ NO</span>'}</span>
+              <span><strong>Treasury:</strong> <a href="${escapeHtml(lp.explorerAccountUrl || "#")}" target="_blank" rel="noopener noreferrer" style="color:var(--sky);display:inline-flex;align-items:center;">${escapeHtml(lp.treasuryAddress || "N/A")}${extIconSvg}</a></span>
+              <span><strong>Master Key Disabled (lsfDisableMaster):</strong> ${lp.masterKeyDisabled ? `<span style="color:var(--green);display:inline-flex;align-items:center;font-weight:700;">${checkIconSvg}YES (0x00100000)</span>` : `<span style="color:var(--red);display:inline-flex;align-items:center;font-weight:700;">${xIconSvg}NO</span>`}</span>
               <span><strong>Required Quorum:</strong> <span style="color:var(--sky);font-weight:700;">${escapeHtml(String(lp.signerQuorum ?? 2))}</span></span>
             </div>
           `;
@@ -7860,7 +7791,7 @@
               (s) => `
               <tr>
                 <td style="text-transform:uppercase;font-weight:700;">${escapeHtml(s.role)}</td>
-                <td class="mono"><a href="https://testnet.xrpl.org/accounts/${encodeURIComponent(s.account)}" target="_blank" rel="noopener noreferrer" style="color:var(--sky);">${escapeHtml(s.account)} ↗</a></td>
+                <td class="mono"><a href="https://testnet.xrpl.org/accounts/${encodeURIComponent(s.account)}" target="_blank" rel="noopener noreferrer" style="color:var(--sky);display:inline-flex;align-items:center;">${escapeHtml(s.account)}${extIconSvg}</a></td>
                 <td style="font-weight:700;">${escapeHtml(String(s.weight))}</td>
                 <td style="color:var(--muted);">${escapeHtml(roleDescriptions[s.role] || "Authorized signer")}</td>
               </tr>`,

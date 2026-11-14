@@ -1108,7 +1108,7 @@ async function startServer() {
     },
   });
 
-  startMonitor(2000);
+  startMonitor(3000);
 
   let retries = 0;
   server.on("error", async (err) => {

@@ -7,7 +7,7 @@
 const EventEmitter = require('events');
 const { listResources, getResource } = require('./resources');
 
-const TICK_MS = 2000;
+const TICK_MS = 3000;
 const LOW_RETRY_MS = 60000; // Re-emit 'low' at most once every 60s while still <= threshold
 const WARN_LEVEL_PERCENT = 20; // Proactive early warning threshold (20%)
 const emitter = new EventEmitter();
@@ -113,10 +113,15 @@ function getSnapshot() {
 }
 
 /**
- * Single monitor tick: publishes current levels without changing them, and
- * emits 'low' if any resource is at or below its threshold.
+ * Single 3-second monitor tick: drains each resource a little, emits 'level',
+ * and emits 'low' if any resource is at or below its threshold.
  */
 function tick() {
+  const plugins = listResources();
+  for (const r of plugins) {
+    r.drain();
+  }
+
   const snapshot = getSnapshot();
   emitter.emit('level', snapshot);
   evaluateLevels(snapshot);

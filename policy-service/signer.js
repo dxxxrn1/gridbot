@@ -305,28 +305,6 @@ async function signAndSubmitAgentRequest({
     }
   }
 
-  try {
-    const existingPending = await findRecentPendingDuplicate(
-      safeResource,
-      safeAmount,
-      30 * 60,
-      requesterId,
-    );
-    if (existingPending) {
-      return {
-        status: "pending_owner",
-        id: existingPending.id,
-        reason: existingPending.blocked_reason || "Matching request is already awaiting owner approval",
-        deduped: true,
-      };
-    }
-  } catch (err) {
-    return {
-      status: "blocked",
-      reason: `Fail-safe: pending-request duplicate check failed (${err.message})`,
-    };
-  }
-
   // -------------------------------------------------------------------------
   // Step 2: Velocity limit (max 6 requests per minute in memory)
   // -------------------------------------------------------------------------
@@ -387,6 +365,24 @@ async function signAndSubmitAgentRequest({
   if (capReasons.length > 0) {
     const capReason = capReasons.join("; ");
     try {
+      const existingPending = await findRecentPendingDuplicate(
+        safeResource,
+        safeAmount,
+        30 * 60,
+        requesterId,
+      );
+      if (existingPending) {
+        if (existingPending.blocked_reason !== capReason) {
+          await updateTx(existingPending.id, { blocked_reason: capReason });
+        }
+        return {
+          status: "pending_owner",
+          id: existingPending.id,
+          reason: capReason,
+          deduped: true,
+        };
+      }
+
       const row = await logTx({
         resource: safeResource,
         amount: safeAmount,
